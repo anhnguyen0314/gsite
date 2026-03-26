@@ -43,48 +43,51 @@ function generateInviteCode() {
 }
 
 async function getOrCreatePlayer(userId, username) {
-  const ref  = db.collection('poker_players').doc(userId);
-  const snap = await ref.get();
+  // Chips live in users/{userId} (shared across all games)
+  const userRef   = db.collection('users').doc(userId);
+  const userSnap  = await userRef.get();
 
-  if (snap.exists) {
-    const data = snap.data();
-    // Daily refill: if chips < 1000 and last refill was a different calendar day
-    const today     = new Date().toDateString();
-    const lastRefill = data.lastRefillDate || '';
-    if (data.chips < 1000 && lastRefill !== today) {
-      await ref.update({ chips: STARTING_CHIPS, lastRefillDate: today });
-      return { ...data, chips: STARTING_CHIPS };
-    }
-    return data;
+  let chips = STARTING_CHIPS;
+  if (userSnap.exists) {
+    chips = userSnap.data().chips ?? STARTING_CHIPS;
   } else {
-    const newPlayer = {
+    // Create user account if it doesn't exist yet
+    await userRef.set({
       userId,
       username,
-      chips:        STARTING_CHIPS,
-      wins:         0,
-      gamesPlayed:  0,
-      lastRefillDate: new Date().toDateString()
-    };
-    await ref.set(newPlayer);
-    return newPlayer;
+      chips:          STARTING_CHIPS,
+      lastDailyBonus: new Date().toDateString(),
+      createdAt:      admin.firestore.FieldValue.serverTimestamp()
+    });
   }
+
+  // Poker stats live in poker_players/{userId}
+  const pokerRef  = db.collection('poker_players').doc(userId);
+  const pokerSnap = await pokerRef.get();
+
+  if (!pokerSnap.exists) {
+    await pokerRef.set({ userId, username, wins: 0, gamesPlayed: 0 });
+    return { chips, wins: 0, gamesPlayed: 0 };
+  }
+
+  return { chips, ...pokerSnap.data() };
 }
 
 async function savePlayerChips(userId, chips) {
-  await db.collection('poker_players').doc(userId).update({ chips });
+  await db.collection('users').doc(userId).update({ chips });
 }
 
 async function recordWin(userId) {
-  const ref = db.collection('poker_players').doc(userId);
-  await ref.update({
+  await db.collection('poker_players').doc(userId).update({
     wins:        admin.firestore.FieldValue.increment(1),
     gamesPlayed: admin.firestore.FieldValue.increment(1)
   });
 }
 
 async function recordGamePlayed(userId) {
-  const ref = db.collection('poker_players').doc(userId);
-  await ref.update({ gamesPlayed: admin.firestore.FieldValue.increment(1) });
+  await db.collection('poker_players').doc(userId).update({
+    gamesPlayed: admin.firestore.FieldValue.increment(1)
+  });
 }
 
 function broadcastTableState(table) {

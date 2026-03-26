@@ -259,7 +259,7 @@
     import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, onAuthStateChanged, signOut }
       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { getFirestore, doc, getDoc, collection, query, orderBy, limit, getDocs }
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs, serverTimestamp }
       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -301,14 +301,15 @@
       // Load all data in parallel
       pageContent.innerHTML = `<div class="loading-state">Loading your stats…</div>`;
       try {
-        const [snakeScore, tetrisScore, solitaireScore, pokerData, pokerRank] = await Promise.all([
+        const [snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank] = await Promise.all([
           getGameScore('snake',     user.uid),
           getGameScore('tetris',    user.uid),
           getGameScore('solitaire', user.uid),
+          getUserData(user.uid, displayName),
           getPokerData(user.uid),
           getPokerRank(user.uid)
         ]);
-        renderPage(user, displayName, { snakeScore, tetrisScore, solitaireScore, pokerData, pokerRank });
+        renderPage(user, displayName, { snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank });
       } catch (err) {
         console.error('Failed to load profile:', err);
         pageContent.innerHTML = `<div class="loading-state" style="color:#f87171;">Failed to load profile. Please refresh.</div>`;
@@ -323,6 +324,37 @@
       } catch { return null; }
     }
 
+    async function getUserData(userId, username) {
+      try {
+        const ref   = doc(db, 'users', userId);
+        const snap  = await getDoc(ref);
+        const today = new Date().toDateString();
+
+        if (!snap.exists()) {
+          // Account predates the chip system — create it now
+          const newData = {
+            userId, username,
+            chips:          1000,
+            lastDailyBonus: today,
+            createdAt:      serverTimestamp()
+          };
+          await setDoc(ref, newData);
+          return newData;
+        }
+
+        const data = snap.data();
+        // Award daily bonus if not yet given today
+        if (data.lastDailyBonus !== today) {
+          await updateDoc(ref, { chips: increment(500), lastDailyBonus: today });
+          return { ...data, chips: (data.chips || 0) + 500, lastDailyBonus: today };
+        }
+        return data;
+      } catch (err) {
+        console.warn('getUserData failed:', err);
+        return null;
+      }
+    }
+
     async function getPokerData(userId) {
       try {
         const snap = await getDoc(doc(db, 'poker_players', userId));
@@ -331,7 +363,6 @@
     }
 
     async function getPokerRank(userId) {
-      // Rank by wins (how many players have MORE wins than this user)
       try {
         const snap = await getDocs(
           query(collection(db, 'poker_players'), orderBy('wins', 'desc'))
@@ -341,22 +372,18 @@
           if (d.id === userId) return rank;
           rank++;
         }
-        return rank; // not found → append at end
+        return rank;
       } catch { return null; }
     }
 
     // ── Render ─────────────────────────────────────────────────
     function renderPage(user, displayName, data) {
-      const { snakeScore, tetrisScore, solitaireScore, pokerData, pokerRank } = data;
+      const { snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank } = data;
 
-      const chips       = pokerData?.chips       ?? 10000;
+      // Chips come from central users/ collection
+      const chips       = userData?.chips        ?? 0;
       const wins        = pokerData?.wins         ?? 0;
       const gamesPlayed = pokerData?.gamesPlayed  ?? 0;
-      const isNewPlayer = !pokerData;
-
-      // Check if chips were refilled today
-      const today       = new Date().toDateString();
-      const wasRefilled = pokerData?.lastRefillDate === today && chips === 10000 && wins === 0 && gamesPlayed === 0;
 
       // Initials for avatar
       const initials = displayName.slice(0, 1).toUpperCase();
@@ -372,19 +399,33 @@
           <div class="member-badge">⭐ GameZone Member</div>
         </div>
 
-        ${chips < 1000 ? `
-          <div class="refill-notice">
-            🔄 Your chips are running low! Log in tomorrow to get a free refill back to 10,000.
-          </div>` : ''}
-
-        <!-- Stats grid -->
-        <div class="section-title">Poker Stats</div>
-        <div class="stats-grid">
-          <div class="stat-card highlight">
+        <!-- Chip balance (site-wide) -->
+        <div class="section-title">My Chips</div>
+        <div class="stats-grid" style="margin-bottom:10px;">
+          <div class="stat-card highlight" style="grid-column:span 2;">
             <div class="stat-icon">🪙</div>
             <div class="stat-value">${chips.toLocaleString()}</div>
-            <div class="stat-label">Chips</div>
+            <div class="stat-label">Total Chips</div>
           </div>
+        </div>
+        <div class="scores-card" style="margin-bottom:28px;">
+          <div class="score-row">
+            <div class="score-game"><span>📅</span> Daily login bonus</div>
+            <div class="score-value">+500 chips</div>
+          </div>
+          <div class="score-row">
+            <div class="score-game"><span>🐍</span> Snake — per minute played</div>
+            <div class="score-value">+100 chips</div>
+          </div>
+          <div class="score-row">
+            <div class="score-game"><span>🟦</span> Tetris — per 1,000 pts</div>
+            <div class="score-value">+100 chips</div>
+          </div>
+        </div>
+
+        <!-- Poker stats -->
+        <div class="section-title">Poker Stats</div>
+        <div class="stats-grid">
           <div class="stat-card">
             <div class="stat-icon">🏆</div>
             <div class="stat-value">${wins.toLocaleString()}</div>

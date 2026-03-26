@@ -7,27 +7,17 @@
   <link rel="stylesheet" href="style.css" />
   <style>
     .leaderboard-page {
-      max-width: 640px;
+      max-width: 860px;
       margin: 0 auto;
-      padding: 40px 20px;
+      padding: 40px 20px 60px;
     }
 
     .page-header {
       text-align: center;
       margin-bottom: 32px;
     }
-
-    .page-header h1 {
-      font-size: 32px;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 8px;
-    }
-
-    .page-header p {
-      color: #7070a0;
-      font-size: 15px;
-    }
+    .page-header h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .page-header p  { color: #7070a0; font-size: 15px; }
 
     /* Game tabs */
     .tabs {
@@ -38,33 +28,27 @@
       border: 1px solid #2a2a4a;
       border-radius: 12px;
       padding: 6px;
+      flex-wrap: wrap;
     }
-
     .tab {
       flex: 1;
-      padding: 10px;
+      min-width: 80px;
+      padding: 10px 8px;
       border: none;
       border-radius: 8px;
       background: transparent;
       color: #7070a0;
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 500;
       font-family: 'Segoe UI', sans-serif;
       cursor: pointer;
       transition: background 0.2s, color 0.2s;
+      white-space: nowrap;
     }
+    .tab.active { background: #7c3aed; color: #fff; }
+    .tab:hover:not(.active) { background: #2a2a4a; color: #e0e0e0; }
 
-    .tab.active {
-      background: #7c3aed;
-      color: #ffffff;
-    }
-
-    .tab:hover:not(.active) {
-      background: #2a2a4a;
-      color: #e0e0e0;
-    }
-
-    /* Leaderboard table */
+    /* Board */
     .board {
       background: #1a1a2e;
       border: 1px solid #2a2a4a;
@@ -72,10 +56,29 @@
       overflow: hidden;
     }
 
-    .board-header {
+    /* Column grid — changes per game type */
+    .board-header,
+    .board-row {
       display: grid;
-      grid-template-columns: 52px 1fr 110px;
-      padding: 12px 20px;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    /* Score games (snake/tetris/solitaire): Rank | Player | — | — | — | Best */
+    .layout-score .board-header,
+    .layout-score .board-row {
+      grid-template-columns: 48px 1fr 64px 80px 76px 100px;
+    }
+
+    /* Poker: Rank | Player | Wins | Games | Win Rate | — */
+    .layout-poker .board-header,
+    .layout-poker .board-row {
+      grid-template-columns: 48px 1fr 64px 80px 76px 100px;
+    }
+
+    .board-header {
+      padding-top: 12px;
+      padding-bottom: 12px;
       border-bottom: 1px solid #2a2a4a;
       font-size: 11px;
       color: #5050a0;
@@ -83,123 +86,84 @@
       letter-spacing: 0.08em;
       font-weight: 600;
     }
+    .board-header .col-num { text-align: right; }
 
     .board-row {
-      display: grid;
-      grid-template-columns: 52px 1fr 110px;
-      padding: 14px 20px;
+      padding-top: 14px;
+      padding-bottom: 14px;
       border-bottom: 1px solid #1e1e38;
-      align-items: center;
       transition: background 0.15s;
     }
-
-    .board-row:last-child {
-      border-bottom: none;
-    }
-
-    .board-row:hover {
-      background: #1f1f38;
-    }
-
+    .board-row:last-child { border-bottom: none; }
+    .board-row:hover { background: #1f1f38; }
     .board-row.you {
       background: #1e1430;
       border-left: 3px solid #7c3aed;
     }
 
-    .rank {
-      font-size: 18px;
-      font-weight: 700;
-      color: #5050a0;
-    }
-
+    .rank { font-size: 16px; font-weight: 700; color: #5050a0; }
     .rank.gold   { color: #facc15; }
     .rank.silver { color: #94a3b8; }
     .rank.bronze { color: #fb923c; }
 
-    .player {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
+    .player { display: flex; align-items: center; gap: 8px; min-width: 0; }
     .player-name {
-      font-size: 15px;
-      font-weight: 500;
-      color: #e0e0e0;
+      font-size: 15px; font-weight: 500; color: #e0e0e0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-
     .you-badge {
-      font-size: 10px;
-      background: #7c3aed;
-      color: #fff;
-      padding: 2px 7px;
-      border-radius: 20px;
-      font-weight: 600;
-      letter-spacing: 0.05em;
+      font-size: 10px; background: #7c3aed; color: #fff;
+      padding: 2px 7px; border-radius: 20px; font-weight: 600;
+      letter-spacing: 0.05em; flex-shrink: 0;
     }
 
-    .score-val {
-      font-size: 18px;
-      font-weight: 700;
-      color: #a78bfa;
+    .col-num {
+      font-size: 15px; font-weight: 700; color: #a78bfa;
       text-align: right;
     }
+    .col-num.dim { color: #3a3a6a; font-weight: 400; font-size: 14px; }
 
     /* States */
     .state-box {
-      padding: 60px 20px;
-      text-align: center;
-      color: #5050a0;
+      padding: 60px 20px; text-align: center; color: #5050a0;
     }
-
-    .state-box .state-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-    }
-
-    .state-box p {
-      font-size: 15px;
-    }
+    .state-box .state-icon { font-size: 48px; margin-bottom: 16px; }
+    .state-box p { font-size: 15px; }
 
     .spinner {
-      width: 36px;
-      height: 36px;
-      border: 3px solid #2a2a4a;
-      border-top-color: #7c3aed;
+      width: 36px; height: 36px;
+      border: 3px solid #2a2a4a; border-top-color: #7c3aed;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
       margin: 0 auto 16px;
     }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     .your-rank-bar {
       margin-top: 16px;
-      background: #1a1a2e;
-      border: 1px solid #2a2a4a;
-      border-radius: 12px;
-      padding: 14px 20px;
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 14px;
-      color: #9090b0;
+      background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 12px;
+      padding: 14px 20px; display: none;
+      align-items: center; justify-content: space-between;
+      font-size: 14px; color: #9090b0;
     }
+    .your-rank-bar.visible { display: flex; }
+    .your-rank-bar strong { color: #a78bfa; }
 
-    .your-rank-bar.visible {
-      display: flex;
-    }
-
-    .your-rank-bar strong {
-      color: #a78bfa;
+    /* Mobile — hide less-important columns */
+    @media (max-width: 600px) {
+      .board-header,
+      .board-row {
+        grid-template-columns: 40px 1fr 60px 80px !important;
+      }
+      .col-games, .col-winrate { display: none; }
+      .board-header .col-games,
+      .board-header .col-winrate { display: none; }
+      .tab { font-size: 12px; padding: 8px 4px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
   <nav>
     <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 GameZone</a>
     <ul class="nav-links">
@@ -220,12 +184,13 @@
     </div>
 
     <div class="tabs">
-      <button class="tab active" id="tab-snake" onclick="switchGame('snake')">🐍 Snake</button>
-      <button class="tab" id="tab-tetris" onclick="switchGame('tetris')">🟦 Tetris</button>
-      <button class="tab" id="tab-solitaire" onclick="switchGame('solitaire')">♠️ Solitaire</button>
+      <button class="tab active" id="tab-snake"     onclick="switchGame('snake')">🐍 Snake</button>
+      <button class="tab"        id="tab-tetris"    onclick="switchGame('tetris')">🟦 Tetris</button>
+      <button class="tab"        id="tab-solitaire" onclick="switchGame('solitaire')">♠️ Solitaire</button>
+      <button class="tab"        id="tab-poker"     onclick="switchGame('poker')">🃏 Poker</button>
     </div>
 
-    <div class="board" id="board">
+    <div class="board layout-score" id="board">
       <div class="state-box">
         <div class="spinner"></div>
         <p>Loading scores…</p>
@@ -239,7 +204,8 @@
 
   <script type="module">
     import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getAuth, onAuthStateChanged, signOut }
+      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
     import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc }
       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
@@ -259,14 +225,13 @@
     let currentUser = null;
     let currentGame = 'snake';
 
-    // Nav auth state
     const navAuth = document.getElementById('navAuth');
     onAuthStateChanged(auth, (user) => {
       currentUser = user;
       if (user) {
         const name = user.displayName || user.email.split('@')[0];
         navAuth.innerHTML = `
-          <span class="nav-username">👾 ${name}</span>
+          <a href="account.html" class="nav-username" style="text-decoration:none;">👾 ${escHtml(name)}</a>
           <button class="btn-secondary" id="logoutBtn">Log out</button>
         `;
         document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -282,86 +247,56 @@
       loadLeaderboard(currentGame);
     });
 
-    // Config per game: ascending = lower score is better (solitaire uses time)
+    // ── Game config ────────────────────────────────────────────
     const GAME_CONFIG = {
-      snake:     { ascending: false, label: 'Score', fmt: v => v.toLocaleString() },
-      tetris:    { ascending: false, label: 'Score', fmt: v => v.toLocaleString() },
-      solitaire: { ascending: true,  label: 'Time',  fmt: v => {
-        const m = Math.floor(v/60), s = String(v%60).padStart(2,'0');
-        return `${m}:${s}`;
-      }}
+      snake: {
+        type:      'score',
+        ascending: false,
+        scoreLabel: 'Best Score',
+        scoreFmt:  v => v.toLocaleString() + ' pts'
+      },
+      tetris: {
+        type:      'score',
+        ascending: false,
+        scoreLabel: 'Best Score',
+        scoreFmt:  v => v.toLocaleString() + ' pts'
+      },
+      solitaire: {
+        type:      'score',
+        ascending: true,
+        scoreLabel: 'Best Time',
+        scoreFmt:  v => { const m = Math.floor(v/60), s = String(v%60).padStart(2,'0'); return `${m}:${s}`; }
+      },
+      poker: {
+        type:      'poker',
+        ascending: false,
+        scoreLabel: '—'
+      }
     };
 
+    // ── Tab switcher ───────────────────────────────────────────
     window.switchGame = function(game) {
       currentGame = game;
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
       document.getElementById(`tab-${game}`).classList.add('active');
+      // Toggle board layout class
+      const board = document.getElementById('board');
+      board.className = game === 'poker' ? 'board layout-poker' : 'board layout-score';
       loadLeaderboard(game);
     };
 
+    // ── Load leaderboard ───────────────────────────────────────
     async function loadLeaderboard(game) {
-      const board  = document.getElementById('board');
-      const cfg    = GAME_CONFIG[game] || GAME_CONFIG.snake;
-      board.innerHTML = `<div class="state-box"><div class="spinner"></div><p>Loading scores…</p></div>`;
+      const board = document.getElementById('board');
+      board.innerHTML = `<div class="state-box"><div class="spinner"></div><p>Loading…</p></div>`;
       document.getElementById('yourRankBar').classList.remove('visible');
 
       try {
-        const q = query(
-          collection(db, 'games', game, 'scores'),
-          orderBy('score', cfg.ascending ? 'asc' : 'desc'),
-          limit(10)
-        );
-        const snap = await getDocs(q);
-        const rows = [];
-        snap.forEach(d => rows.push(d.data()));
-
-        if (rows.length === 0) {
-          board.innerHTML = `
-            <div class="state-box">
-              <div class="state-icon">🎮</div>
-              <p>No scores yet — be the first to play!</p>
-            </div>`;
-          return;
+        if (game === 'poker') {
+          await loadPokerLeaderboard(board);
+        } else {
+          await loadScoreLeaderboard(game, board);
         }
-
-        const medals = ['🥇', '🥈', '🥉'];
-        const rankClasses = ['gold', 'silver', 'bronze'];
-
-        board.innerHTML = `
-          <div class="board-header">
-            <div>Rank</div><div>Player</div><div style="text-align:right">${cfg.label}</div>
-          </div>
-          ${rows.map((row, i) => {
-            const isYou = currentUser && row.userId === currentUser.uid;
-            const rankDisplay = i < 3
-              ? `<span class="rank ${rankClasses[i]}">${medals[i]}</span>`
-              : `<span class="rank">#${i + 1}</span>`;
-            return `
-              <div class="board-row ${isYou ? 'you' : ''}">
-                <div>${rankDisplay}</div>
-                <div class="player">
-                  <span class="player-name">${escapeHtml(row.username)}</span>
-                  ${isYou ? '<span class="you-badge">YOU</span>' : ''}
-                </div>
-                <div class="score-val">${cfg.fmt(row.score)}</div>
-              </div>`;
-          }).join('')}
-        `;
-
-        // Show the user's own best if outside top 10
-        if (currentUser) {
-          const userRef  = doc(db, 'games', game, 'scores', currentUser.uid);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            const inTop10 = rows.some(r => r.userId === currentUser.uid);
-            if (!inTop10) {
-              document.getElementById('yourScore').textContent = cfg.fmt(userSnap.data().score);
-              document.getElementById('yourRank').textContent = 'Outside top 10';
-              document.getElementById('yourRankBar').classList.add('visible');
-            }
-          }
-        }
-
       } catch (err) {
         board.innerHTML = `
           <div class="state-box">
@@ -372,8 +307,122 @@
       }
     }
 
-    function escapeHtml(str) {
-      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // ── Score leaderboard (snake / tetris / solitaire) ─────────
+    async function loadScoreLeaderboard(game, board) {
+      const cfg = GAME_CONFIG[game];
+      const q   = query(
+        collection(db, 'games', game, 'scores'),
+        orderBy('score', cfg.ascending ? 'asc' : 'desc'),
+        limit(10)
+      );
+      const snap = await getDocs(q);
+      const rows = [];
+      snap.forEach(d => rows.push(d.data()));
+
+      if (rows.length === 0) {
+        board.innerHTML = `<div class="state-box"><div class="state-icon">🎮</div><p>No scores yet — be the first!</p></div>`;
+        return;
+      }
+
+      board.innerHTML = buildHeader({ wins: false, scoreLabel: cfg.scoreLabel }) +
+        rows.map((row, i) => buildScoreRow(row, i, cfg)).join('');
+
+      // Show user's own position if outside top 10
+      if (currentUser) {
+        const userSnap = await getDoc(doc(db, 'games', game, 'scores', currentUser.uid));
+        if (userSnap.exists() && !rows.some(r => r.userId === currentUser.uid)) {
+          document.getElementById('yourScore').textContent = cfg.scoreFmt(userSnap.data().score);
+          document.getElementById('yourRank').textContent  = 'Outside top 10';
+          document.getElementById('yourRankBar').classList.add('visible');
+        }
+      }
+    }
+
+    // ── Poker leaderboard ──────────────────────────────────────
+    async function loadPokerLeaderboard(board) {
+      const q    = query(collection(db, 'poker_players'), orderBy('wins', 'desc'), limit(10));
+      const snap = await getDocs(q);
+      const rows = [];
+      snap.forEach(d => rows.push(d.data()));
+
+      if (rows.length === 0) {
+        board.innerHTML = `<div class="state-box"><div class="state-icon">♠️</div><p>No poker games played yet!</p></div>`;
+        return;
+      }
+
+      board.innerHTML = buildHeader({ wins: true, scoreLabel: '—' }) +
+        rows.map((row, i) => buildPokerRow(row, i)).join('');
+
+      // Show user's own position if outside top 10
+      if (currentUser && !rows.some(r => r.userId === currentUser.uid)) {
+        const userSnap = await getDoc(doc(db, 'poker_players', currentUser.uid));
+        if (userSnap.exists()) {
+          const d = userSnap.data();
+          document.getElementById('yourScore').textContent = `${d.wins || 0} wins`;
+          document.getElementById('yourRank').textContent  = 'Outside top 10';
+          document.getElementById('yourRankBar').classList.add('visible');
+        }
+      }
+    }
+
+    // ── Row builders ───────────────────────────────────────────
+    function buildHeader({ wins, scoreLabel }) {
+      return `
+        <div class="board-header">
+          <div>Rank</div>
+          <div>Player</div>
+          <div class="col-num col-wins">${wins ? 'Wins' : '—'}</div>
+          <div class="col-num col-games">${wins ? 'Played' : '—'}</div>
+          <div class="col-num col-winrate">${wins ? 'Win Rate' : '—'}</div>
+          <div class="col-num">${scoreLabel}</div>
+        </div>`;
+    }
+
+    function buildScoreRow(row, i, cfg) {
+      const isYou = currentUser && row.userId === currentUser.uid;
+      return `
+        <div class="board-row ${isYou ? 'you' : ''}">
+          <div>${rankBadge(i)}</div>
+          <div class="player">
+            <span class="player-name">${escHtml(row.username)}</span>
+            ${isYou ? '<span class="you-badge">YOU</span>' : ''}
+          </div>
+          <div class="col-num col-wins dim">—</div>
+          <div class="col-num col-games dim">—</div>
+          <div class="col-num col-winrate dim">—</div>
+          <div class="col-num">${cfg.scoreFmt(row.score)}</div>
+        </div>`;
+    }
+
+    function buildPokerRow(row, i) {
+      const isYou    = currentUser && row.userId === currentUser.uid;
+      const played   = row.gamesPlayed || 0;
+      const wins     = row.wins || 0;
+      const winRate  = played > 0 ? Math.round((wins / played) * 100) + '%' : '—';
+      return `
+        <div class="board-row ${isYou ? 'you' : ''}">
+          <div>${rankBadge(i)}</div>
+          <div class="player">
+            <span class="player-name">${escHtml(row.username)}</span>
+            ${isYou ? '<span class="you-badge">YOU</span>' : ''}
+          </div>
+          <div class="col-num col-wins">${wins.toLocaleString()}</div>
+          <div class="col-num col-games">${played.toLocaleString()}</div>
+          <div class="col-num col-winrate">${winRate}</div>
+          <div class="col-num dim">—</div>
+        </div>`;
+    }
+
+    function rankBadge(i) {
+      const medals = ['🥇', '🥈', '🥉'];
+      const cls    = ['gold', 'silver', 'bronze'];
+      return i < 3
+        ? `<span class="rank ${cls[i]}">${medals[i]}</span>`
+        : `<span class="rank">#${i + 1}</span>`;
+    }
+
+    function escHtml(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
   </script>
 

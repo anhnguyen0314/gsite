@@ -427,12 +427,16 @@
       running = false;
       const overlay = document.getElementById('overlay');
       document.getElementById('overlay-title').textContent = 'Game Over';
+      // Chips earned: 100 per 1000 points
+      const chipsEarned = Math.floor(score / 1000) * 100;
+      const chipMsg = chipsEarned > 0 ? ` · 🪙 +${chipsEarned} chips` : '';
       document.getElementById('overlay-msg').textContent =
-        `Score: ${score} · Level: ${level} · Lines: ${lines}`;
+        `Score: ${score} · Level: ${level} · Lines: ${lines}${chipMsg}`;
       document.querySelector('#overlay .btn').textContent = 'Play Again';
       overlay.style.display = 'flex';
       // Save to Firestore if user is logged in
       if (window.firestoreSaveScore) window.firestoreSaveScore('tetris', score);
+      if (chipsEarned > 0 && window.firestoreEarnChips) window.firestoreEarnChips(chipsEarned);
     }
 
     function draw() {
@@ -532,7 +536,7 @@
   <script type="module">
     import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { getFirestore, doc, getDoc, setDoc, serverTimestamp }
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, serverTimestamp }
       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const firebaseConfig = {
@@ -567,6 +571,17 @@
         }
       } catch (err) {
         console.warn('Could not save score to Firestore:', err);
+      }
+    };
+
+    window.firestoreEarnChips = async function(amount) {
+      if (!currentUser || amount <= 0) return;
+      try {
+        await updateDoc(doc(db, 'users', currentUser.uid), {
+          chips: increment(amount)
+        });
+      } catch (err) {
+        console.warn('Could not save chips to Firestore:', err);
       }
     };
   </script>

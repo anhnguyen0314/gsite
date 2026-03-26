@@ -133,9 +133,22 @@ The site is organized by **genre**, not by platform:
    - Username in nav is now a link to account.html (handled in script.js)
    - Account link added to index.html nav
 
+## Completed phases (continued)
+8. ✅ **Site-wide chip economy**
+   - Chips moved from `poker_players/{userId}` to `users/{userId}` (shared across all games)
+   - Firestore structure: `users/{userId}` — chips, lastDailyBonus, username, createdAt
+   - Daily login bonus: +500 chips on first login each day (handled in script.js via toast)
+   - New users start with 1,000 chips
+   - Snake: +100 chips per full minute played (shown on game over screen)
+   - Tetris: +100 chips per 1,000 points scored (shown on game over screen)
+   - Poker server updated to read/write chips from `users/` not `poker_players/`
+   - Poker stats (wins, gamesPlayed) still tracked in `poker_players/{userId}`
+   - account.html updated: shows total chips + chip earning rates for each game
+   - Chip earning uses `window.firestoreEarnChips(amount)` pattern (same as firestoreSaveScore)
+
 ## Planned next phases
 1. **More games** — Memory Match, Blackjack, Space Blaster
-2. **Poker deployment** — Render.com signup, deploy poker-server, update SERVER_URL in lobby.html, game.html, account.html
+2. **Chip spending** — define which games cost chips to play and how much
 3. **Community** — Discord server, global leaderboards
 4. **Monetization** — Google AdSense, Ko-fi donations
 
