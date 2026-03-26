@@ -120,8 +120,8 @@ The site is organized by **genre**, not by platform:
    - Player actions: fold, check, call, raise, all-in; 30-second action timer
    - Leaderboard metric: most wins (tracked in Firestore)
    - `index.html` Battle Arena card → now links to `games/poker/lobby.html`
-   - **Deployment pending**: need to set up Render.com account, add `serviceAccount.json`, deploy server
-   - Both lobby.html and game.html have `SERVER_URL = 'https://YOUR-APP-NAME.onrender.com'` — must update after deploy
+   - **Deployed on Render.com**: `https://gamezone-poker.onrender.com`
+   - SERVER_URL is set in lobby.html, game.html, and account.html
 
 ## Completed phases (continued)
 7. ✅ **Account page** — `account.html`
