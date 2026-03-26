@@ -1,0 +1,268 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #0f0f1a;
+  color: #e0e0e0;
+}
+
+/* Nav */
+nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 24px;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2a2a4a;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.nav-logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: #a78bfa;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.nav-links a {
+  color: #c0c0d0;
+  text-decoration: none;
+  font-size: 15px;
+  transition: color 0.2s;
+}
+
+.nav-links a:hover {
+  color: #a78bfa;
+}
+
+.nav-auth {
+  display: flex;
+  gap: 10px;
+}
+
+/* Buttons */
+.btn-primary {
+  background: #7c3aed;
+  color: #fff;
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover {
+  background: #6d28d9;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #a78bfa;
+  padding: 8px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  border: 1px solid #a78bfa;
+  transition: background 0.2s;
+}
+
+.btn-secondary:hover {
+  background: #1e1e3a;
+}
+
+.btn-large {
+  padding: 14px 32px;
+  font-size: 16px;
+  border-radius: 10px;
+}
+
+/* Hero */
+.hero {
+  text-align: center;
+  padding: 60px 20px;
+  background: linear-gradient(135deg, #1a1a2e, #16213e);
+}
+
+.hero h1 {
+  font-size: 42px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 16px;
+}
+
+.hero p {
+  font-size: 18px;
+  color: #9090b0;
+  margin-bottom: 32px;
+}
+
+/* Categories */
+.category {
+  padding: 50px 24px;
+  border-bottom: 1px solid #1e1e2e;
+}
+
+.category h2 {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #ffffff;
+}
+
+/* Game Grid */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.game-card {
+  background: #1a1a2e;
+  border: 1px solid #2a2a4a;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.game-card:hover {
+  transform: translateY(-4px);
+  border-color: #7c3aed;
+}
+
+.game-thumb {
+  font-size: 48px;
+  width: 80px;
+  height: 80px;
+  background: #0f0f1a;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-info {
+  text-align: center;
+}
+
+.game-info h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 6px;
+}
+
+.tag {
+  font-size: 12px;
+  background: #2a2a4a;
+  color: #a78bfa;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+
+.btn-play {
+  background: #7c3aed;
+  color: #fff;
+  padding: 8px 24px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  width: 100%;
+  text-align: center;
+  transition: background 0.2s;
+}
+
+.btn-play:hover {
+  background: #6d28d9;
+}
+
+/* Footer */
+footer {
+  text-align: center;
+  padding: 30px;
+  color: #505070;
+  font-size: 14px;
+}
+
+/* ── Mobile styles ── */
+@media (max-width: 600px) {
+  nav {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .nav-links {
+    gap: 16px;
+  }
+
+  .nav-auth {
+    width: 100%;
+  }
+
+  .nav-auth a {
+    flex: 1;
+    text-align: center;
+  }
+
+  .hero h1 {
+    font-size: 28px;
+  }
+
+  .hero p {
+    font-size: 15px;
+  }
+
+  .btn-large {
+    padding: 12px 24px;
+    font-size: 15px;
+  }
+
+  .category {
+    padding: 40px 16px;
+  }
+
+  .game-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .game-card {
+    padding: 14px;
+  }
+
+  .game-thumb {
+    font-size: 36px;
+    width: 64px;
+    height: 64px;
+  }
+
+  .game-info h3 {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .game-grid {
+    grid-template-columns: 1fr;
+  }
+}
