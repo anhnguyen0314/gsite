@@ -52,6 +52,13 @@ nav {
 .nav-auth {
   display: flex;
   gap: 10px;
+  align-items: center;
+}
+
+.nav-username {
+  color: #a78bfa;
+  font-size: 14px;
+  font-weight: 500;
 }
 
 /* Buttons */

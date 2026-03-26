@@ -12,9 +12,12 @@
   <nav>
     <div class="nav-logo">🎮 GameZone</div>
     <ul class="nav-links">
-      <li><a href="#mobile">Mobile</a></li>
-      <li><a href="#pc">PC</a></li>
+      <li><a href="#arcade">Arcade</a></li>
+      <li><a href="#puzzle">Puzzle</a></li>
+      <li><a href="#card">Card</a></li>
       <li><a href="#multiplayer">Multiplayer</a></li>
+      <li><a href="leaderboard.html">🏆 Leaderboard</a></li>
+      <li><a href="account.html">👾 Account</a></li>
     </ul>
     <div class="nav-auth">
       <a href="login.html" class="btn-secondary">Log in</a>
@@ -26,18 +29,26 @@
   <section class="hero">
     <h1>Play Free Games Online</h1>
     <p>Hundreds of browser games — no download, no install. Just play.</p>
-    <a href="#mobile" class="btn-primary btn-large">Browse Games</a>
+    <a href="#arcade" class="btn-primary btn-large">Browse Games</a>
   </section>
 
-  <!-- Mobile Games -->
-  <section class="category" id="mobile">
-    <h2>📱 Mobile Games</h2>
+  <!-- Arcade -->
+  <section class="category" id="arcade">
+    <h2>🕹️ Arcade</h2>
     <div class="game-grid">
       <div class="game-card">
-        <div class="game-thumb">🧩</div>
+        <div class="game-thumb">🐍</div>
         <div class="game-info">
-          <h3>Puzzle Rush</h3>
-          <span class="tag">Puzzle</span>
+          <h3>Snake</h3>
+          <span class="tag">Arcade</span>
+        </div>
+        <a href="games/snake/snake.html" class="btn-play">Play</a>
+      </div>
+      <div class="game-card">
+        <div class="game-thumb">🚀</div>
+        <div class="game-info">
+          <h3>Space Blaster</h3>
+          <span class="tag">Arcade</span>
         </div>
         <a href="#" class="btn-play">Play</a>
       </div>
@@ -49,29 +60,44 @@
         </div>
         <a href="#" class="btn-play">Play</a>
       </div>
+    </div>
+  </section>
+
+  <!-- Puzzle -->
+  <section class="category" id="puzzle">
+    <h2>🧩 Puzzle</h2>
+    <div class="game-grid">
+      <div class="game-card">
+        <div class="game-thumb">🟦</div>
+        <div class="game-info">
+          <h3>Tetris</h3>
+          <span class="tag">Puzzle</span>
+        </div>
+        <a href="games/tetris/tetris.html" class="btn-play">Play</a>
+      </div>
       <div class="game-card">
         <div class="game-thumb">⭐</div>
         <div class="game-info">
           <h3>Star Match</h3>
-          <span class="tag">Casual</span>
+          <span class="tag">Puzzle</span>
+        </div>
+        <a href="#" class="btn-play">Play</a>
+      </div>
+      <div class="game-card">
+        <div class="game-thumb">🧠</div>
+        <div class="game-info">
+          <h3>Memory Match</h3>
+          <span class="tag">Puzzle</span>
         </div>
         <a href="#" class="btn-play">Play</a>
       </div>
     </div>
   </section>
 
-  <!-- PC Games -->
-  <section class="category" id="pc">
-    <h2>🖥️ PC Games</h2>
+  <!-- Card -->
+  <section class="category" id="card">
+    <h2>🃏 Card</h2>
     <div class="game-grid">
-      <div class="game-card">
-        <div class="game-thumb">🚀</div>
-        <div class="game-info">
-          <h3>Space Blaster</h3>
-          <span class="tag">Action</span>
-        </div>
-        <a href="#" class="btn-play">Play</a>
-      </div>
       <div class="game-card">
         <div class="game-thumb">🃏</div>
         <div class="game-info">
@@ -81,27 +107,35 @@
         <a href="#" class="btn-play">Play</a>
       </div>
       <div class="game-card">
-        <div class="game-thumb">♟️</div>
+        <div class="game-thumb">♠️</div>
         <div class="game-info">
-          <h3>Chess Master</h3>
-          <span class="tag">Strategy</span>
+          <h3>Solitaire</h3>
+          <span class="tag">Card</span>
+        </div>
+        <a href="games/solitaire/solitaire.html" class="btn-play">Play</a>
+      </div>
+      <div class="game-card">
+        <div class="game-thumb">🎴</div>
+        <div class="game-info">
+          <h3>Blackjack</h3>
+          <span class="tag">Card</span>
         </div>
         <a href="#" class="btn-play">Play</a>
       </div>
     </div>
   </section>
 
-  <!-- Multiplayer Games -->
+  <!-- Multiplayer -->
   <section class="category" id="multiplayer">
     <h2>🌐 Multiplayer</h2>
     <div class="game-grid">
       <div class="game-card">
         <div class="game-thumb">⚔️</div>
         <div class="game-info">
-          <h3>Battle Arena</h3>
+          <h3>Texas Hold'em</h3>
           <span class="tag">Multiplayer</span>
         </div>
-        <a href="signup.html" class="btn-play">Play</a>
+        <a href="games/poker/lobby.html" class="btn-play">Play</a>
       </div>
       <div class="game-card">
         <div class="game-thumb">🎲</div>
@@ -126,6 +160,6 @@
     <p>© 2026 GameZone · Built with ❤️</p>
   </footer>
 
-  <script src="script.js"></script>
+  <script type="module" src="script.js"></script>
 </body>
 </html>

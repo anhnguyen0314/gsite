@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Tetris · GameZone</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0f0f1a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .back-btn {
+      color: #a78bfa;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .back-btn:hover { text-decoration: underline; }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .game-wrap {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+    }
+
+    .canvas-wrap {
+      position: relative;
+    }
+
+    canvas {
+      background: #1a1a2e;
+      border: 2px solid #2a2a4a;
+      border-radius: 12px;
+      display: block;
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15,15,26,0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      gap: 12px;
+    }
+
+    .overlay h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .overlay p {
+      font-size: 14px;
+      color: #9090b0;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    .btn {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      padding: 10px 32px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #6d28d9; }
+
+    /* Side panel */
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-width: 110px;
+    }
+
+    .stat-box {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 12px 16px;
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #9090b0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .stat-value {
+      font-size: 26px;
+      font-weight: 700;
+      color: #a78bfa;
+    }
+
+    .next-box {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .next-box .stat-label {
+      margin-bottom: 8px;
+    }
+
+    #nextCanvas {
+      display: block;
+      margin: 0 auto;
+      border-radius: 6px;
+    }
+
+    /* Mobile controls */
+    .mobile-controls {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+    }
+
+    .ctrl-row {
+      display: flex;
+      gap: 6px;
+    }
+
+    .ctrl-btn {
+      width: 60px;
+      height: 60px;
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      color: #a78bfa;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .ctrl-btn:active { background: #2a2a4a; }
+
+    .ctrl-btn.wide {
+      width: 126px;
+      font-size: 13px;
+      color: #e0e0e0;
+    }
+
+    @media (max-width: 600px) {
+      .mobile-controls { display: flex; }
+      .game-wrap { gap: 12px; }
+      .side-panel { min-width: 90px; }
+      .stat-value { font-size: 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="../../index.html" class="back-btn">← Back to GameZone</a>
+    <h1>🟦 Tetris</h1>
+    <div style="width:120px"></div>
+  </header>
+
+  <div class="game-wrap">
+    <div class="canvas-wrap">
+      <canvas id="gameCanvas" width="300" height="600"></canvas>
+      <div class="overlay" id="overlay">
+        <h2 id="overlay-title">Tetris</h2>
+        <p id="overlay-msg">Use ← → to move · ↑ to rotate<br>↓ to soft drop · Space to hard drop</p>
+        <button class="btn" onclick="startGame()">Start Game</button>
+      </div>
+    </div>
+
+    <div class="side-panel">
+      <div class="stat-box">
+        <div class="stat-label">Score</div>
+        <div class="stat-value" id="score">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Best</div>
+        <div class="stat-value" id="best">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Level</div>
+        <div class="stat-value" id="level">1</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Lines</div>
+        <div class="stat-value" id="lines">0</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Time</div>
+        <div class="stat-value" id="timer">0:00</div>
+      </div>
+      <div class="next-box">
+        <div class="stat-label">Next</div>
+        <canvas id="nextCanvas" width="80" height="80"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile controls -->
+  <div class="mobile-controls">
+    <div class="ctrl-row">
+      <div class="ctrl-btn" onclick="rotatePiece()">↻</div>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-btn" onclick="moveLeft()">◀</div>
+      <div class="ctrl-btn" onclick="softDrop()">▼</div>
+      <div class="ctrl-btn" onclick="moveRight()">▶</div>
+    </div>
+    <div class="ctrl-row">
+      <div class="ctrl-btn wide" onclick="hardDrop()">Hard Drop</div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const nextCanvas = document.getElementById('nextCanvas');
+    const nctx = nextCanvas.getContext('2d');
+    const BLOCK = 30;
+    const COLS = 10;
+    const ROWS = 20;
+
+    const COLORS = {
+      I: '#22d3ee', O: '#facc15', T: '#a78bfa',
+      S: '#4ade80', Z: '#f87171', J: '#60a5fa', L: '#fb923c'
+    };
+
+    const SHAPES = {
+      I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+      O: [[1,1],[1,1]],
+      T: [[0,1,0],[1,1,1],[0,0,0]],
+      S: [[0,1,1],[1,1,0],[0,0,0]],
+      Z: [[1,1,0],[0,1,1],[0,0,0]],
+      J: [[1,0,0],[1,1,1],[0,0,0]],
+      L: [[0,0,1],[1,1,1],[0,0,0]]
+    };
+
+    const PIECES = Object.keys(SHAPES);
+    const SCORE_TABLE = [0, 100, 300, 500, 800];
+
+    let board, current, next, score, best, level, lines, timerSecs;
+    let gameLoopId, timerLoopId, running, paused;
+
+    best = parseInt(localStorage.getItem('tetrisBest') || '0');
+    document.getElementById('best').textContent = best;
+
+    function newPiece(type) {
+      type = type || PIECES[Math.floor(Math.random() * PIECES.length)];
+      const shape = SHAPES[type].map(r => [...r]);
+      return {
+        type,
+        shape,
+        color: COLORS[type],
+        x: Math.floor((COLS - shape[0].length) / 2),
+        y: 0
+      };
+    }
+
+    function startGame() {
+      document.getElementById('overlay').style.display = 'none';
+      board = Array.from({length: ROWS}, () => Array(COLS).fill(null));
+      score = 0; level = 1; lines = 0; timerSecs = 0;
+      current = newPiece();
+      next = newPiece();
+      running = true; paused = false;
+      updateStats();
+      clearInterval(gameLoopId);
+      clearInterval(timerLoopId);
+      gameLoopId = setInterval(tick, getSpeed());
+      timerLoopId = setInterval(() => { timerSecs++; updateTimer(); }, 1000);
+      draw();
+    }
+
+    function getSpeed() { return Math.max(100, 700 - (level - 1) * 60); }
+
+    function tick() {
+      if (!running || paused) return;
+      if (!movePiece(0, 1)) {
+        placePiece();
+        clearLines();
+        current = next;
+        next = newPiece();
+        drawNext();
+        if (collision(current, 0, 0)) { endGame(); return; }
+      }
+      draw();
+    }
+
+    function movePiece(dx, dy) {
+      if (!collision(current, dx, dy)) {
+        current.x += dx;
+        current.y += dy;
+        draw();
+        return true;
+      }
+      return false;
+    }
+
+    function moveLeft()  { if (running && !paused) movePiece(-1, 0); }
+    function moveRight() { if (running && !paused) movePiece(1, 0); }
+    function softDrop()  { if (running && !paused) movePiece(0, 1); }
+
+    function hardDrop() {
+      if (!running || paused) return;
+      while (!collision(current, 0, 1)) current.y++;
+      placePiece();
+      clearLines();
+      current = next;
+      next = newPiece();
+      drawNext();
+      if (collision(current, 0, 0)) { endGame(); return; }
+      draw();
+    }
+
+    function rotatePiece() {
+      if (!running || paused) return;
+      const rotated = current.shape[0].map((_, i) =>
+        current.shape.map(row => row[i]).reverse()
+      );
+      const prev = current.shape;
+      current.shape = rotated;
+      if (collision(current, 0, 0)) current.shape = prev;
+      draw();
+    }
+
+    function collision(piece, dx, dy) {
+      return piece.shape.some((row, r) =>
+        row.some((val, c) => {
+          if (!val) return false;
+          const nx = piece.x + c + dx;
+          const ny = piece.y + r + dy;
+          return nx < 0 || nx >= COLS || ny >= ROWS || (ny >= 0 && board[ny][nx]);
+        })
+      );
+    }
+
+    function placePiece() {
+      current.shape.forEach((row, r) =>
+        row.forEach((val, c) => {
+          if (val && current.y + r >= 0)
+            board[current.y + r][current.x + c] = current.color;
+        })
+      );
+    }
+
+    function clearLines() {
+      let cleared = 0;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (board[r].every(c => c)) {
+          board.splice(r, 1);
+          board.unshift(Array(COLS).fill(null));
+          cleared++;
+          r++;
+        }
+      }
+      if (cleared) {
+        lines += cleared;
+        score += SCORE_TABLE[cleared] * level;
+        level = Math.floor(lines / 10) + 1;
+        if (score > best) {
+          best = score;
+          localStorage.setItem('tetrisBest', best);
+        }
+        clearInterval(gameLoopId);
+        gameLoopId = setInterval(tick, getSpeed());
+        updateStats();
+      }
+    }
+
+    function updateStats() {
+      document.getElementById('score').textContent = score;
+      document.getElementById('best').textContent = best;
+      document.getElementById('level').textContent = level;
+      document.getElementById('lines').textContent = lines;
+    }
+
+    function updateTimer() {
+      const m = Math.floor(timerSecs / 60);
+      const s = String(timerSecs % 60).padStart(2, '0');
+      document.getElementById('timer').textContent = `${m}:${s}`;
+    }
+
+    function endGame() {
+      clearInterval(gameLoopId);
+      clearInterval(timerLoopId);
+      running = false;
+      const overlay = document.getElementById('overlay');
+      document.getElementById('overlay-title').textContent = 'Game Over';
+      document.getElementById('overlay-msg').textContent =
+        `Score: ${score} · Level: ${level} · Lines: ${lines}`;
+      document.querySelector('#overlay .btn').textContent = 'Play Again';
+      overlay.style.display = 'flex';
+      // Save to Firestore if user is logged in
+      if (window.firestoreSaveScore) window.firestoreSaveScore('tetris', score);
+    }
+
+    function draw() {
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Grid lines
+      ctx.strokeStyle = '#ffffff06';
+      ctx.lineWidth = 0.5;
+      for (let c = 0; c <= COLS; c++) {
+        ctx.beginPath();
+        ctx.moveTo(c * BLOCK, 0);
+        ctx.lineTo(c * BLOCK, canvas.height);
+        ctx.stroke();
+      }
+      for (let r = 0; r <= ROWS; r++) {
+        ctx.beginPath();
+        ctx.moveTo(0, r * BLOCK);
+        ctx.lineTo(canvas.width, r * BLOCK);
+        ctx.stroke();
+      }
+
+      // Board
+      board.forEach((row, r) =>
+        row.forEach((color, c) => {
+          if (color) drawBlock(ctx, c, r, color);
+        })
+      );
+
+      // Ghost piece
+      let ghostY = current.y;
+      while (!collision(current, 0, ghostY - current.y + 1)) ghostY++;
+      current.shape.forEach((row, r) =>
+        row.forEach((val, c) => {
+          if (val && ghostY + r >= 0) {
+            ctx.fillStyle = current.color + '30';
+            ctx.fillRect(
+              (current.x + c) * BLOCK + 1,
+              (ghostY + r) * BLOCK + 1,
+              BLOCK - 2, BLOCK - 2
+            );
+          }
+        })
+      );
+
+      // Current piece
+      current.shape.forEach((row, r) =>
+        row.forEach((val, c) => {
+          if (val && current.y + r >= 0)
+            drawBlock(ctx, current.x + c, current.y + r, current.color);
+        })
+      );
+    }
+
+    function drawBlock(context, x, y, color) {
+      context.fillStyle = color;
+      context.beginPath();
+      context.roundRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, BLOCK - 2, 3);
+      context.fill();
+      context.fillStyle = 'rgba(255,255,255,0.15)';
+      context.beginPath();
+      context.roundRect(x * BLOCK + 2, y * BLOCK + 2, BLOCK - 4, 6, 2);
+      context.fill();
+    }
+
+    function drawNext() {
+      nctx.fillStyle = '#1a1a2e';
+      nctx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
+      const nb = 18;
+      const offsetX = Math.floor((nextCanvas.width - next.shape[0].length * nb) / 2);
+      const offsetY = Math.floor((nextCanvas.height - next.shape.length * nb) / 2);
+      next.shape.forEach((row, r) =>
+        row.forEach((val, c) => {
+          if (val) {
+            nctx.fillStyle = next.color;
+            nctx.beginPath();
+            nctx.roundRect(offsetX + c * nb + 1, offsetY + r * nb + 1, nb - 2, nb - 2, 2);
+            nctx.fill();
+          }
+        })
+      );
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); moveLeft(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); moveRight(); }
+      if (e.key === 'ArrowDown')  { e.preventDefault(); softDrop(); }
+      if (e.key === 'ArrowUp')    { e.preventDefault(); rotatePiece(); }
+      if (e.key === ' ')          { e.preventDefault(); hardDrop(); }
+    });
+
+    draw();
+    drawNext();
+  </script>
+
+  <!-- Firebase: save score to Firestore when logged in -->
+  <script type="module">
+    import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp }
+      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+      authDomain:        "gamezone-6487a.firebaseapp.com",
+      projectId:         "gamezone-6487a",
+      storageBucket:     "gamezone-6487a.firebasestorage.app",
+      messagingSenderId: "266519256159",
+      appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    let currentUser = null;
+    onAuthStateChanged(auth, (user) => { currentUser = user; });
+
+    window.firestoreSaveScore = async function(game, score) {
+      if (!currentUser || score === 0) return;
+      try {
+        const ref  = doc(db, 'games', game, 'scores', currentUser.uid);
+        const snap = await getDoc(ref);
+        const prev = snap.exists() ? (snap.data().score || 0) : 0;
+        if (score > prev) {
+          await setDoc(ref, {
+            userId:    currentUser.uid,
+            username:  currentUser.displayName || currentUser.email.split('@')[0],
+            score,
+            updatedAt: serverTimestamp()
+          });
+        }
+      } catch (err) {
+        console.warn('Could not save score to Firestore:', err);
+      }
+    };
+  </script>
+
+</body>
+</html>

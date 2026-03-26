@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Poker Lobby — GameZone</title>
+  <link rel="stylesheet" href="../../style.css"/>
+  <style>
+    .lobby-wrap {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 32px 16px 60px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .page-header h1 { font-size: 30px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .page-header p  { color: #7070a0; font-size: 15px; }
+
+    /* Player chip bar */
+    .chip-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 14px 20px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .chip-bar .chip-info { display: flex; align-items: center; gap: 10px; }
+    .chip-icon { font-size: 24px; }
+    .chip-label { color: #7070a0; font-size: 13px; }
+    .chip-amount { font-size: 22px; font-weight: 700; color: #a78bfa; }
+
+    .btn-create {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-create:hover { background: #6d28d9; }
+
+    /* Section titles */
+    .section-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #5050a0;
+      font-weight: 600;
+      margin: 24px 0 12px;
+    }
+
+    /* Table cards */
+    .table-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .table-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 16px 20px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .table-card:hover { border-color: #4a4a7a; }
+
+    .table-meta { flex: 1; min-width: 160px; }
+    .table-name { font-size: 16px; font-weight: 600; color: #e0e0e0; margin-bottom: 4px; }
+    .table-details { font-size: 13px; color: #7070a0; display: flex; gap: 14px; flex-wrap: wrap; }
+    .stake-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      text-transform: uppercase;
+    }
+    .stake-low  { background: #14532d; color: #4ade80; }
+    .stake-mid  { background: #1e3a5f; color: #60a5fa; }
+    .stake-high { background: #4c1d1d; color: #f87171; }
+
+    .table-players { font-size: 18px; font-weight: 700; color: #a78bfa; white-space: nowrap; }
+    .table-players span { font-size: 13px; color: #5050a0; font-weight: 400; }
+
+    .btn-join {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 9px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+      white-space: nowrap;
+    }
+    .btn-join:hover { background: #6d28d9; }
+    .btn-join:disabled { background: #2a2a4a; color: #5050a0; cursor: default; }
+
+    .empty-state {
+      text-align: center;
+      color: #5050a0;
+      padding: 40px 20px;
+      font-size: 15px;
+    }
+
+    /* Private table join */
+    .private-join {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .private-join input {
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      padding: 9px 14px;
+      font-size: 15px;
+      font-family: 'Segoe UI', sans-serif;
+      flex: 1;
+      min-width: 140px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .private-join input::placeholder { text-transform: none; letter-spacing: normal; color: #5050a0; }
+    .private-join input:focus { outline: none; border-color: #7c3aed; }
+
+    /* Create table modal */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 28px;
+      width: 100%;
+      max-width: 400px;
+      margin: 16px;
+    }
+    .modal h2 { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 20px; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label { display: block; font-size: 13px; color: #9090b0; margin-bottom: 6px; font-weight: 500; }
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      padding: 10px 14px;
+      font-size: 15px;
+      font-family: 'Segoe UI', sans-serif;
+      box-sizing: border-box;
+    }
+    .form-group input:focus,
+    .form-group select:focus { outline: none; border-color: #7c3aed; }
+    .form-group select option { background: #1a1a2e; }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #c0c0d8;
+      cursor: pointer;
+    }
+    .checkbox-row input[type=checkbox] { width: 16px; height: 16px; accent-color: #7c3aed; cursor: pointer; }
+
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    .btn-cancel {
+      flex: 1;
+      background: transparent;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      color: #9090b0;
+      padding: 10px;
+      font-size: 14px;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+    }
+    .btn-cancel:hover { background: #2a2a4a; }
+    .btn-confirm {
+      flex: 2;
+      background: #7c3aed;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      padding: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+    }
+    .btn-confirm:hover { background: #6d28d9; }
+
+    .status-msg {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 18px;
+      text-align: center;
+      color: #7070a0;
+      font-size: 15px;
+      margin-bottom: 20px;
+    }
+
+    /* Login prompt */
+    .login-prompt {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .login-prompt p { color: #7070a0; margin-bottom: 16px; font-size: 15px; }
+    .login-prompt a {
+      background: #7c3aed;
+      color: #fff;
+      text-decoration: none;
+      border-radius: 8px;
+      padding: 10px 24px;
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    @media (max-width: 600px) {
+      .chip-bar { flex-direction: column; align-items: flex-start; }
+      .table-card { flex-direction: column; align-items: flex-start; }
+      .btn-join { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <a href="../../index.html" class="nav-logo" style="text-decoration:none;">🎮 GameZone</a>
+    <ul class="nav-links">
+      <li><a href="../../index.html#arcade">Arcade</a></li>
+      <li><a href="../../index.html#puzzle">Puzzle</a></li>
+      <li><a href="../../index.html#card">Card</a></li>
+    </ul>
+    <div class="nav-auth" id="navAuth">
+      <a href="../../login.html" class="btn-secondary">Log in</a>
+      <a href="../../signup.html" class="btn-primary">Sign up</a>
+    </div>
+  </nav>
+
+  <div class="lobby-wrap">
+    <div class="page-header">
+      <h1>♠️ Texas Hold'em Poker</h1>
+      <p>Real-time multiplayer · Up to 5 players per table</p>
+    </div>
+
+    <div id="mainContent">
+      <div class="status-msg" id="statusMsg">Connecting…</div>
+    </div>
+  </div>
+
+  <!-- Create Table Modal -->
+  <div class="modal-overlay" id="createModal">
+    <div class="modal">
+      <h2>Create Table</h2>
+      <div class="form-group">
+        <label>Table name</label>
+        <input type="text" id="tableNameInput" placeholder="My poker table" maxlength="30"/>
+      </div>
+      <div class="form-group">
+        <label>Stakes</label>
+        <select id="stakeSelect">
+          <option value="low">Low — 25 / 50 blinds</option>
+          <option value="mid">Mid — 100 / 200 blinds</option>
+          <option value="high">High — 500 / 1,000 blinds</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="checkbox-row">
+          <input type="checkbox" id="privateCheck"/>
+          Private table (invite code)
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-confirm" onclick="confirmCreate()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut }
+      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+      authDomain:        "gamezone-6487a.firebaseapp.com",
+      projectId:         "gamezone-6487a",
+      storageBucket:     "gamezone-6487a.firebasestorage.app",
+      messagingSenderId: "266519256159",
+      appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ── IMPORTANT: Replace this with your actual Render.com URL after deploying ──
+    const SERVER_URL = 'https://YOUR-APP-NAME.onrender.com';
+
+    let socket = null;
+    let currentUser = null;
+    let myChips = 0;
+
+    // Nav
+    const navAuth = document.getElementById('navAuth');
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        const name = user.displayName || user.email.split('@')[0];
+        navAuth.innerHTML = `
+          <span class="nav-username">👾 ${name}</span>
+          <button class="btn-secondary" id="logoutBtn">Log out</button>
+        `;
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+          if (socket) socket.disconnect();
+          await signOut(auth);
+          window.location.reload();
+        });
+        connectSocket(user);
+      } else {
+        showLoginPrompt();
+      }
+    });
+
+    function showLoginPrompt() {
+      document.getElementById('mainContent').innerHTML = `
+        <div class="login-prompt">
+          <p>You need an account to play poker.</p>
+          <a href="../../login.html">Log in to play</a>
+        </div>
+      `;
+    }
+
+    // ── Socket connection ──────────────────────────────────────
+    async function connectSocket(user) {
+      // Dynamically load socket.io client from server
+      const script = document.createElement('script');
+      script.src = `${SERVER_URL}/socket.io/socket.io.js`;
+      script.onload = () => initSocket(user);
+      script.onerror = () => {
+        document.getElementById('statusMsg').textContent =
+          '⚠️ Could not reach poker server. Is it running on Render?';
+      };
+      document.head.appendChild(script);
+    }
+
+    async function initSocket(user) {
+      socket = io(SERVER_URL, { transports: ['websocket'] });
+      window._pokerSocket = socket; // expose for non-module functions
+
+      socket.on('connect', async () => {
+        const idToken = await user.getIdToken();
+        socket.emit('auth', {
+          idToken,
+          userId:   user.uid,
+          username: user.displayName || user.email.split('@')[0]
+        });
+      });
+
+      socket.on('authed', (data) => {
+        myChips = data.chips;
+        window._myUserId = data.userId;
+        renderLobby(data);
+      });
+
+      socket.on('lobbyUpdate', (tables) => {
+        renderTableList(tables);
+      });
+
+      socket.on('tableCreated', ({ tableId, inviteCode }) => {
+        if (inviteCode) {
+          alert(`Table created! Invite code: ${inviteCode}\n\nShare this code with friends.`);
+        }
+        joinTable(tableId, inviteCode);
+      });
+
+      socket.on('joinedTable', ({ tableId }) => {
+        window.location.href = `game.html?table=${tableId}`;
+      });
+
+      socket.on('error', (msg) => {
+        alert('Error: ' + msg);
+      });
+
+      socket.on('disconnect', () => {
+        document.getElementById('statusMsg') &&
+          (document.getElementById('statusMsg').textContent = 'Disconnected from server.');
+      });
+    }
+
+    // ── Render ─────────────────────────────────────────────────
+    function renderLobby(playerData) {
+      myChips = playerData.chips;
+      const main = document.getElementById('mainContent');
+      main.innerHTML = `
+        <div class="chip-bar">
+          <div class="chip-info">
+            <span class="chip-icon">🪙</span>
+            <div>
+              <div class="chip-label">Your chips</div>
+              <div class="chip-amount" id="chipDisplay">${myChips.toLocaleString()}</div>
+            </div>
+          </div>
+          <button class="btn-create" onclick="openModal()">+ Create Table</button>
+        </div>
+
+        <div class="section-title">Public Tables</div>
+        <div class="table-list" id="tableList">
+          <div class="empty-state">No tables open yet — create one!</div>
+        </div>
+
+        <div class="section-title">Join Private Table</div>
+        <div class="private-join">
+          <input type="text" id="inviteInput" placeholder="Enter invite code (e.g. AB12CD)" maxlength="6"/>
+          <button class="btn-join" onclick="joinPrivate()">Join</button>
+        </div>
+      `;
+    }
+
+    function renderTableList(tables) {
+      const el = document.getElementById('tableList');
+      if (!el) return;
+
+      if (!tables || tables.length === 0) {
+        el.innerHTML = '<div class="empty-state">No public tables open — create one!</div>';
+        return;
+      }
+
+      el.innerHTML = tables.map(t => {
+        const stakeClass = `stake-${t.stakeLevel}`;
+        const full = t.playerCount >= t.maxPlayers;
+        const stateLabel = t.state === 'waiting' ? 'Waiting for players' : 'In game';
+        return `
+          <div class="table-card">
+            <div class="table-meta">
+              <div class="table-name">${escHtml(t.name)}</div>
+              <div class="table-details">
+                <span class="stake-badge ${stakeClass}">${t.stakeLevel}</span>
+                <span>Blinds: ${t.blinds}</span>
+                <span>${stateLabel}</span>
+              </div>
+            </div>
+            <div class="table-players">${t.playerCount}/${t.maxPlayers} <span>players</span></div>
+            <button class="btn-join" onclick="joinTable('${t.tableId}', null)"
+              ${full ? 'disabled' : ''}>${full ? 'Full' : 'Join'}</button>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ── Actions ────────────────────────────────────────────────
+    window.openModal  = () => document.getElementById('createModal').classList.add('open');
+    window.closeModal = () => document.getElementById('createModal').classList.remove('open');
+
+    window.confirmCreate = () => {
+      const sock = window._pokerSocket;
+      if (!sock) return;
+      const name       = document.getElementById('tableNameInput').value.trim() || 'My Table';
+      const stakeLevel = document.getElementById('stakeSelect').value;
+      const isPrivate  = document.getElementById('privateCheck').checked;
+      sock.emit('createTable', { stakeLevel, isPrivate, tableName: name });
+      closeModal();
+    };
+
+    window.joinTable = (tableId, inviteCode) => {
+      const sock = window._pokerSocket;
+      if (!sock) return;
+      sock.emit('joinTable', { tableId, inviteCode });
+    };
+
+    window.joinPrivate = () => {
+      const code = document.getElementById('inviteInput').value.trim().toUpperCase();
+      if (!code) return;
+      // We need to find the tableId by invite code — emit a special join
+      const sock = window._pokerSocket;
+      if (!sock) return;
+      // The server matches by code when tableId is omitted
+      sock.emit('joinTable', { tableId: null, inviteCode: code });
+    };
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+
+</body>
+</html>

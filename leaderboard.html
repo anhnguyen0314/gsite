@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Leaderboard — GameZone</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .leaderboard-page {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .page-header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .page-header p {
+      color: #7070a0;
+      font-size: 15px;
+    }
+
+    /* Game tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 24px;
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 6px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: transparent;
+      color: #7070a0;
+      font-size: 15px;
+      font-weight: 500;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .tab.active {
+      background: #7c3aed;
+      color: #ffffff;
+    }
+
+    .tab:hover:not(.active) {
+      background: #2a2a4a;
+      color: #e0e0e0;
+    }
+
+    /* Leaderboard table */
+    .board {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+
+    .board-header {
+      display: grid;
+      grid-template-columns: 52px 1fr 110px;
+      padding: 12px 20px;
+      border-bottom: 1px solid #2a2a4a;
+      font-size: 11px;
+      color: #5050a0;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    .board-row {
+      display: grid;
+      grid-template-columns: 52px 1fr 110px;
+      padding: 14px 20px;
+      border-bottom: 1px solid #1e1e38;
+      align-items: center;
+      transition: background 0.15s;
+    }
+
+    .board-row:last-child {
+      border-bottom: none;
+    }
+
+    .board-row:hover {
+      background: #1f1f38;
+    }
+
+    .board-row.you {
+      background: #1e1430;
+      border-left: 3px solid #7c3aed;
+    }
+
+    .rank {
+      font-size: 18px;
+      font-weight: 700;
+      color: #5050a0;
+    }
+
+    .rank.gold   { color: #facc15; }
+    .rank.silver { color: #94a3b8; }
+    .rank.bronze { color: #fb923c; }
+
+    .player {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .player-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: #e0e0e0;
+    }
+
+    .you-badge {
+      font-size: 10px;
+      background: #7c3aed;
+      color: #fff;
+      padding: 2px 7px;
+      border-radius: 20px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+    }
+
+    .score-val {
+      font-size: 18px;
+      font-weight: 700;
+      color: #a78bfa;
+      text-align: right;
+    }
+
+    /* States */
+    .state-box {
+      padding: 60px 20px;
+      text-align: center;
+      color: #5050a0;
+    }
+
+    .state-box .state-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    .state-box p {
+      font-size: 15px;
+    }
+
+    .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid #2a2a4a;
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .your-rank-bar {
+      margin-top: 16px;
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 14px 20px;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 14px;
+      color: #9090b0;
+    }
+
+    .your-rank-bar.visible {
+      display: flex;
+    }
+
+    .your-rank-bar strong {
+      color: #a78bfa;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 GameZone</a>
+    <ul class="nav-links">
+      <li><a href="index.html#arcade">Arcade</a></li>
+      <li><a href="index.html#puzzle">Puzzle</a></li>
+      <li><a href="index.html#card">Card</a></li>
+    </ul>
+    <div class="nav-auth" id="navAuth">
+      <a href="login.html" class="btn-secondary">Log in</a>
+      <a href="signup.html" class="btn-primary">Sign up</a>
+    </div>
+  </nav>
+
+  <div class="leaderboard-page">
+    <div class="page-header">
+      <h1>🏆 Leaderboard</h1>
+      <p>Top 10 players across all games</p>
+    </div>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-snake" onclick="switchGame('snake')">🐍 Snake</button>
+      <button class="tab" id="tab-tetris" onclick="switchGame('tetris')">🟦 Tetris</button>
+      <button class="tab" id="tab-solitaire" onclick="switchGame('solitaire')">♠️ Solitaire</button>
+    </div>
+
+    <div class="board" id="board">
+      <div class="state-box">
+        <div class="spinner"></div>
+        <p>Loading scores…</p>
+      </div>
+    </div>
+
+    <div class="your-rank-bar" id="yourRankBar">
+      Your best: <strong id="yourScore">—</strong> &nbsp;·&nbsp; Rank: <strong id="yourRank">—</strong>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc }
+      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+      authDomain:        "gamezone-6487a.firebaseapp.com",
+      projectId:         "gamezone-6487a",
+      storageBucket:     "gamezone-6487a.firebasestorage.app",
+      messagingSenderId: "266519256159",
+      appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    let currentUser = null;
+    let currentGame = 'snake';
+
+    // Nav auth state
+    const navAuth = document.getElementById('navAuth');
+    onAuthStateChanged(auth, (user) => {
+      currentUser = user;
+      if (user) {
+        const name = user.displayName || user.email.split('@')[0];
+        navAuth.innerHTML = `
+          <span class="nav-username">👾 ${name}</span>
+          <button class="btn-secondary" id="logoutBtn">Log out</button>
+        `;
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+          await signOut(auth);
+          window.location.reload();
+        });
+      } else {
+        navAuth.innerHTML = `
+          <a href="login.html" class="btn-secondary">Log in</a>
+          <a href="signup.html" class="btn-primary">Sign up</a>
+        `;
+      }
+      loadLeaderboard(currentGame);
+    });
+
+    // Config per game: ascending = lower score is better (solitaire uses time)
+    const GAME_CONFIG = {
+      snake:     { ascending: false, label: 'Score', fmt: v => v.toLocaleString() },
+      tetris:    { ascending: false, label: 'Score', fmt: v => v.toLocaleString() },
+      solitaire: { ascending: true,  label: 'Time',  fmt: v => {
+        const m = Math.floor(v/60), s = String(v%60).padStart(2,'0');
+        return `${m}:${s}`;
+      }}
+    };
+
+    window.switchGame = function(game) {
+      currentGame = game;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.getElementById(`tab-${game}`).classList.add('active');
+      loadLeaderboard(game);
+    };
+
+    async function loadLeaderboard(game) {
+      const board  = document.getElementById('board');
+      const cfg    = GAME_CONFIG[game] || GAME_CONFIG.snake;
+      board.innerHTML = `<div class="state-box"><div class="spinner"></div><p>Loading scores…</p></div>`;
+      document.getElementById('yourRankBar').classList.remove('visible');
+
+      try {
+        const q = query(
+          collection(db, 'games', game, 'scores'),
+          orderBy('score', cfg.ascending ? 'asc' : 'desc'),
+          limit(10)
+        );
+        const snap = await getDocs(q);
+        const rows = [];
+        snap.forEach(d => rows.push(d.data()));
+
+        if (rows.length === 0) {
+          board.innerHTML = `
+            <div class="state-box">
+              <div class="state-icon">🎮</div>
+              <p>No scores yet — be the first to play!</p>
+            </div>`;
+          return;
+        }
+
+        const medals = ['🥇', '🥈', '🥉'];
+        const rankClasses = ['gold', 'silver', 'bronze'];
+
+        board.innerHTML = `
+          <div class="board-header">
+            <div>Rank</div><div>Player</div><div style="text-align:right">${cfg.label}</div>
+          </div>
+          ${rows.map((row, i) => {
+            const isYou = currentUser && row.userId === currentUser.uid;
+            const rankDisplay = i < 3
+              ? `<span class="rank ${rankClasses[i]}">${medals[i]}</span>`
+              : `<span class="rank">#${i + 1}</span>`;
+            return `
+              <div class="board-row ${isYou ? 'you' : ''}">
+                <div>${rankDisplay}</div>
+                <div class="player">
+                  <span class="player-name">${escapeHtml(row.username)}</span>
+                  ${isYou ? '<span class="you-badge">YOU</span>' : ''}
+                </div>
+                <div class="score-val">${cfg.fmt(row.score)}</div>
+              </div>`;
+          }).join('')}
+        `;
+
+        // Show the user's own best if outside top 10
+        if (currentUser) {
+          const userRef  = doc(db, 'games', game, 'scores', currentUser.uid);
+          const userSnap = await getDoc(userRef);
+          if (userSnap.exists()) {
+            const inTop10 = rows.some(r => r.userId === currentUser.uid);
+            if (!inTop10) {
+              document.getElementById('yourScore').textContent = cfg.fmt(userSnap.data().score);
+              document.getElementById('yourRank').textContent = 'Outside top 10';
+              document.getElementById('yourRankBar').classList.add('visible');
+            }
+          }
+        }
+
+      } catch (err) {
+        board.innerHTML = `
+          <div class="state-box">
+            <div class="state-icon">⚠️</div>
+            <p>Couldn't load scores. Check your connection.</p>
+          </div>`;
+        console.error(err);
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Snake · GameZone</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0f0f1a;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .back-btn {
+      color: #a78bfa;
+      text-decoration: none;
+      font-size: 14px;
+    }
+
+    .back-btn:hover { text-decoration: underline; }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .stats {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: #9090b0;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #a78bfa;
+    }
+
+    canvas {
+      background: #1a1a2e;
+      border: 2px solid #2a2a4a;
+      border-radius: 12px;
+      display: block;
+      max-width: 100%;
+    }
+
+    .controls {
+      margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      padding: 10px 32px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn:hover { background: #6d28d9; }
+
+    .status {
+      font-size: 14px;
+      color: #9090b0;
+      margin-top: 4px;
+    }
+
+    /* Mobile d-pad */
+    .dpad {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      margin-top: 16px;
+    }
+
+    .dpad-row {
+      display: flex;
+      gap: 4px;
+    }
+
+    .dpad-btn {
+      width: 56px;
+      height: 56px;
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      color: #a78bfa;
+      font-size: 22px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .dpad-btn:active { background: #2a2a4a; }
+
+    @media (max-width: 600px) {
+      .dpad { display: flex; }
+    }
+
+    .overlay {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(15,15,26,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      border-radius: 10px;
+      gap: 10px;
+    }
+
+    .overlay h2 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .overlay p {
+      font-size: 15px;
+      color: #9090b0;
+    }
+
+    .canvas-wrap {
+      position: relative;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="../../index.html" class="back-btn">← Back to GameZone</a>
+    <h1>🐍 Snake</h1>
+    <div style="width:120px"></div>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">Score</div>
+      <div class="stat-value" id="score">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Best</div>
+      <div class="stat-value" id="best">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">Time</div>
+      <div class="stat-value" id="timer">0:00</div>
+    </div>
+  </div>
+
+  <div class="canvas-wrap">
+    <canvas id="gameCanvas" width="480" height="480"></canvas>
+    <div class="overlay" id="overlay">
+      <h2 id="overlay-title">Snake</h2>
+      <p id="overlay-msg">Use arrow keys or the d-pad to move</p>
+      <button class="btn" onclick="startGame()">Start Game</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="status" id="status">Press Start to play</div>
+  </div>
+
+  <!-- Mobile d-pad -->
+  <div class="dpad">
+    <div class="dpad-row">
+      <div class="dpad-btn" onclick="setDir(0,-1)">▲</div>
+    </div>
+    <div class="dpad-row">
+      <div class="dpad-btn" onclick="setDir(-1,0)">◀</div>
+      <div style="width:56px;height:56px"></div>
+      <div class="dpad-btn" onclick="setDir(1,0)">▶</div>
+    </div>
+    <div class="dpad-row">
+      <div class="dpad-btn" onclick="setDir(0,1)">▼</div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const GRID = 20;
+    const COLS = canvas.width / GRID;
+    const ROWS = canvas.height / GRID;
+
+    let snake, dir, nextDir, food, score, best, timerSecs, gameLoop, timerLoop, running;
+
+    best = parseInt(localStorage.getItem('snakeBest') || '0');
+    document.getElementById('best').textContent = best;
+
+    function startGame() {
+      document.getElementById('overlay').style.display = 'none';
+      snake = [{x: 10, y: 10}, {x: 9, y: 10}, {x: 8, y: 10}];
+      dir = {x: 1, y: 0};
+      nextDir = {x: 1, y: 0};
+      score = 0;
+      timerSecs = 0;
+      running = true;
+      updateScore(0);
+      updateTimer();
+      placeFood();
+      clearInterval(gameLoop);
+      clearInterval(timerLoop);
+      gameLoop = setInterval(tick, 120);
+      timerLoop = setInterval(() => {
+        timerSecs++;
+        updateTimer();
+      }, 1000);
+      document.getElementById('status').textContent = 'Use arrow keys or d-pad to move';
+    }
+
+    function placeFood() {
+      let pos;
+      do {
+        pos = {
+          x: Math.floor(Math.random() * COLS),
+          y: Math.floor(Math.random() * ROWS)
+        };
+      } while (snake.some(s => s.x === pos.x && s.y === pos.y));
+      food = pos;
+    }
+
+    function setDir(x, y) {
+      if (x === 1 && dir.x === -1) return;
+      if (x === -1 && dir.x === 1) return;
+      if (y === 1 && dir.y === -1) return;
+      if (y === -1 && dir.y === 1) return;
+      nextDir = {x, y};
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'ArrowUp')    setDir(0, -1);
+      if (e.key === 'ArrowDown')  setDir(0,  1);
+      if (e.key === 'ArrowLeft')  setDir(-1, 0);
+      if (e.key === 'ArrowRight') setDir(1,  0);
+    });
+
+    function tick() {
+      dir = nextDir;
+      const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+
+      // Wall collision
+      if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+        endGame(); return;
+      }
+
+      // Self collision
+      if (snake.some(s => s.x === head.x && s.y === head.y)) {
+        endGame(); return;
+      }
+
+      snake.unshift(head);
+
+      if (head.x === food.x && head.y === food.y) {
+        updateScore(score + 10);
+        placeFood();
+      } else {
+        snake.pop();
+      }
+
+      draw();
+    }
+
+    function updateScore(val) {
+      score = val;
+      document.getElementById('score').textContent = score;
+      if (score > best) {
+        best = score;
+        localStorage.setItem('snakeBest', best);
+        document.getElementById('best').textContent = best;
+      }
+    }
+
+    function updateTimer() {
+      const m = Math.floor(timerSecs / 60);
+      const s = String(timerSecs % 60).padStart(2, '0');
+      document.getElementById('timer').textContent = `${m}:${s}`;
+    }
+
+    function endGame() {
+      clearInterval(gameLoop);
+      clearInterval(timerLoop);
+      running = false;
+      const overlay = document.getElementById('overlay');
+      document.getElementById('overlay-title').textContent = 'Game Over';
+      document.getElementById('overlay-msg').textContent = `Score: ${score} · Time: ${document.getElementById('timer').textContent}`;
+      document.querySelector('#overlay .btn').textContent = 'Play Again';
+      overlay.style.display = 'flex';
+      // Save to Firestore if user is logged in
+      if (window.firestoreSaveScore) window.firestoreSaveScore('snake', score);
+    }
+
+    function draw() {
+      ctx.fillStyle = '#1a1a2e';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Grid dots
+      ctx.fillStyle = '#ffffff08';
+      for (let x = 0; x < COLS; x++) {
+        for (let y = 0; y < ROWS; y++) {
+          ctx.beginPath();
+          ctx.arc(x * GRID + GRID/2, y * GRID + GRID/2, 1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      // Food
+      ctx.fillStyle = '#f43f5e';
+      ctx.beginPath();
+      ctx.roundRect(food.x * GRID + 2, food.y * GRID + 2, GRID - 4, GRID - 4, 4);
+      ctx.fill();
+
+      // Snake
+      snake.forEach((seg, i) => {
+        const ratio = 1 - (i / snake.length) * 0.5;
+        ctx.fillStyle = i === 0 ? '#a78bfa' : `rgba(124, 58, 237, ${ratio})`;
+        ctx.beginPath();
+        ctx.roundRect(seg.x * GRID + 1, seg.y * GRID + 1, GRID - 2, GRID - 2, i === 0 ? 6 : 3);
+        ctx.fill();
+      });
+    }
+
+    draw();
+  </script>
+
+  <!-- Firebase: save score to Firestore when logged in -->
+  <script type="module">
+    import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getFirestore, doc, getDoc, setDoc, serverTimestamp }
+      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+      authDomain:        "gamezone-6487a.firebaseapp.com",
+      projectId:         "gamezone-6487a",
+      storageBucket:     "gamezone-6487a.firebasestorage.app",
+      messagingSenderId: "266519256159",
+      appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    let currentUser = null;
+    onAuthStateChanged(auth, (user) => { currentUser = user; });
+
+    window.firestoreSaveScore = async function(game, score) {
+      if (!currentUser || score === 0) return;
+      try {
+        const ref  = doc(db, 'games', game, 'scores', currentUser.uid);
+        const snap = await getDoc(ref);
+        const prev = snap.exists() ? (snap.data().score || 0) : 0;
+        if (score > prev) {
+          await setDoc(ref, {
+            userId:    currentUser.uid,
+            username:  currentUser.displayName || currentUser.email.split('@')[0],
+            score,
+            updatedAt: serverTimestamp()
+          });
+        }
+      } catch (err) {
+        console.warn('Could not save score to Firestore:', err);
+      }
+    };
+  </script>
+
+</body>
+</html>

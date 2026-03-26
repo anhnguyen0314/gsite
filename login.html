@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Log In — GameZone</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .auth-page {
+      min-height: calc(100vh - 70px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 20px;
+    }
+
+    .auth-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .auth-logo {
+      text-align: center;
+      font-size: 36px;
+      margin-bottom: 8px;
+    }
+
+    .auth-card h1 {
+      text-align: center;
+      font-size: 24px;
+      color: #ffffff;
+      margin-bottom: 6px;
+    }
+
+    .auth-card .subtitle {
+      text-align: center;
+      font-size: 14px;
+      color: #7070a0;
+      margin-bottom: 32px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      color: #a0a0c0;
+      margin-bottom: 6px;
+      font-weight: 500;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px 14px;
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 15px;
+      font-family: 'Segoe UI', sans-serif;
+      transition: border-color 0.2s;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: #7c3aed;
+    }
+
+    .form-group input::placeholder {
+      color: #404060;
+    }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .label-row label {
+      font-size: 13px;
+      color: #a0a0c0;
+      font-weight: 500;
+    }
+
+    .forgot-link {
+      font-size: 12px;
+      color: #a78bfa;
+      text-decoration: none;
+    }
+
+    .forgot-link:hover {
+      text-decoration: underline;
+    }
+
+    .btn-submit {
+      width: 100%;
+      padding: 13px;
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-top: 8px;
+    }
+
+    .btn-submit:hover {
+      background: #6d28d9;
+    }
+
+    .btn-submit:disabled {
+      background: #4a2a8a;
+      cursor: not-allowed;
+    }
+
+    .error-msg {
+      background: #2a1a1a;
+      border: 1px solid #6b2020;
+      color: #f87171;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .success-msg {
+      background: #1a2a1a;
+      border: 1px solid #206b20;
+      color: #86efac;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 16px;
+      display: none;
+    }
+
+    .auth-footer {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 14px;
+      color: #6060a0;
+    }
+
+    .auth-footer a {
+      color: #a78bfa;
+      text-decoration: none;
+    }
+
+    .auth-footer a:hover {
+      text-decoration: underline;
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid #2a2a4a;
+      margin: 28px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav>
+    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 GameZone</a>
+    <div class="nav-auth">
+      <a href="login.html" class="btn-secondary">Log in</a>
+      <a href="signup.html" class="btn-primary">Sign up</a>
+    </div>
+  </nav>
+
+  <div class="auth-page">
+    <div class="auth-card">
+      <div class="auth-logo">🎮</div>
+      <h1>Welcome back</h1>
+      <p class="subtitle">Log in to continue playing</p>
+
+      <div class="error-msg" id="errorMsg"></div>
+      <div class="success-msg" id="successMsg"></div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="email">Email address</label>
+          <input type="email" id="email" placeholder="you@example.com" required />
+        </div>
+        <div class="form-group">
+          <div class="label-row">
+            <label for="password">Password</label>
+            <a href="#" class="forgot-link" id="forgotLink">Forgot password?</a>
+          </div>
+          <input type="password" id="password" placeholder="Your password" required />
+        </div>
+        <button type="submit" class="btn-submit" id="submitBtn">Log In</button>
+      </form>
+
+      <hr class="divider" />
+      <p class="auth-footer">New to GameZone? <a href="signup.html">Create an account</a></p>
+    </div>
+  </div>
+
+  <!-- Firebase SDK (v10 modular via CDN) -->
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+    // ─── PASTE YOUR FIREBASE CONFIG HERE ───────────────────────────────────────
+    // After creating your Firebase project, replace the values below with your
+    // own config object from the Firebase Console.
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+      authDomain:        "gamezone-6487a.firebaseapp.com",
+      projectId:         "gamezone-6487a",
+      storageBucket:     "gamezone-6487a.firebasestorage.app",
+      messagingSenderId: "266519256159",
+      appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+    };
+    // ───────────────────────────────────────────────────────────────────────────
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const form       = document.getElementById('loginForm');
+    const submitBtn  = document.getElementById('submitBtn');
+    const errorMsg   = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const forgotLink = document.getElementById('forgotLink');
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.style.display = 'block';
+      successMsg.style.display = 'none';
+    }
+
+    function showSuccess(msg) {
+      successMsg.textContent = msg;
+      successMsg.style.display = 'block';
+      errorMsg.style.display = 'none';
+    }
+
+    function friendlyError(code) {
+      const map = {
+        'auth/invalid-credential':      'Incorrect email or password.',
+        'auth/user-not-found':          'No account found with that email.',
+        'auth/wrong-password':          'Incorrect password. Try again.',
+        'auth/invalid-email':           'Please enter a valid email address.',
+        'auth/too-many-requests':       'Too many attempts. Please wait a moment and try again.',
+        'auth/network-request-failed':  'Network error. Check your connection and try again.',
+      };
+      return map[code] || 'Something went wrong. Please try again.';
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      errorMsg.style.display = 'none';
+      successMsg.style.display = 'none';
+
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Logging in…';
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        showSuccess('Logged in! Redirecting…');
+        setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+      } catch (err) {
+        showError(friendlyError(err.code));
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Log In';
+      }
+    });
+
+    // Forgot password
+    forgotLink.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      if (!email) {
+        return showError('Enter your email address above, then click "Forgot password?".');
+      }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        showSuccess('Password reset email sent! Check your inbox.');
+      } catch (err) {
+        showError(friendlyError(err.code));
+      }
+    });
+  </script>
+
+</body>
+</html>

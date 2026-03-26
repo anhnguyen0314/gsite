@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Poker — GameZone</title>
+  <link rel="stylesheet" href="../../style.css"/>
+  <style>
+    * { box-sizing: border-box; }
+    body { background: #0a0a14; overflow-x: hidden; }
+
+    /* ── Layout ── */
+    .game-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 12px 12px 80px;
+    }
+
+    .top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .top-bar h2 { font-size: 18px; font-weight: 700; color: #fff; }
+    .btn-leave {
+      background: transparent;
+      border: 1px solid #3a3a6a;
+      border-radius: 8px;
+      color: #9090b0;
+      padding: 7px 14px;
+      font-size: 13px;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+    }
+    .btn-leave:hover { background: #1a1a2e; color: #e0e0e0; }
+
+    /* ── Poker table ── */
+    .poker-table {
+      background: #0d3320;
+      border: 6px solid #6b4200;
+      border-radius: 120px;
+      position: relative;
+      min-height: 320px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .pot-display {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.5);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 13px;
+      color: #facc15;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    /* Community cards */
+    .community-area {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    /* Player seats around the table */
+    .seats {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    /* Card styling */
+    .card {
+      width: 48px;
+      height: 66px;
+      background: #fff;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      border: 2px solid #ddd;
+      user-select: none;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .card.back {
+      background: linear-gradient(135deg, #1e1480 0%, #3730a3 100%);
+      border-color: #4338ca;
+    }
+    .card.hearts, .card.diamonds { color: #dc2626; }
+    .card.spades,  .card.clubs   { color: #111; }
+    .card.placeholder {
+      background: rgba(255,255,255,0.05);
+      border: 2px dashed #2a4a2a;
+      border-radius: 6px;
+    }
+    .card .suit-icon { font-size: 18px; line-height: 1; }
+
+    /* Seat pods */
+    .seat-pod {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      pointer-events: auto;
+    }
+    .seat-label {
+      font-size: 11px;
+      color: #7070a0;
+      text-align: center;
+      line-height: 1.2;
+    }
+    .seat-pod.active-player .seat-label { color: #a78bfa; }
+    .seat-pod.is-you .seat-label { color: #4ade80; }
+    .seat-pod.folded-player { opacity: 0.4; }
+
+    .seat-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #e0e0e0;
+      white-space: nowrap;
+      max-width: 80px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .seat-chips { font-size: 11px; color: #facc15; }
+    .seat-bet   { font-size: 11px; color: #a78bfa; }
+    .dealer-btn {
+      background: #facc15;
+      color: #000;
+      border-radius: 50%;
+      width: 18px;
+      height: 18px;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .hole-cards { display: flex; gap: 4px; }
+    .hole-cards .card { width: 38px; height: 52px; font-size: 12px; }
+
+    /* Empty seat */
+    .empty-seat {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.04);
+      border: 2px dashed #2a2a4a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    /* ── Game state message ── */
+    .state-banner {
+      text-align: center;
+      padding: 8px 20px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 20px;
+      font-size: 14px;
+      color: #d0d0e0;
+      margin-bottom: 8px;
+    }
+    .state-banner.your-turn {
+      background: rgba(124,58,237,0.5);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    /* ── Hand result overlay ── */
+    .result-overlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      border-radius: 114px;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10;
+    }
+    .result-overlay.show { display: flex; }
+    .result-overlay h3 { font-size: 22px; color: #facc15; font-weight: 700; }
+    .result-overlay p  { font-size: 15px; color: #e0e0e0; }
+
+    /* ── Action panel ── */
+    .action-panel {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 16px 20px;
+    }
+    .action-panel.hidden { display: none; }
+
+    .bet-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .bet-label { font-size: 13px; color: #7070a0; flex-shrink: 0; }
+    .bet-slider {
+      flex: 1;
+      min-width: 120px;
+      accent-color: #7c3aed;
+    }
+    .bet-input {
+      width: 100px;
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      padding: 7px 10px;
+      font-size: 14px;
+      font-family: 'Segoe UI', sans-serif;
+      text-align: right;
+    }
+    .bet-input:focus { outline: none; border-color: #7c3aed; }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 8px;
+    }
+    .act-btn {
+      padding: 12px 8px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .act-btn:hover { opacity: 0.85; }
+    .act-btn:disabled { opacity: 0.35; cursor: default; }
+    .btn-fold   { background: #4c1d1d; color: #f87171; }
+    .btn-check  { background: #1e3a5f; color: #60a5fa; }
+    .btn-call   { background: #14532d; color: #4ade80; }
+    .btn-raise  { background: #4c1d95; color: #c4b5fd; }
+    .btn-allin  { background: #78350f; color: #fbbf24; }
+
+    .timer-bar-wrap {
+      height: 4px;
+      background: #2a2a4a;
+      border-radius: 2px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    .timer-bar {
+      height: 100%;
+      background: #7c3aed;
+      width: 100%;
+      transition: width 1s linear;
+    }
+
+    /* ── Waiting state ── */
+    .waiting-box {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    .waiting-box p { color: #7070a0; font-size: 15px; margin-bottom: 16px; }
+
+    /* ── Sidebar (chip count) ── */
+    .info-bar {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .info-chip {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 8px 14px;
+      font-size: 13px;
+      color: #9090b0;
+    }
+    .info-chip strong { color: #a78bfa; }
+
+    @media (max-width: 600px) {
+      .poker-table { border-radius: 60px; min-height: 240px; }
+      .result-overlay { border-radius: 54px; }
+      .card { width: 36px; height: 50px; font-size: 12px; }
+      .card .suit-icon { font-size: 14px; }
+      .hole-cards .card { width: 30px; height: 42px; font-size: 10px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="../../index.html" class="nav-logo" style="text-decoration:none;">🎮 GameZone</a>
+    <ul class="nav-links"></ul>
+    <div class="nav-auth" id="navAuth"></div>
+  </nav>
+
+  <div class="game-wrap">
+    <div class="top-bar">
+      <h2 id="tableTitle">♠️ Poker</h2>
+      <button class="btn-leave" onclick="leaveTable()">Leave Table</button>
+    </div>
+
+    <div class="info-bar" id="infoBar"></div>
+
+    <div id="statusBox">
+      <div style="text-align:center;padding:60px;color:#5050a0;">Connecting to table…</div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+    import { getAuth, onAuthStateChanged, signOut }
+      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+      authDomain:        "gamezone-6487a.firebaseapp.com",
+      projectId:         "gamezone-6487a",
+      storageBucket:     "gamezone-6487a.firebasestorage.app",
+      messagingSenderId: "266519256159",
+      appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ── IMPORTANT: Replace with your Render.com URL ──
+    const SERVER_URL = 'https://YOUR-APP-NAME.onrender.com';
+
+    const params  = new URLSearchParams(window.location.search);
+    const tableId = params.get('table');
+
+    let socket     = null;
+    let myUserId   = null;
+    let myChips    = 0;
+    let timerInterval = null;
+
+    const navAuth = document.getElementById('navAuth');
+
+    onAuthStateChanged(auth, async (user) => {
+      if (!user) { window.location.href = '../../login.html'; return; }
+      myUserId = user.uid;
+
+      const name = user.displayName || user.email.split('@')[0];
+      navAuth.innerHTML = `
+        <span class="nav-username">👾 ${name}</span>
+        <button class="btn-secondary" id="logoutBtn">Log out</button>
+      `;
+      document.getElementById('logoutBtn').addEventListener('click', async () => {
+        if (socket) socket.disconnect();
+        await signOut(auth);
+        window.location.href = '../../index.html';
+      });
+
+      await loadSocketIO(user);
+    });
+
+    async function loadSocketIO(user) {
+      const script = document.createElement('script');
+      script.src = `${SERVER_URL}/socket.io/socket.io.js`;
+      script.onload = () => connectSocket(user);
+      script.onerror = () => {
+        document.getElementById('statusBox').innerHTML =
+          `<div style="text-align:center;padding:60px;color:#f87171;">
+            ⚠️ Cannot reach poker server.<br>
+            <a href="lobby.html" style="color:#a78bfa;">Back to lobby</a>
+          </div>`;
+      };
+      document.head.appendChild(script);
+    }
+
+    async function connectSocket(user) {
+      socket = io(SERVER_URL, { transports: ['websocket'] });
+
+      socket.on('connect', async () => {
+        const idToken = await user.getIdToken();
+        socket.emit('auth', {
+          idToken,
+          userId:   user.uid,
+          username: user.displayName || user.email.split('@')[0]
+        });
+      });
+
+      socket.on('authed', (data) => {
+        myChips = data.chips;
+        // Join table from URL param
+        if (tableId) socket.emit('joinTable', { tableId, inviteCode: null });
+      });
+
+      socket.on('tableState', (state) => {
+        renderTable(state);
+      });
+
+      socket.on('handResult', (result) => {
+        showHandResult(result);
+      });
+
+      socket.on('error', (msg) => {
+        if (msg === 'Table not found') {
+          window.location.href = 'lobby.html';
+        } else {
+          alert('Error: ' + msg);
+        }
+      });
+
+      socket.on('disconnect', () => {
+        document.getElementById('statusBox').innerHTML =
+          `<div style="text-align:center;padding:40px;color:#f87171;">Disconnected. <a href="lobby.html" style="color:#a78bfa;">Back to lobby</a></div>`;
+      });
+    }
+
+    // ── Render table state ─────────────────────────────────────
+    function renderTable(state) {
+      const myPlayer = state.players.find(p => p.userId === myUserId);
+      if (myPlayer) myChips = myPlayer.chips;
+
+      updateInfoBar(state);
+
+      const sb = document.getElementById('statusBox');
+      if (state.state === 'waiting') {
+        sb.innerHTML = buildWaiting(state);
+        return;
+      }
+      sb.innerHTML = buildGameUI(state);
+      setupActions(state);
+    }
+
+    function updateInfoBar(state) {
+      const me = state.players.find(p => p.userId === myUserId);
+      if (!me) return;
+      const stakeLabels = { low: '25/50', mid: '100/200', high: '500/1000' };
+      document.getElementById('infoBar').innerHTML = `
+        <div class="info-chip">🪙 Chips: <strong>${me.chips.toLocaleString()}</strong></div>
+        <div class="info-chip">🎯 Blinds: <strong>${stakeLabels[state.stakeLevel] || ''}</strong></div>
+        <div class="info-chip">🃏 Hand #<strong>${state.handNumber}</strong></div>
+        ${state.pot > 0 ? `<div class="info-chip">💰 Pot: <strong>${state.pot.toLocaleString()}</strong></div>` : ''}
+      `;
+    }
+
+    function buildWaiting(state) {
+      return `
+        <div class="poker-table">
+          <div class="waiting-box">
+            <p>Waiting for players… (${state.players.filter(p=>p.sitting).length}/${5} seated)</p>
+            <p style="font-size:13px;color:#5050a0;">Game starts when 2+ players are seated.</p>
+          </div>
+        </div>
+        ${buildActionPanel(null, null)}
+      `;
+    }
+
+    function buildGameUI(state) {
+      const me          = state.players.find(p => p.userId === myUserId);
+      const isMyTurn    = me && state.players[state.actionIdx]?.userId === myUserId;
+      const stateLabel  = { preflop:'Pre-flop', flop:'Flop', turn:'Turn', river:'River', showdown:'Showdown', starting:'Starting…' };
+
+      return `
+        <div class="poker-table" id="pokerTable">
+          <div class="pot-display">💰 Pot: ${state.pot.toLocaleString()}</div>
+
+          ${buildSeats(state)}
+
+          <!-- Community cards in center -->
+          <div class="community-area">
+            ${buildCommunityCards(state.community)}
+          </div>
+
+          <div class="state-banner ${isMyTurn ? 'your-turn' : ''}">
+            ${stateLabel[state.state] || state.state}
+            ${isMyTurn ? ' — Your turn!' : ''}
+          </div>
+
+          <div class="result-overlay" id="resultOverlay"></div>
+        </div>
+
+        ${buildActionPanel(state, me)}
+      `;
+    }
+
+    function buildCommunityCards(cards) {
+      const slots = 5;
+      let html = '';
+      for (let i = 0; i < slots; i++) {
+        if (i < cards.length) {
+          html += buildCard(cards[i]);
+        } else {
+          html += `<div class="card placeholder"></div>`;
+        }
+      }
+      return html;
+    }
+
+    // Seat positions: 5 players around an oval
+    // Positions as percentages of table width/height
+    const SEAT_POSITIONS = [
+      { bottom: '8%',  left: '50%',  transform: 'translateX(-50%)' },  // 0 — bottom center (hero)
+      { bottom: '15%', left: '8%',   transform: '' },                    // 1 — bottom left
+      { top:    '15%', left: '8%',   transform: '' },                    // 2 — top left
+      { top:    '8%',  left: '50%',  transform: 'translateX(-50%)' },   // 3 — top center
+      { top:    '15%', right: '8%',  transform: '' },                    // 4 — top right
+    ];
+
+    function buildSeats(state) {
+      const players = state.players.filter(p => p.sitting);
+      // Find my seat and arrange so I'm always at position 0 (bottom)
+      const myIdx = players.findIndex(p => p.userId === myUserId);
+      const ordered = myIdx >= 0
+        ? [...players.slice(myIdx), ...players.slice(0, myIdx)]
+        : players;
+
+      let html = '<div class="seats">';
+      ordered.forEach((p, i) => {
+        const pos = SEAT_POSITIONS[i];
+        if (!pos) return;
+        const posStyle = Object.entries(pos).map(([k, v]) => v ? `${k}:${v}` : '').filter(Boolean).join(';');
+        const isYou      = p.userId === myUserId;
+        const isDealer   = state.players.indexOf(state.players.find(pl => pl.userId === p.userId)) === state.dealerIdx;
+        const isActive   = state.players.indexOf(state.players.find(pl => pl.userId === p.userId)) === state.actionIdx;
+        const classList  = [
+          'seat-pod',
+          isYou    ? 'is-you'         : '',
+          isActive ? 'active-player'  : '',
+          p.folded ? 'folded-player'  : ''
+        ].filter(Boolean).join(' ');
+
+        html += `
+          <div class="${classList}" style="position:absolute;${posStyle};text-align:center;">
+            <div class="hole-cards">${p.cards.map(c => buildCard(c)).join('')}</div>
+            <div class="seat-name">${escHtml(p.username)}${isYou ? ' (You)' : ''}</div>
+            <div class="seat-chips">🪙 ${p.chips.toLocaleString()}</div>
+            ${p.bet > 0 ? `<div class="seat-bet">Bet: ${p.bet.toLocaleString()}</div>` : ''}
+            ${isDealer ? `<div class="dealer-btn">D</div>` : ''}
+            ${p.allIn ? `<span style="font-size:10px;color:#fbbf24;">ALL-IN</span>` : ''}
+          </div>`;
+      });
+      html += '</div>';
+      return html;
+    }
+
+    function buildActionPanel(state, me) {
+      if (!state || !me) {
+        return `<div class="action-panel hidden" id="actionPanel"></div>`;
+      }
+      const isMyTurn = state.players[state.actionIdx]?.userId === myUserId;
+      if (!isMyTurn || me.folded || me.allIn || state.state === 'showdown' || state.state === 'waiting') {
+        return `<div class="action-panel hidden" id="actionPanel"></div>`;
+      }
+      const canCheck = me.bet >= state.currentBet;
+      const toCall   = state.currentBet - me.bet;
+      const minRaise = state.currentBet + (state.stakeLevel === 'low' ? 50 : state.stakeLevel === 'mid' ? 200 : 1000);
+
+      return `
+        <div class="action-panel" id="actionPanel">
+          <div class="timer-bar-wrap"><div class="timer-bar" id="timerBar"></div></div>
+          <div class="bet-row">
+            <span class="bet-label">Raise to:</span>
+            <input type="range" class="bet-slider" id="betSlider"
+              min="${minRaise}" max="${me.chips + me.bet}" step="50"
+              value="${minRaise}" oninput="syncBet(this.value)"/>
+            <input type="number" class="bet-input" id="betInput"
+              min="${minRaise}" max="${me.chips + me.bet}"
+              value="${minRaise}" oninput="syncSlider(this.value)"/>
+          </div>
+          <div class="action-buttons">
+            <button class="act-btn btn-fold"  onclick="sendAction('fold')">Fold</button>
+            <button class="act-btn btn-check" onclick="sendAction('check')"  ${canCheck ? '' : 'disabled'}>Check</button>
+            <button class="act-btn btn-call"  onclick="sendAction('call')"   ${toCall <= 0 ? 'disabled' : ''}>
+              Call ${toCall > 0 ? toCall.toLocaleString() : ''}
+            </button>
+            <button class="act-btn btn-raise" onclick="sendAction('raise')">Raise</button>
+            <button class="act-btn btn-allin" onclick="sendAction('allin')">All-in</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function setupActions(state) {
+      const me = state.players.find(p => p.userId === myUserId);
+      if (!me) return;
+      const isMyTurn = state.players[state.actionIdx]?.userId === myUserId;
+      if (!isMyTurn) return;
+
+      // Start timer bar
+      clearInterval(timerInterval);
+      let secs = 30;
+      const bar = document.getElementById('timerBar');
+      if (bar) {
+        timerInterval = setInterval(() => {
+          secs--;
+          if (bar) bar.style.width = `${(secs/30)*100}%`;
+          if (secs <= 0) clearInterval(timerInterval);
+        }, 1000);
+      }
+    }
+
+    // ── Hand result overlay ────────────────────────────────────
+    function showHandResult(result) {
+      const overlay = document.getElementById('resultOverlay');
+      if (!overlay) return;
+      overlay.classList.add('show');
+      const names = result.winners.map(w => escHtml(w.username)).join(', ');
+      const hand  = result.winners[0]?.handName || '';
+      overlay.innerHTML = `
+        <h3>🏆 ${names} wins!</h3>
+        <p>${hand}</p>
+        <p style="font-size:13px;color:#7070a0;margin-top:8px;">Next hand starting soon…</p>
+      `;
+      setTimeout(() => overlay.classList.remove('show'), 4500);
+    }
+
+    // ── Card builder ───────────────────────────────────────────
+    const SUIT_SYMBOLS = { s: '♠', h: '♥', d: '♦', c: '♣' };
+    const SUIT_CLASSES  = { s: 'spades', h: 'hearts', d: 'diamonds', c: 'clubs' };
+    const RANK_DISPLAY  = { T: '10', J: 'J', Q: 'Q', K: 'K', A: 'A' };
+
+    function buildCard(card) {
+      if (!card || card.rank === '?') {
+        return `<div class="card back"></div>`;
+      }
+      const suitClass = SUIT_CLASSES[card.suit] || '';
+      const rankStr   = RANK_DISPLAY[card.rank] || card.rank;
+      const suitSym   = SUIT_SYMBOLS[card.suit] || card.suit;
+      return `
+        <div class="card ${suitClass}">
+          <span style="font-size:11px;line-height:1;">${rankStr}</span>
+          <span class="suit-icon">${suitSym}</span>
+        </div>`;
+    }
+
+    function escHtml(s) {
+      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── Exposed to non-module onclick handlers ─────────────────
+    window.sendAction = (action) => {
+      if (!socket) return;
+      let amount = 0;
+      if (action === 'raise') {
+        amount = parseInt(document.getElementById('betInput')?.value || 0);
+      }
+      socket.emit('playerAction', { action, amount });
+      clearInterval(timerInterval);
+    };
+
+    window.leaveTable = () => {
+      if (socket) socket.emit('leaveTable');
+      window.location.href = 'lobby.html';
+    };
+
+    window.syncBet = (val) => {
+      const input = document.getElementById('betInput');
+      if (input) input.value = val;
+    };
+    window.syncSlider = (val) => {
+      const slider = document.getElementById('betSlider');
+      if (slider) slider.value = val;
+    };
+  </script>
+
+</body>
+</html>
