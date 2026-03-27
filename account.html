@@ -446,27 +446,16 @@
 
         <!-- Chip balance (site-wide) -->
         <div class="section-title">My Chips</div>
-        <div class="stats-grid" style="margin-bottom:10px;">
+        <div class="stats-grid" style="margin-bottom:16px;">
           <div class="stat-card highlight" style="grid-column:span 2;">
             <div class="stat-icon">🪙</div>
             <div class="stat-value">${chips.toLocaleString()}</div>
             <div class="stat-label">Total Chips</div>
           </div>
         </div>
-        <div class="scores-card" style="margin-bottom:28px;">
-          <div class="score-row">
-            <div class="score-game"><span>📅</span> Daily login bonus</div>
-            <div class="score-value">+500 chips</div>
-          </div>
-          <div class="score-row">
-            <div class="score-game"><span>🐍</span> Snake — per minute played</div>
-            <div class="score-value">+100 chips</div>
-          </div>
-          <div class="score-row">
-            <div class="score-game"><span>🟦</span> Tetris — per 1,000 pts</div>
-            <div class="score-value">+100 chips</div>
-          </div>
-        </div>
+        <a href="chips.html" style="display:inline-block;margin-bottom:28px;font-size:14px;color:#a78bfa;text-decoration:none;">
+          How to earn &amp; spend chips →
+        </a>
 
         <!-- Unified game stats table -->
         <div class="section-title">My Game Stats</div>
@@ -528,8 +517,9 @@
         <!-- Actions -->
         <div class="actions-row">
           <a href="games/poker/lobby.html" class="btn-poker">♠️ Play Poker</a>
+          <a href="chips.html"       class="btn-outline">🪙 Chips</a>
           <a href="leaderboard.html" class="btn-outline">🏆 Leaderboard</a>
-          <a href="index.html" class="btn-outline">← All Games</a>
+          <a href="index.html"       class="btn-outline">← All Games</a>
         </div>
       `;
     }
