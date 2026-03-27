@@ -83,6 +83,22 @@ app.post('/admin/chips', adminAuth, async (req, res) => {
   if (isNaN(amount) || amount < 0) return res.status(400).json({ error: 'chips must be a non-negative integer' });
   try {
     await db.collection('users').doc(uid).update({ chips: amount });
+
+    // Keep in-memory state consistent so savePlayerChips doesn't overwrite this value
+    const pdata = players.get(uid);
+    if (pdata) {
+      if (pdata.tableId) {
+        // Player is currently at a table — split the admin amount into wallet + table portions
+        const table    = tables.get(pdata.tableId);
+        const tp       = table ? table.players.find(p => p.userId === uid) : null;
+        const tableStack = tp ? tp.chips : 0;
+        pdata.walletChips = amount - tableStack; // so wallet + tableStack = amount
+      } else {
+        pdata.walletChips = undefined; // not at a table; savePlayerChips will use 0
+      }
+      pdata.chips = amount;
+    }
+
     res.json({ ok: true, uid, chips: amount });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -215,8 +231,13 @@ async function handlePostAction(table) {
     broadcastTableState(table);
 
     // Build handResult with correct winners (from lastHandWinnerIds) and all revealed hands
-    const nonFolded   = table.players.filter(p => p.sitting && !p.folded);
-    const folded      = table.players.filter(p => p.sitting && p.folded);
+    const nonFolded    = table.players.filter(p => p.sitting && !p.folded);
+    const folded       = table.players.filter(p => p.sitting && p.folded);
+    const pot          = table.lastHandPot || 0;  // set by engine._awardPot
+    const winnerCount  = actualWinnerIds.length || 1;
+    const share        = Math.floor(pot / winnerCount);
+    const isSplit      = actualWinnerIds.length > 1;
+
     io.to(`table:${table.tableId}`).emit('handResult', {
       // actual pot winners only
       winners: nonFolded
@@ -225,7 +246,8 @@ async function handlePostAction(table) {
           userId:   p.userId,
           username: p.username,
           handName: p.handEval ? p.handEval.name : 'Last standing',
-          cards:    p.cards
+          cards:    p.cards,
+          won:      share
         })),
       // all non-folded hands revealed (for result overlay and history)
       allPlayers: nonFolded.map(p => ({
@@ -233,7 +255,8 @@ async function handlePostAction(table) {
         username: p.username,
         handName: p.handEval ? p.handEval.name : 'Last standing',
         cards:    p.cards,
-        isWinner: actualWinnerIds.includes(p.userId)
+        isWinner: actualWinnerIds.includes(p.userId),
+        won:      actualWinnerIds.includes(p.userId) ? share : 0
       })),
       // players who folded during this hand
       foldedPlayers: folded.map(p => ({
@@ -241,6 +264,8 @@ async function handlePostAction(table) {
         username: p.username,
         cards:    p.cards
       })),
+      pot,
+      isSplit,
       community: table.community
     });
 

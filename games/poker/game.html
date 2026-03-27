@@ -349,6 +349,8 @@
     }
     .result-banner h3 { font-size: 22px; color: #facc15; font-weight: 700; margin-bottom: 4px; }
     .result-banner .hand-name { font-size: 14px; color: #a78bfa; }
+    .result-banner .pot-label  { font-size: 12px; color: #7070a0; margin-top: 4px; }
+    .result-chip-won { font-size: 11px; font-weight: 700; color: #4ade80; margin-left: 6px; }
 
     .result-community { display: flex; gap: 5px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
     .result-community .card { width: 44px; height: 62px; font-size: 13px; }
@@ -844,7 +846,9 @@
       const winners    = result.winners    || [];
       const allPlayers = result.allPlayers || winners;
       const community  = result.community  || [];
-      const names      = winners.map(w => escHtml(w.username)).join(', ') || 'Unknown';
+      const isSplit    = result.isSplit    || winners.length > 1;
+      const pot        = result.pot        || 0;
+      const names      = winners.map(w => escHtml(w.username)).join(' & ') || 'Unknown';
       const winnerHandName = winners[0]?.handName || '';
 
       // Build initial shown set: auto-show winners + bots; human losers decide
@@ -854,7 +858,7 @@
       }
 
       const foldedPlayers = result.foldedPlayers || [];
-      _currentResult = { handNumber: lastHandNumber, winners, allPlayers, foldedPlayers, community, shownSet };
+      _currentResult = { handNumber: lastHandNumber, winners, allPlayers, foldedPlayers, community, shownSet, isSplit, pot };
 
       function renderOverlay() {
         const communityHtml = community.map(c => buildCard(c, 'result')).join('');
@@ -876,24 +880,34 @@
               </div>`;
           }
 
+          const chipLabel = p.isWinner && p.won
+            ? `<span class="result-chip-won">+${p.won.toLocaleString()} 🪙</span>`
+            : '';
+
           return `
             <div class="result-player-row">
               <div class="result-player-meta">
                 <span class="result-player-name ${p.isWinner ? 'winner' : 'loser'}">
-                  ${p.isWinner ? '🏆 ' : ''}${escHtml(p.username)}
+                  ${p.isWinner ? (isSplit ? '🤝 ' : '🏆 ') : ''}${escHtml(p.username)}
                 </span>
                 ${shown ? `<span class="result-player-handname">${escHtml(p.handName || '')}</span>` : ''}
+                ${chipLabel}
               </div>
               <div class="result-player-cards">${cardsHtml}</div>
               ${choiceBtns}
             </div>`;
         }).join('');
 
+        const bannerIcon = isSplit ? '🤝' : '🏆';
+        const bannerVerb = isSplit ? 'Split Pot' : 'wins!';
+        const potLabel   = pot ? `<div class="pot-label">Pot: ${pot.toLocaleString()} 🪙</div>` : '';
+
         overlay.innerHTML = `
           <div class="result-card">
             <div class="result-banner">
-              <h3>🏆 ${names} wins!</h3>
+              <h3>${bannerIcon} ${names} ${bannerVerb}</h3>
               ${winnerHandName ? `<div class="hand-name">${escHtml(winnerHandName)}</div>` : ''}
+              ${potLabel}
             </div>
             ${communityHtml ? `<div class="result-community">${communityHtml}</div>` : ''}
             <div class="result-players-list">${playersHtml}</div>
@@ -943,9 +957,11 @@
       countEl.textContent = handHistory.length;
 
       list.innerHTML = handHistory.map(h => {
-        const winnerNames   = (h.winners || []).map(w => escHtml(w.username)).join(', ') || '?';
+        const isSplit       = h.isSplit || (h.winners || []).length > 1;
+        const winnerNames   = (h.winners || []).map(w => escHtml(w.username)).join(' & ') || '?';
         const winnerHandName = (h.winners || [])[0]?.handName || 'Last standing';
         const communityHtml = (h.community || []).map(c => buildCard(c, 'history')).join('');
+        const potLabel      = h.pot ? `· 🪙 ${h.pot.toLocaleString()}` : '';
 
         const playersHtml = (h.allPlayers || []).map(p => {
           const shown     = h.shownSet ? h.shownSet[p.userId] : p.isWinner;
@@ -957,11 +973,16 @@
             ? (p.cards || []).map(c => buildCard(c, 'history')).join('')
             : (p.cards || []).map(() => `<div class="card back"></div>`).join('');
 
-          const outcomeTag = p.isWinner
-            ? `<span class="history-outcome won">Won</span>`
-            : (mucked && isMe)
-              ? `<span class="history-outcome mucked">Mucked</span>`
-              : `<span class="history-outcome lost">Lost</span>`;
+          let outcomeTag;
+          if (p.isWinner) {
+            const wonLabel = p.won ? ` +${p.won.toLocaleString()}` : '';
+            const pill     = isSplit ? 'Split' : 'Won';
+            outcomeTag = `<span class="history-outcome won">${pill}${wonLabel} 🪙</span>`;
+          } else if (mucked && isMe) {
+            outcomeTag = `<span class="history-outcome mucked">Mucked</span>`;
+          } else {
+            outcomeTag = `<span class="history-outcome lost">Lost</span>`;
+          }
 
           return `
             <div class="history-player-row">
@@ -984,11 +1005,12 @@
               <span class="history-outcome folded">Folded</span>
             </div>`).join('');
 
+        const headerIcon = isSplit ? '🤝' : '🏆';
         return `
           <div class="history-entry">
             <div class="history-entry-top">
               <span class="history-hand-num">Hand #${h.handNumber}</span>
-              <span class="history-winner">🏆 ${winnerNames} · ${escHtml(winnerHandName)}</span>
+              <span class="history-winner">${headerIcon} ${winnerNames} · ${escHtml(winnerHandName)} ${potLabel}</span>
             </div>
             <div class="history-community">${communityHtml}</div>
             <div class="history-players">${playersHtml}${foldedHtml}</div>

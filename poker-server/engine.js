@@ -539,6 +539,7 @@ class Table {
       pot: this.pot
     };
 
+    this.lastHandPot = this.pot;  // server reads this before pot is zeroed
     this.pot = 0;
     this.lastHandWinnerIds = winners.map(w => w.userId); // server reads this for stats
     return result;
