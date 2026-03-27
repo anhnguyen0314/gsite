@@ -486,12 +486,21 @@ class Table {
     // Notify server of the new street (used for all-in board-runout broadcasts)
     if (typeof this._onStreetChange === 'function') this._onStreetChange();
 
-    // Set action to first active player left of dealer
-    this.actionIdx = this._nextSittingAfter(this.dealerIdx);
+    // Set action to first ACTIVE (non-folded, non-all-in) player left of dealer.
+    // _nextSittingAfter only skips folded players, so we need our own loop here
+    // to avoid pointing actionIdx at an all-in player and hanging the game.
+    let canAct = false;
+    for (let i = 1; i <= this.players.length; i++) {
+      const next = (this.dealerIdx + i) % this.players.length;
+      const p = this.players[next];
+      if (p.sitting && !p.folded && !p.allIn) {
+        this.actionIdx = next;
+        canAct = true;
+        break;
+      }
+    }
+    if (!canAct) this.actionIdx = this._nextSittingAfter(this.dealerIdx); // all-in runout fallback
 
-    // If no one can act (everyone is all-in), run out the board automatically
-    // Use a short delay so the server can broadcast the new street before advancing
-    const canAct = this.players.some(p => p.sitting && !p.folded && !p.allIn);
     if (canAct) {
       this._startActionTimer();
     } else {
