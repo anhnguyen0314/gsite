@@ -95,8 +95,8 @@
     .opp-bet   { font-size: 11px; color: #a78bfa; }
 
     .opp-cards { display: flex; gap: 3px; }
-    .opp-cards .card { width: 30px; height: 42px; font-size: 10px; }
-    .opp-cards .card .suit-icon { font-size: 13px; }
+    .opp-cards .card { width: 34px; height: 48px; font-size: 12px; }
+    .opp-cards .card .suit-icon { font-size: 15px; }
 
     .badge {
       position: absolute;
@@ -159,8 +159,8 @@
       justify-content: center;
       flex-wrap: nowrap;
     }
-    .community-cards .card { width: 54px; height: 76px; font-size: 15px; }
-    .community-cards .card .suit-icon { font-size: 20px; }
+    .community-cards .card { width: 58px; height: 82px; font-size: 17px; }
+    .community-cards .card .suit-icon { font-size: 23px; }
 
     /* ── My area ── */
     .my-area {
@@ -180,8 +180,8 @@
       gap: 8px;
       flex-shrink: 0;
     }
-    .my-hole-cards .card { width: 62px; height: 88px; font-size: 18px; }
-    .my-hole-cards .card .suit-icon { font-size: 26px; }
+    .my-hole-cards .card { width: 68px; height: 96px; font-size: 20px; }
+    .my-hole-cards .card .suit-icon { font-size: 30px; }
 
     .my-info {
       flex: 1;
@@ -378,11 +378,80 @@
     }
     .card .suit-icon { line-height: 1; }
 
+    /* ── Hand history ── */
+    .history-section {
+      margin-top: 20px;
+    }
+    .history-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 10px 14px;
+      background: #111128;
+      border: 1px solid #1e1e3a;
+      border-radius: 12px;
+      user-select: none;
+    }
+    .history-header span { font-size: 13px; font-weight: 600; color: #7070a0; }
+    .history-header .toggle-icon { font-size: 12px; color: #5050a0; transition: transform 0.2s; }
+    .history-header.open .toggle-icon { transform: rotate(180deg); }
+
+    .history-list {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .history-list.visible { display: flex; }
+
+    .history-entry {
+      background: #111128;
+      border: 1px solid #1e1e3a;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+    .history-entry-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .history-hand-num { font-size: 11px; color: #5050a0; }
+    .history-winner {
+      font-size: 12px; font-weight: 600;
+      color: #facc15;
+    }
+    .history-hand-name { font-size: 11px; color: #a78bfa; }
+
+    .history-community { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 8px; }
+    .history-community .card { width: 36px; height: 50px; font-size: 11px; }
+    .history-community .card .suit-icon { font-size: 14px; }
+
+    .history-players { display: flex; flex-direction: column; gap: 4px; }
+    .history-player-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .history-player-name {
+      font-size: 11px; color: #9090b0;
+      min-width: 80px;
+    }
+    .history-player-name.winner-name { color: #4ade80; font-weight: 600; }
+    .history-player-cards { display: flex; gap: 3px; }
+    .history-player-cards .card { width: 28px; height: 40px; font-size: 10px; }
+    .history-player-cards .card .suit-icon { font-size: 12px; }
+    .history-player-handname { font-size: 10px; color: #6060a0; }
+
     @media (max-width: 500px) {
-      .community-cards .card { width: 44px; height: 62px; font-size: 13px; }
-      .community-cards .card .suit-icon { font-size: 17px; }
-      .my-hole-cards .card { width: 52px; height: 74px; font-size: 15px; }
-      .my-hole-cards .card .suit-icon { font-size: 22px; }
+      .community-cards .card { width: 46px; height: 66px; font-size: 14px; }
+      .community-cards .card .suit-icon { font-size: 19px; }
+      .my-hole-cards .card { width: 56px; height: 80px; font-size: 17px; }
+      .my-hole-cards .card .suit-icon { font-size: 24px; }
       .opp-pod { min-width: 80px; padding: 8px; }
     }
   </style>
@@ -406,6 +475,15 @@
 
     <div id="statusBox">
       <div style="text-align:center;padding:60px;color:#5050a0;">Connecting to table…</div>
+    </div>
+
+    <!-- Hand history (always visible, populated after each hand) -->
+    <div class="history-section" id="historySection" style="display:none;">
+      <div class="history-header" id="historyHeader" onclick="toggleHistory()">
+        <span>🃏 Hand History (<span id="historyCount">0</span>)</span>
+        <span class="toggle-icon">▼</span>
+      </div>
+      <div class="history-list" id="historyList"></div>
     </div>
   </div>
 
@@ -438,6 +516,8 @@
     let myUserId      = null;
     let timerInterval = null;
     let timerSecs     = 30;
+    let lastHandNumber = 0;
+    const handHistory  = [];   // stores last 10 hand results
 
     const navAuth = document.getElementById('navAuth');
 
@@ -525,6 +605,7 @@
       const stakeLabels = { low: '25/50', mid: '100/200', high: '500/1000' };
       document.getElementById('tableTitle').textContent =
         `♠️ Poker  ·  ${stakeLabels[state.stakeLevel] || ''}  ·  Hand #${state.handNumber}`;
+      lastHandNumber = state.handNumber;
 
       const sb = document.getElementById('statusBox');
       if (state.state === 'waiting') {
@@ -710,22 +791,88 @@
       const overlay = document.getElementById('resultOverlay');
       if (!overlay) return;
 
-      const names   = result.winners.map(w => escHtml(w.username)).join(', ');
-      const hand    = result.winners[0]?.handName || '';
-      const winCards = (result.community || []).slice(0, 5);
-      const cardHtml = winCards.map(c => buildCard(c, 'result')).join('');
+      const winners  = result.winners || [];
+      const allPlayers = result.allPlayers || winners; // fallback for old server
+      const names    = winners.map(w => escHtml(w.username)).join(', ') || 'Unknown';
+      const handName = winners[0]?.handName || '';
+      const community = result.community || [];
+
+      // Community cards row
+      const communityHtml = community.map(c => buildCard(c, 'result')).join('');
+
+      // All players' hole cards revealed
+      const playersHtml = allPlayers.map(p => `
+        <div class="history-player-row">
+          <span class="history-player-name ${p.isWinner ? 'winner-name' : ''}">${escHtml(p.username)}${p.isWinner ? ' 🏆' : ''}</span>
+          <div class="history-player-cards">${(p.cards || []).map(c => buildCard(c, 'result')).join('')}</div>
+          <span class="history-player-handname">${escHtml(p.handName || '')}</span>
+        </div>`).join('');
 
       overlay.innerHTML = `
         <div class="result-card">
           <h3>🏆 ${names} wins!</h3>
-          ${hand ? `<div class="hand-name">${escHtml(hand)}</div>` : ''}
-          ${cardHtml ? `<div class="result-cards">${cardHtml}</div>` : ''}
-          <div class="next-msg">Next hand starting soon…</div>
+          ${handName ? `<div class="hand-name">${escHtml(handName)}</div>` : ''}
+          ${communityHtml ? `<div class="result-cards">${communityHtml}</div>` : ''}
+          <div class="history-players" style="margin-top:12px;">${playersHtml}</div>
+          <div class="next-msg" style="margin-top:12px;">Next hand starting soon…</div>
         </div>`;
 
       overlay.classList.add('show');
-      setTimeout(() => overlay.classList.remove('show'), 4500);
+      setTimeout(() => overlay.classList.remove('show'), 5000);
+
+      // Store in hand history
+      addToHistory({
+        handNumber: lastHandNumber,
+        winners,
+        allPlayers,
+        community
+      });
     }
+
+    // ── Hand history ────────────────────────────────────────────
+    function addToHistory(entry) {
+      handHistory.unshift(entry);        // newest first
+      if (handHistory.length > 10) handHistory.pop();
+
+      const section = document.getElementById('historySection');
+      const countEl = document.getElementById('historyCount');
+      const list    = document.getElementById('historyList');
+      if (!section || !list) return;
+
+      section.style.display = '';
+      countEl.textContent = handHistory.length;
+
+      list.innerHTML = handHistory.map(h => {
+        const winnerNames = (h.winners || []).map(w => escHtml(w.username)).join(', ') || '?';
+        const topHand     = (h.winners || [])[0]?.handName || 'Last standing';
+        const communityHtml = (h.community || []).map(c => buildCard(c, 'history')).join('');
+        const playersHtml   = (h.allPlayers || []).map(p => `
+          <div class="history-player-row">
+            <span class="history-player-name ${p.isWinner ? 'winner-name' : ''}">${escHtml(p.username)}</span>
+            <div class="history-player-cards">${(p.cards || []).map(c => buildCard(c, 'history')).join('')}</div>
+            <span class="history-player-handname">${escHtml(p.handName || '')}</span>
+          </div>`).join('');
+
+        return `
+          <div class="history-entry">
+            <div class="history-entry-top">
+              <span class="history-hand-num">Hand #${h.handNumber}</span>
+              <span class="history-winner">🏆 ${winnerNames}</span>
+              <span class="history-hand-name">${escHtml(topHand)}</span>
+            </div>
+            <div class="history-community">${communityHtml}</div>
+            <div class="history-players">${playersHtml}</div>
+          </div>`;
+      }).join('');
+    }
+
+    window.toggleHistory = () => {
+      const header = document.getElementById('historyHeader');
+      const list   = document.getElementById('historyList');
+      if (!header || !list) return;
+      const open = list.classList.toggle('visible');
+      header.classList.toggle('open', open);
+    };
 
     // ── Card builder ────────────────────────────────────────────
     const SUIT_SYMBOLS = { s: '♠', h: '♥', d: '♦', c: '♣' };

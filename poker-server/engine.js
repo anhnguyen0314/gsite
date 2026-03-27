@@ -286,6 +286,7 @@ class Table {
       p.bet    = 0;
       p.folded = false;
       p.allIn  = false;
+      p.acted  = false;  // tracks whether player has voluntarily acted this street
     }
 
     // Advance dealer button (only among sitting players)
@@ -346,10 +347,12 @@ class Table {
     switch (action) {
       case 'fold':
         p.folded = true;
+        p.acted  = true;
         break;
 
       case 'check':
         if (p.bet < this.currentBet) return { ok: false, reason: 'Cannot check — must call or raise' };
+        p.acted = true;
         break;
 
       case 'call': {
@@ -358,6 +361,7 @@ class Table {
         p.bet   += toCall;
         this.pot += toCall;
         if (p.chips === 0) p.allIn = true;
+        p.acted = true;
         break;
       }
 
@@ -370,6 +374,13 @@ class Table {
         this.pot += extra;
         this.currentBet = p.bet;
         if (p.chips === 0) p.allIn = true;
+        p.acted = true;
+        // Raise re-opens action for all other active players
+        for (const other of this.players) {
+          if (other !== p && other.sitting && !other.folded && !other.allIn) {
+            other.acted = false;
+          }
+        }
         break;
       }
 
@@ -378,8 +389,18 @@ class Table {
         p.chips  = 0;
         p.bet   += allInAmt;
         this.pot += allInAmt;
-        if (p.bet > this.currentBet) this.currentBet = p.bet;
+        const isRaise = p.bet > this.currentBet;
+        if (isRaise) {
+          this.currentBet = p.bet;
+          // All-in raise re-opens action for other active players
+          for (const other of this.players) {
+            if (other !== p && other.sitting && !other.folded && !other.allIn) {
+              other.acted = false;
+            }
+          }
+        }
         p.allIn = true;
+        p.acted = true;
         break;
       }
 
@@ -417,8 +438,8 @@ class Table {
   _bettingRoundOver() {
     const active = this.players.filter(p => p.sitting && !p.folded && !p.allIn);
     if (active.length === 0) return true;
-    // Everyone has matched the current bet (or folded/all-in)
-    return active.every(p => p.bet === this.currentBet);
+    // Every active player must have acted AND matched the current bet
+    return active.every(p => p.acted && p.bet === this.currentBet);
   }
 
   _advanceStreet() {
@@ -431,8 +452,11 @@ class Table {
       return;
     }
 
-    // Reset bets for new street
-    for (const p of this.players) p.bet = 0;
+    // Reset bets and action flags for new street
+    for (const p of this.players) {
+      p.bet   = 0;
+      p.acted = false;
+    }
     this.currentBet = 0;
 
     if (this.state === STATE.PREFLOP) {

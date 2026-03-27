@@ -120,18 +120,33 @@ function broadcastLobbyUpdate() {
 async function handlePostAction(table) {
   if (table.state === STATE.SHOWDOWN) {
     // lastHandWinnerIds is set by engine._awardPot — these are the actual winners
-    const winnerIds  = (table.lastHandWinnerIds || []).filter(uid => !uid.startsWith('bot_'));
+    const actualWinnerIds = table.lastHandWinnerIds || [];
+    const winnerIds  = actualWinnerIds.filter(uid => !uid.startsWith('bot_'));
     const allRealIds = table.players
       .filter(p => !p.userId.startsWith('bot_'))
       .map(p => p.userId);
 
     broadcastTableState(table);
+
+    // Build handResult with correct winners (from lastHandWinnerIds) and all revealed hands
+    const nonFolded   = table.players.filter(p => p.sitting && !p.folded);
     io.to(`table:${table.tableId}`).emit('handResult', {
-      winners:   table.players.filter(p => !p.folded && p.sitting).map(p => ({
+      // actual pot winners only
+      winners: nonFolded
+        .filter(p => actualWinnerIds.includes(p.userId))
+        .map(p => ({
+          userId:   p.userId,
+          username: p.username,
+          handName: p.handEval ? p.handEval.name : 'Last standing',
+          cards:    p.cards
+        })),
+      // all non-folded hands revealed (for result overlay and history)
+      allPlayers: nonFolded.map(p => ({
         userId:   p.userId,
         username: p.username,
         handName: p.handEval ? p.handEval.name : 'Last standing',
-        cards:    p.cards
+        cards:    p.cards,
+        isWinner: actualWinnerIds.includes(p.userId)
       })),
       community: table.community
     });
