@@ -302,7 +302,7 @@
 
   <script type="module">
     import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getAuth, onAuthStateChanged, signOut }
+    import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail }
       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
     import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs, serverTimestamp }
       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
@@ -520,6 +520,7 @@
           <a href="chips.html"       class="btn-outline">🪙 Chips</a>
           <a href="leaderboard.html" class="btn-outline">🏆 Leaderboard</a>
           <a href="index.html"       class="btn-outline">← All Games</a>
+          <button id="resetPwBtn" class="btn-outline" onclick="resetPassword()">🔑 Reset Password</button>
         </div>
       `;
     }
@@ -547,6 +548,46 @@
     function escHtml(s) {
       return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
+
+    function showToast(message, isError = false) {
+      let toast = document.getElementById('gz-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'gz-toast';
+        toast.style.cssText = `
+          position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+          background:#1a1a2e; border-radius:12px;
+          color:#e0e0e0; font-family:'Segoe UI',sans-serif; font-size:15px;
+          padding:12px 24px; z-index:9999; box-shadow:0 4px 24px rgba(0,0,0,0.5);
+          opacity:0; transition:opacity 0.3s; white-space:nowrap; pointer-events:none;
+        `;
+        document.body.appendChild(toast);
+      }
+      toast.style.border = isError ? '1px solid #6b2020' : '1px solid #7c3aed';
+      toast.textContent = message;
+      toast.style.opacity = '1';
+      clearTimeout(toast._timeout);
+      toast._timeout = setTimeout(() => { toast.style.opacity = '0'; }, 4000);
+    }
+
+    window.resetPassword = async function() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const btn = document.getElementById('resetPwBtn');
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+      try {
+        await sendPasswordResetEmail(auth, user.email);
+        showToast('✅ Password reset email sent to ' + user.email);
+      } catch (err) {
+        showToast('❌ Could not send reset email. Try again.', true);
+      }
+      if (btn) {
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = '🔑 Reset Password';
+        }, 5000);
+      }
+    };
   </script>
 
 </body>

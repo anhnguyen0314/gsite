@@ -6,7 +6,7 @@ const http       = require('http');
 const { Server } = require('socket.io');
 const cors       = require('cors');
 const admin      = require('firebase-admin');
-const { Table, STATE, STAKE_CONFIG, MAX_PLAYERS, STARTING_CHIPS } = require('./engine');
+const { Table, STATE, STAKE_CONFIG, MAX_PLAYERS, STARTING_CHIPS, evaluateHand } = require('./engine');
 
 // ── Firebase Admin init ──────────────────────────────────────
 // You'll paste your service account JSON here (from Firebase console)
@@ -73,11 +73,18 @@ async function getOrCreatePlayer(userId, username) {
   return { chips, ...pokerSnap.data() };
 }
 
-async function savePlayerChips(userId, chips) {
-  await db.collection('users').doc(userId).update({ chips });
+async function savePlayerChips(userId, tableChips) {
+  if (userId.startsWith('bot_')) return; // bots have no Firestore entry
+  const pdata = players.get(userId);
+  // walletChips = chips NOT at the table. Total = wallet + table.
+  const walletChips = (pdata && pdata.walletChips != null) ? pdata.walletChips : 0;
+  const total = walletChips + tableChips;
+  await db.collection('users').doc(userId).update({ chips: total });
+  if (pdata) pdata.chips = total;
 }
 
 async function recordWin(userId) {
+  if (userId.startsWith('bot_')) return;
   await db.collection('poker_players').doc(userId).update({
     wins:        admin.firestore.FieldValue.increment(1),
     gamesPlayed: admin.firestore.FieldValue.increment(1)
@@ -85,6 +92,7 @@ async function recordWin(userId) {
 }
 
 async function recordGamePlayed(userId) {
+  if (userId.startsWith('bot_')) return;
   await db.collection('poker_players').doc(userId).update({
     gamesPlayed: admin.firestore.FieldValue.increment(1)
   });
@@ -105,6 +113,128 @@ function broadcastLobbyUpdate() {
     if (!t.isPrivate) list.push(t.lobbyEntry());
   }
   io.emit('lobbyUpdate', list);
+}
+
+// ── Bot logic ─────────────────────────────────────────────────
+const RANK_VALUES = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'T':10,'J':11,'Q':12,'K':13,'A':14 };
+
+function getBotHandStrength(bot, community) {
+  if (community.length < 3) {
+    // Preflop heuristic (evaluateHand needs 5+ cards)
+    const [c1, c2] = bot.cards;
+    if (!c1 || !c2) return 0;
+    const r1 = RANK_VALUES[c1.rank] || 0;
+    const r2 = RANK_VALUES[c2.rank] || 0;
+    const maxR = Math.max(r1, r2);
+    const gap  = Math.abs(r1 - r2);
+    const isSuited = c1.suit === c2.suit;
+    const isPair = c1.rank === c2.rank;
+    if (isPair && maxR >= 9)            return 3; // pocket 9s+
+    if (maxR >= 13 && gap <= 3)         return 2; // AK, AQ, KQ
+    if (isPair || maxR >= 11)           return 1; // any pair or J+
+    if (gap <= 4 && isSuited)           return 1; // suited connectors
+    return 0;
+  }
+  const ev = evaluateHand([...bot.cards, ...community]);
+  if (!ev) return 0;
+  if (ev.rank >= 5) return 3; // flush or better
+  if (ev.rank >= 3) return 2; // set or better
+  if (ev.rank >= 1) return 1; // one pair
+  return 0;
+}
+
+function getBotAction(table, bot) {
+  const strength = getBotHandStrength(bot, table.community);
+  const toCall   = Math.max(0, table.currentBet - bot.bet);
+  const rand     = Math.random();
+  const blinds   = table.stakes.bigBlind;
+  const minRaise = table.currentBet + blinds;
+  const halfPot  = Math.floor(table.pot / 2);
+
+  if (strength === 0) {
+    if (toCall === 0) return { action: 'check' };
+    if (rand < 0.15)  return { action: 'call' }; // rare bluff-call
+    return { action: 'fold' };
+  }
+  if (strength === 1) {
+    if (toCall === 0) return { action: 'check' };
+    if (toCall > bot.chips * 0.5) return { action: 'fold' };
+    return { action: 'call' };
+  }
+  if (strength === 2) {
+    if (toCall === 0) {
+      if (rand < 0.5) {
+        const amt = Math.min(minRaise + halfPot, bot.chips + bot.bet);
+        if (amt > table.currentBet) return { action: 'raise', amount: amt };
+      }
+      return { action: 'check' };
+    }
+    return { action: 'call' };
+  }
+  // strength === 3: strong hand
+  const raiseAmt = Math.min(minRaise + table.pot, bot.chips + bot.bet);
+  if (rand < 0.65 && raiseAmt > table.currentBet) return { action: 'raise', amount: raiseAmt };
+  if (toCall === 0) return { action: 'check' };
+  return { action: 'call' };
+}
+
+const BETTING_STATES = [STATE.PREFLOP, STATE.FLOP, STATE.TURN, STATE.RIVER];
+
+function triggerBotIfNeeded(table) {
+  if (!BETTING_STATES.includes(table.state)) return;
+  const actor = table.players[table.actionIdx];
+  if (!actor || !actor.userId.startsWith('bot_')) return;
+  if (actor.folded || actor.allIn) return;
+  if (table._botActionPending) return;
+
+  table._botActionPending = true;
+  const delay = 1200 + Math.random() * 1000; // 1.2–2.2 s
+
+  setTimeout(() => {
+    table._botActionPending = false;
+
+    // Re-verify it's still this bot's turn
+    if (!BETTING_STATES.includes(table.state)) return;
+    const current = table.players[table.actionIdx];
+    if (!current || current.userId !== actor.userId) return;
+
+    const { action, amount } = getBotAction(table, actor);
+    const result = table.handleAction(actor.userId, action, amount);
+    if (!result.ok) return;
+
+    if (table.state === STATE.SHOWDOWN) {
+      // Determine winners (real players only for recording)
+      const winnerIds = table.players
+        .filter(p => p.chips > 0 && !p.userId.startsWith('bot_'))
+        .map(p => p.userId);
+
+      broadcastTableState(table);
+      io.to(`table:${table.tableId}`).emit('handResult', {
+        winners:   table.players.filter(p => !p.folded && p.sitting).map(p => ({
+          userId:   p.userId,
+          username: p.username,
+          handName: p.handEval ? p.handEval.name : 'Last standing',
+          cards:    p.cards
+        })),
+        community: table.community
+      });
+
+      table.scheduleNextHand(async (info) => {
+        for (const p of table.players) {
+          if (!p.userId.startsWith('bot_')) {
+            await savePlayerChips(p.userId, p.chips);
+          }
+        }
+        for (const uid of winnerIds) await recordWin(uid);
+        broadcastTableState(table);
+        broadcastLobbyUpdate();
+        triggerBotIfNeeded(table);
+      });
+    } else {
+      broadcastTableState(table);
+      triggerBotIfNeeded(table);
+    }
+  }, delay);
 }
 
 // ── Socket.io events ─────────────────────────────────────────
@@ -167,7 +297,7 @@ io.on('connection', (socket) => {
   });
 
   // ── joinTable ──────────────────────────────────────────────
-  socket.on('joinTable', async ({ tableId, inviteCode }) => {
+  socket.on('joinTable', async ({ tableId, inviteCode, buyIn }) => {
     const userId = socket.data.userId;
     if (!userId) { socket.emit('error', 'Not authenticated'); return; }
 
@@ -196,11 +326,35 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // ── Buy-in validation (only for new joins, not reconnects) ──
+    const isRejoining = table.players.some(p => p.userId === userId);
+    let actualBuyIn = pdata.chips; // default: all chips (backward compat / reconnect)
+    if (!isRejoining) {
+      // Validate and normalise buy-in: min 1000, multiples of 500
+      actualBuyIn = Math.round((parseInt(buyIn) || 1000) / 500) * 500;
+      actualBuyIn = Math.max(1000, actualBuyIn);
+      if (actualBuyIn > pdata.chips) {
+        socket.emit('error', 'Not enough chips for that buy-in');
+        return;
+      }
+      // Deduct buy-in from wallet immediately in Firestore
+      const walletAfter = pdata.chips - actualBuyIn;
+      try {
+        await db.collection('users').doc(userId).update({ chips: walletAfter });
+      } catch (err) {
+        console.error('Could not deduct buy-in:', err);
+        socket.emit('error', 'Could not process buy-in');
+        return;
+      }
+      pdata.walletChips = walletAfter;
+      pdata.chips       = walletAfter; // lobby balance shown = wallet only
+    }
+
     let result = table.addPlayer({
       userId,
       username:  pdata.username,
       socketId:  socket.id,
-      chips:     pdata.chips
+      chips:     isRejoining ? undefined : actualBuyIn  // undefined → engine keeps existing
     });
 
     if (!result.ok) {
@@ -223,11 +377,9 @@ io.on('connection', (socket) => {
     if (!table._handCallbackSet) {
       table._handCallbackSet = true;
       table._onHandDone = async (result, winnerIds) => {
-        // Save chip counts and record wins
+        // Save chip counts and record wins (savePlayerChips updates pdata.chips internally)
         for (const p of table.players) {
           await savePlayerChips(p.userId, p.chips);
-          const pinfo = players.get(p.userId);
-          if (pinfo) pinfo.chips = p.chips;
         }
         if (winnerIds) {
           for (const uid of winnerIds) await recordWin(uid);
@@ -247,15 +399,23 @@ io.on('connection', (socket) => {
 
     const table = tables.get(pdata.tableId);
     if (table) {
+      // Grab chip count before removing from table
+      const p = table.players.find(p => p.userId === userId);
+
       table.removePlayer(userId);
       socket.leave(`table:${pdata.tableId}`);
       broadcastTableState(table);
 
-      // Save chips
-      const p = table.players.find(p => p.userId === userId);
+      // Cash out: save wallet + table chips, clear wallet reservation
       if (p) {
-        await savePlayerChips(userId, p.chips);
-        pdata.chips = p.chips;
+        await savePlayerChips(userId, p.chips); // savePlayerChips adds walletChips internally
+      }
+      pdata.walletChips = undefined;
+
+      // Remove bots if no real players remain after this leave
+      const remainingReal = table.players.filter(p2 => p2.userId !== userId && !p2.userId.startsWith('bot_'));
+      if (remainingReal.length === 0) {
+        table.players = []; // clear bots too
       }
 
       // Delete empty tables
@@ -298,17 +458,44 @@ io.on('connection', (socket) => {
       // Save and schedule next hand
       table.scheduleNextHand(async (info) => {
         for (const p of table.players) {
-          await savePlayerChips(p.userId, p.chips);
-          const pinfo = players.get(p.userId);
-          if (pinfo) pinfo.chips = p.chips;
+          await savePlayerChips(p.userId, p.chips); // skips bots; updates pdata.chips
         }
         for (const uid of winnerIds) await recordWin(uid);
         broadcastTableState(table);
         broadcastLobbyUpdate();
+        triggerBotIfNeeded(table); // start bot if it acts first in new hand
       });
     } else {
       broadcastTableState(table);
+      triggerBotIfNeeded(table); // bot may be next to act
     }
+  });
+
+  // ── addBot ─────────────────────────────────────────────────
+  socket.on('addBot', () => {
+    const userId = socket.data.userId;
+    if (!userId) return;
+    const pdata = players.get(userId);
+    if (!pdata || !pdata.tableId) return;
+
+    const table = tables.get(pdata.tableId);
+    if (!table) return;
+    if (table.state !== STATE.WAITING) { socket.emit('error', 'Can only add a bot while waiting'); return; }
+    if (table.players.length >= MAX_PLAYERS) { socket.emit('error', 'Table is full'); return; }
+    if (table.players.some(p => p.userId.startsWith('bot_'))) { socket.emit('error', 'Bot already at table'); return; }
+
+    const botId       = `bot_${table.tableId}_${Date.now()}`;
+    const botChips    = Math.max(2000, table.stakes.bigBlind * 40);
+    const botUsername = '🤖 Bot';
+
+    const result = table.addPlayer({ userId: botId, username: botUsername, socketId: null, chips: botChips });
+    if (!result.ok) { socket.emit('error', result.reason); return; }
+
+    broadcastTableState(table);
+    broadcastLobbyUpdate();
+
+    // If hand starts automatically (2+ players), trigger bot after dealing delay
+    setTimeout(() => triggerBotIfNeeded(table), 3500);
   });
 
   // ── getPlayerProfile ───────────────────────────────────────
@@ -364,11 +551,14 @@ io.on('connection', (socket) => {
     if (pdata.tableId) {
       const table = tables.get(pdata.tableId);
       if (table) {
+        // Grab chip count before removing
+        const p = table.players.find(p => p.userId === userId);
+
         table.removePlayer(userId);
         broadcastTableState(table);
-        // Save chips back to Firestore
-        const p = table.players.find(p => p.userId === userId);
+        // Save wallet + table chips back to Firestore, clear wallet reservation
         if (p) await savePlayerChips(userId, p.chips);
+        pdata.walletChips = undefined;
         if (table.players.length === 0) {
           // Delay deletion so a player navigating lobby→game has time to rejoin
           const emptyTableId = pdata.tableId;

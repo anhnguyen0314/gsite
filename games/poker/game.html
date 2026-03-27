@@ -365,7 +365,7 @@
 
       const name = user.displayName || user.email.split('@')[0];
       navAuth.innerHTML = `
-        <span class="nav-username">👾 ${name}</span>
+        <a href="../../account.html" class="nav-username" style="text-decoration:none;">👾 ${name}</a>
         <button class="btn-secondary" id="logoutBtn">Log out</button>
       `;
       document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -460,11 +460,20 @@
     }
 
     function buildWaiting(state) {
+      const seated  = state.players.filter(p => p.sitting).length;
+      const hasBot  = state.players.some(p => p.userId && p.userId.startsWith('bot_'));
+      const iAlone  = seated === 1 && state.players.some(p => p.userId === myUserId);
+      const showBtn = iAlone && !hasBot;
+
       return `
         <div class="poker-table">
           <div class="waiting-box">
-            <p>Waiting for players… (${state.players.filter(p=>p.sitting).length}/${5} seated)</p>
+            <p>Waiting for players… (${seated}/${5} seated)</p>
             <p style="font-size:13px;color:#5050a0;">Game starts when 2+ players are seated.</p>
+            ${showBtn ? `
+              <button class="btn-leave" style="margin-top:12px;border-color:#7c3aed;color:#a78bfa;padding:9px 20px;"
+                onclick="addBot()">🤖 Play vs Bot</button>
+            ` : ''}
           </div>
         </div>
         ${buildActionPanel(null, null)}
@@ -662,6 +671,10 @@
       }
       socket.emit('playerAction', { action, amount });
       clearInterval(timerInterval);
+    };
+
+    window.addBot = () => {
+      if (socket) socket.emit('addBot');
     };
 
     window.leaveTable = () => {

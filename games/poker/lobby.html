@@ -249,6 +249,39 @@
       font-size: 15px;
     }
 
+    /* Buy-in stepper */
+    .stepper-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stepper-row input[type=number] {
+      flex: 1;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+    .stepper-row input[type=number]::-webkit-inner-spin-button,
+    .stepper-row input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+    .btn-step {
+      width: 40px;
+      height: 40px;
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 8px;
+      color: #e0e0e0;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+      font-family: 'Segoe UI', sans-serif;
+      transition: background 0.2s;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-step:hover { background: #2a2a4a; }
+    .buyin-hint { font-size: 12px; color: #5050a0; margin-top: 8px; }
+
     @media (max-width: 600px) {
       .chip-bar { flex-direction: column; align-items: flex-start; }
       .table-card { flex-direction: column; align-items: flex-start; }
@@ -308,6 +341,27 @@
       <div class="modal-actions">
         <button class="btn-cancel" onclick="closeModal()">Cancel</button>
         <button class="btn-confirm" onclick="confirmCreate()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buy-in Modal -->
+  <div class="modal-overlay" id="buyInModal">
+    <div class="modal">
+      <h2>Buy In</h2>
+      <p style="color:#7070a0;font-size:14px;margin-bottom:20px;">Choose how many chips to bring to the table.</p>
+      <div class="form-group">
+        <label>Buy-in amount</label>
+        <div class="stepper-row">
+          <button class="btn-step" onclick="adjustBuyIn(-500)">−</button>
+          <input type="number" id="buyInInput" min="1000" step="500" value="2000"/>
+          <button class="btn-step" onclick="adjustBuyIn(500)">+</button>
+        </div>
+        <p class="buyin-hint" id="buyInHint"></p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeBuyInModal()">Cancel</button>
+        <button class="btn-confirm" id="buyInConfirmBtn" onclick="confirmBuyIn()">Join Table</button>
       </div>
     </div>
   </div>
@@ -381,7 +435,7 @@
       if (user) {
         const name = user.displayName || user.email.split('@')[0];
         navAuth.innerHTML = `
-          <span class="nav-username">👾 ${name}</span>
+          <a href="../../account.html" class="nav-username" style="text-decoration:none;">👾 ${name}</a>
           <button class="btn-secondary" id="logoutBtn">Log out</button>
         `;
         document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -542,20 +596,52 @@
       closeModal();
     };
 
+    let pendingJoin = null; // { tableId, inviteCode }
+
     window.joinTable = (tableId, inviteCode) => {
+      pendingJoin = { tableId, inviteCode };
+      // Default buy-in: min(chips, 2000), but at least 1000
+      const defaultBuyIn = Math.max(1000, Math.min(myChips, 2000));
+      const input = document.getElementById('buyInInput');
+      input.value = defaultBuyIn;
+      document.getElementById('buyInHint').textContent =
+        `Your balance: ${myChips.toLocaleString()} chips · Min: 1,000`;
+      document.getElementById('buyInModal').classList.add('open');
+    };
+
+    window.closeBuyInModal = () => {
+      document.getElementById('buyInModal').classList.remove('open');
+      pendingJoin = null;
+    };
+
+    window.adjustBuyIn = (delta) => {
+      const input = document.getElementById('buyInInput');
+      let val = (parseInt(input.value) || 1000) + delta;
+      val = Math.round(val / 500) * 500;   // snap to 500-chip grid
+      val = Math.max(1000, val);
+      val = Math.min(val, myChips);         // can't exceed balance
+      input.value = val;
+    };
+
+    window.confirmBuyIn = () => {
+      if (!pendingJoin) return;
       const sock = window._pokerSocket;
       if (!sock) return;
-      sock.emit('joinTable', { tableId, inviteCode });
+      let buyIn = parseInt(document.getElementById('buyInInput').value) || 1000;
+      buyIn = Math.round(buyIn / 500) * 500;
+      buyIn = Math.max(1000, buyIn);
+      if (buyIn > myChips) {
+        alert(`You only have ${myChips.toLocaleString()} chips.`);
+        return;
+      }
+      sock.emit('joinTable', { tableId: pendingJoin.tableId, inviteCode: pendingJoin.inviteCode, buyIn });
+      closeBuyInModal();
     };
 
     window.joinPrivate = () => {
       const code = document.getElementById('inviteInput').value.trim().toUpperCase();
       if (!code) return;
-      // We need to find the tableId by invite code — emit a special join
-      const sock = window._pokerSocket;
-      if (!sock) return;
-      // The server matches by code when tableId is omitted
-      sock.emit('joinTable', { tableId: null, inviteCode: code });
+      window.joinTable(null, code);
     };
 
     function escHtml(s) {
