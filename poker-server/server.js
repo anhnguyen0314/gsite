@@ -405,6 +405,10 @@ io.on('connection', (socket) => {
         broadcastTableState(table);
         triggerBotIfNeeded(table);
       };
+      // Fired by engine._advanceStreet — broadcasts each new street (used for all-in runouts)
+      table._onStreetChange = () => {
+        broadcastTableState(table);
+      };
       // Fired by engine._startActionTimer when a player's clock runs out
       table._onAutoAction = () => {
         handlePostAction(table);

@@ -413,13 +413,23 @@ class Table {
   }
 
   _nextAction() {
-    // Check if betting round is over
+    clearTimeout(this.actionTimer);
+
+    // If only one non-folded player remains, they win immediately — no more action needed
+    const nonFolded = this.players.filter(p => p.sitting && !p.folded);
+    if (nonFolded.length === 1) {
+      this._awardPot(nonFolded);
+      return;
+    }
+    if (nonFolded.length === 0) return; // degenerate — shouldn't happen
+
+    // Check if betting round is over (all active players acted and bets matched)
     if (this._bettingRoundOver()) {
       this._advanceStreet();
       return;
     }
 
-    // Find next player who can act
+    // Find next player who can act (not folded, not all-in)
     const len = this.players.length;
     let next = (this.actionIdx + 1) % len;
     for (let i = 0; i < len; i++) {
@@ -431,7 +441,7 @@ class Table {
       }
       next = (next + 1) % len;
     }
-    // All remaining players are all-in or folded — run out the board
+    // All remaining players are all-in — run out the board
     this._advanceStreet();
   }
 
@@ -473,9 +483,20 @@ class Table {
       return;
     }
 
+    // Notify server of the new street (used for all-in board-runout broadcasts)
+    if (typeof this._onStreetChange === 'function') this._onStreetChange();
+
     // Set action to first active player left of dealer
     this.actionIdx = this._nextSittingAfter(this.dealerIdx);
-    this._startActionTimer();
+
+    // If no one can act (everyone is all-in), run out the board automatically
+    // Use a short delay so the server can broadcast the new street before advancing
+    const canAct = this.players.some(p => p.sitting && !p.folded && !p.allIn);
+    if (canAct) {
+      this._startActionTimer();
+    } else {
+      this.actionTimer = setTimeout(() => this._nextAction(), 1500);
+    }
   }
 
   _showdown() {

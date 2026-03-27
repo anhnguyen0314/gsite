@@ -339,17 +339,52 @@
       background: #1a1a2e;
       border: 1px solid #3a3a6a;
       border-radius: 20px;
-      padding: 28px 36px;
-      text-align: center;
-      max-width: 360px;
+      padding: 22px 24px;
+      max-width: 420px;
       width: 100%;
     }
-    .result-card h3 { font-size: 24px; color: #facc15; font-weight: 700; margin-bottom: 8px; }
-    .result-card .hand-name { font-size: 15px; color: #a78bfa; margin-bottom: 6px; }
-    .result-card .result-cards { display: flex; gap: 6px; justify-content: center; margin: 14px 0; flex-wrap: wrap; }
-    .result-card .result-cards .card { width: 48px; height: 68px; font-size: 14px; }
-    .result-card .result-cards .card .suit-icon { font-size: 18px; }
-    .result-card .next-msg { font-size: 13px; color: #5050a0; }
+    .result-banner {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .result-banner h3 { font-size: 22px; color: #facc15; font-weight: 700; margin-bottom: 4px; }
+    .result-banner .hand-name { font-size: 14px; color: #a78bfa; }
+
+    .result-community { display: flex; gap: 5px; justify-content: center; margin-bottom: 14px; flex-wrap: wrap; }
+    .result-community .card { width: 44px; height: 62px; font-size: 13px; }
+    .result-community .card .suit-icon { font-size: 18px; }
+
+    .result-players-list { display: flex; flex-direction: column; gap: 2px; }
+    .result-player-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 4px;
+      border-top: 1px solid #1e1e3a;
+      flex-wrap: wrap;
+    }
+    .result-player-meta { min-width: 100px; flex: 1; }
+    .result-player-name { font-size: 13px; font-weight: 700; display: block; margin-bottom: 2px; }
+    .result-player-name.winner  { color: #facc15; }
+    .result-player-name.loser   { color: #7070a0; }
+    .result-player-handname { font-size: 11px; color: #a78bfa; }
+    .result-player-cards { display: flex; gap: 4px; }
+    .result-player-cards .card { width: 38px; height: 54px; font-size: 12px; }
+    .result-player-cards .card .suit-icon { font-size: 16px; }
+    .result-show-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-show-hand {
+      background: #1e3a5f; color: #60a5fa;
+      border: none; border-radius: 8px;
+      padding: 5px 12px; font-size: 11px; font-weight: 700;
+      font-family: 'Segoe UI', sans-serif; cursor: pointer;
+    }
+    .btn-muck {
+      background: transparent; color: #5050a0;
+      border: 1px solid #2a2a4a; border-radius: 8px;
+      padding: 5px 12px; font-size: 11px; font-weight: 700;
+      font-family: 'Segoe UI', sans-serif; cursor: pointer;
+    }
+    .result-card .next-msg { font-size: 12px; color: #5050a0; text-align: center; margin-top: 14px; }
 
     /* ── Card ── */
     .card {
@@ -430,22 +465,32 @@
     .history-community .card { width: 36px; height: 50px; font-size: 11px; }
     .history-community .card .suit-icon { font-size: 14px; }
 
-    .history-players { display: flex; flex-direction: column; gap: 4px; }
+    .history-players { display: flex; flex-direction: column; gap: 0; }
     .history-player-row {
       display: flex;
       align-items: center;
       gap: 8px;
+      padding: 5px 0;
+      border-top: 1px solid #181830;
       flex-wrap: wrap;
     }
     .history-player-name {
-      font-size: 11px; color: #9090b0;
+      font-size: 11px; color: #6060a0; font-weight: 600;
       min-width: 80px;
     }
-    .history-player-name.winner-name { color: #4ade80; font-weight: 600; }
+    .history-player-name.winner-name { color: #facc15; }
+    .history-player-name.loser-name  { color: #5050a0; }
     .history-player-cards { display: flex; gap: 3px; }
     .history-player-cards .card { width: 28px; height: 40px; font-size: 10px; }
     .history-player-cards .card .suit-icon { font-size: 12px; }
     .history-player-handname { font-size: 10px; color: #6060a0; }
+    .history-outcome {
+      font-size: 10px; font-weight: 700;
+      border-radius: 6px; padding: 2px 7px;
+    }
+    .history-outcome.won  { background: rgba(250,204,21,0.15); color: #facc15; }
+    .history-outcome.lost { background: rgba(239,68,68,0.1);   color: #f87171; }
+    .history-outcome.mucked { background: rgba(80,80,160,0.1); color: #5050a0; }
 
     @media (max-width: 500px) {
       .community-cards .card { width: 46px; height: 66px; font-size: 14px; }
@@ -787,53 +832,106 @@
     }
 
     // ── Hand result overlay ─────────────────────────────────────
+    // shownSet: maps userId → true (show) | false (muck)
+    // Rules: winners always show; bots always show; human loser gets to choose
+    let _currentResult = null;
+
     function showHandResult(result) {
       const overlay = document.getElementById('resultOverlay');
       if (!overlay) return;
 
-      const winners  = result.winners || [];
-      const allPlayers = result.allPlayers || winners; // fallback for old server
-      const names    = winners.map(w => escHtml(w.username)).join(', ') || 'Unknown';
-      const handName = winners[0]?.handName || '';
-      const community = result.community || [];
+      const winners    = result.winners    || [];
+      const allPlayers = result.allPlayers || winners;
+      const community  = result.community  || [];
+      const names      = winners.map(w => escHtml(w.username)).join(', ') || 'Unknown';
+      const winnerHandName = winners[0]?.handName || '';
 
-      // Community cards row
-      const communityHtml = community.map(c => buildCard(c, 'result')).join('');
+      // Build initial shown set: auto-show winners + bots; human losers decide
+      const shownSet = {};
+      for (const p of allPlayers) {
+        shownSet[p.userId] = p.isWinner || p.userId.startsWith('bot_');
+      }
 
-      // All players' hole cards revealed
-      const playersHtml = allPlayers.map(p => `
-        <div class="history-player-row">
-          <span class="history-player-name ${p.isWinner ? 'winner-name' : ''}">${escHtml(p.username)}${p.isWinner ? ' 🏆' : ''}</span>
-          <div class="history-player-cards">${(p.cards || []).map(c => buildCard(c, 'result')).join('')}</div>
-          <span class="history-player-handname">${escHtml(p.handName || '')}</span>
-        </div>`).join('');
+      _currentResult = { handNumber: lastHandNumber, winners, allPlayers, community, shownSet };
 
-      overlay.innerHTML = `
-        <div class="result-card">
-          <h3>🏆 ${names} wins!</h3>
-          ${handName ? `<div class="hand-name">${escHtml(handName)}</div>` : ''}
-          ${communityHtml ? `<div class="result-cards">${communityHtml}</div>` : ''}
-          <div class="history-players" style="margin-top:12px;">${playersHtml}</div>
-          <div class="next-msg" style="margin-top:12px;">Next hand starting soon…</div>
-        </div>`;
+      function renderOverlay() {
+        const communityHtml = community.map(c => buildCard(c, 'result')).join('');
+        const playersHtml   = allPlayers.map(p => {
+          const shown    = shownSet[p.userId];
+          const isMe     = p.userId === myUserId;
+          const isBot    = p.userId.startsWith('bot_');
+          const cardsHtml = shown
+            ? (p.cards || []).map(c => buildCard(c, 'result')).join('')
+            : (p.cards || []).map(() => `<div class="card back"></div>`).join('');
 
+          let choiceBtns = '';
+          if (isMe && !p.isWinner && shownSet[p.userId] === false) {
+            // Human loser: offer Show/Muck choice
+            choiceBtns = `
+              <div class="result-show-btns">
+                <button class="btn-show-hand" onclick="_revealHand('${p.userId}')">Show Hand</button>
+                <button class="btn-muck" onclick="_muckHand('${p.userId}')">Muck</button>
+              </div>`;
+          }
+
+          return `
+            <div class="result-player-row">
+              <div class="result-player-meta">
+                <span class="result-player-name ${p.isWinner ? 'winner' : 'loser'}">
+                  ${p.isWinner ? '🏆 ' : ''}${escHtml(p.username)}
+                </span>
+                ${shown ? `<span class="result-player-handname">${escHtml(p.handName || '')}</span>` : ''}
+              </div>
+              <div class="result-player-cards">${cardsHtml}</div>
+              ${choiceBtns}
+            </div>`;
+        }).join('');
+
+        overlay.innerHTML = `
+          <div class="result-card">
+            <div class="result-banner">
+              <h3>🏆 ${names} wins!</h3>
+              ${winnerHandName ? `<div class="hand-name">${escHtml(winnerHandName)}</div>` : ''}
+            </div>
+            ${communityHtml ? `<div class="result-community">${communityHtml}</div>` : ''}
+            <div class="result-players-list">${playersHtml}</div>
+            <div class="next-msg">Next hand starting soon…</div>
+          </div>`;
+      }
+
+      renderOverlay();
       overlay.classList.add('show');
-      setTimeout(() => overlay.classList.remove('show'), 5000);
 
-      // Store in hand history
-      addToHistory({
-        handNumber: lastHandNumber,
-        winners,
-        allPlayers,
-        community
-      });
+      // Expose choice handlers to onclick
+      window._revealHand = (uid) => {
+        shownSet[uid] = true;
+        renderOverlay();
+        // Update history entry to reflect the reveal
+        if (_currentResult) refreshHistory();
+      };
+      window._muckHand = (uid) => {
+        // shownSet[uid] stays false — cards stay hidden (already rendered as backs)
+        // Remove the choice buttons by marking as "decided"
+        shownSet[uid] = 'mucked';
+        renderOverlay();
+        if (_currentResult) refreshHistory();
+      };
+
+      // Auto-dismiss after 6 seconds
+      setTimeout(() => overlay.classList.remove('show'), 6000);
+
+      // Add to history once the overlay is shown (final state captured on dismiss)
+      addToHistory(_currentResult);
     }
 
     // ── Hand history ────────────────────────────────────────────
     function addToHistory(entry) {
-      handHistory.unshift(entry);        // newest first
+      handHistory.unshift(entry);
       if (handHistory.length > 10) handHistory.pop();
+      refreshHistory();
+    }
 
+    function refreshHistory() {
       const section = document.getElementById('historySection');
       const countEl = document.getElementById('historyCount');
       const list    = document.getElementById('historyList');
@@ -843,22 +941,42 @@
       countEl.textContent = handHistory.length;
 
       list.innerHTML = handHistory.map(h => {
-        const winnerNames = (h.winners || []).map(w => escHtml(w.username)).join(', ') || '?';
-        const topHand     = (h.winners || [])[0]?.handName || 'Last standing';
+        const winnerNames   = (h.winners || []).map(w => escHtml(w.username)).join(', ') || '?';
+        const winnerHandName = (h.winners || [])[0]?.handName || 'Last standing';
         const communityHtml = (h.community || []).map(c => buildCard(c, 'history')).join('');
-        const playersHtml   = (h.allPlayers || []).map(p => `
-          <div class="history-player-row">
-            <span class="history-player-name ${p.isWinner ? 'winner-name' : ''}">${escHtml(p.username)}</span>
-            <div class="history-player-cards">${(p.cards || []).map(c => buildCard(c, 'history')).join('')}</div>
-            <span class="history-player-handname">${escHtml(p.handName || '')}</span>
-          </div>`).join('');
+
+        const playersHtml = (h.allPlayers || []).map(p => {
+          const shown    = h.shownSet ? h.shownSet[p.userId] : p.isWinner;
+          const showCards = shown === true;
+          const mucked    = shown === 'mucked' || shown === false;
+          const isMe      = p.userId === myUserId;
+
+          const cardsHtml = showCards
+            ? (p.cards || []).map(c => buildCard(c, 'history')).join('')
+            : (p.cards || []).map(() => `<div class="card back"></div>`).join('');
+
+          const outcomeTag = p.isWinner
+            ? `<span class="history-outcome won">Won</span>`
+            : (mucked && isMe)
+              ? `<span class="history-outcome mucked">Mucked</span>`
+              : `<span class="history-outcome lost">Lost</span>`;
+
+          return `
+            <div class="history-player-row">
+              <span class="history-player-name ${p.isWinner ? 'winner-name' : 'loser-name'}">
+                ${escHtml(p.username)}
+              </span>
+              <div class="history-player-cards">${cardsHtml}</div>
+              ${showCards ? `<span class="history-player-handname">${escHtml(p.handName || '')}</span>` : ''}
+              ${outcomeTag}
+            </div>`;
+        }).join('');
 
         return `
           <div class="history-entry">
             <div class="history-entry-top">
               <span class="history-hand-num">Hand #${h.handNumber}</span>
-              <span class="history-winner">🏆 ${winnerNames}</span>
-              <span class="history-hand-name">${escHtml(topHand)}</span>
+              <span class="history-winner">🏆 ${winnerNames} · ${escHtml(winnerHandName)}</span>
             </div>
             <div class="history-community">${communityHtml}</div>
             <div class="history-players">${playersHtml}</div>
