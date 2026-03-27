@@ -269,7 +269,8 @@ async function handlePostAction(table) {
       community: table.community
     });
 
-    table.scheduleNextHand(async () => {
+    table.scheduleNextHand(async (info, brokePlayers) => {
+      // Save chips and record stats for remaining players
       for (const p of table.players) {
         if (!p.userId.startsWith('bot_')) await savePlayerChips(p.userId, p.chips);
       }
@@ -278,6 +279,18 @@ async function handlePostAction(table) {
       for (const uid of allRealIds) {
         if (!winnerIds.includes(uid)) await recordGamePlayed(uid);
       }
+
+      // Notify broke players and clean up their server-side state
+      for (const p of (brokePlayers || [])) {
+        const pdata = players.get(p.userId);
+        if (pdata) {
+          const sock = io.sockets.sockets.get(pdata.socketId);
+          if (sock) sock.emit('brokeOut');
+          pdata.tableId      = null;
+          pdata.walletChips  = undefined;
+        }
+      }
+
       broadcastTableState(table);
       broadcastLobbyUpdate();
       triggerBotIfNeeded(table);
@@ -529,6 +542,10 @@ io.on('connection', (socket) => {
       };
       // Fired by engine._startActionTimer when a player's clock runs out
       table._onAutoAction = () => {
+        handlePostAction(table);
+      };
+      // Fired by engine._advanceStreet all-in runout setTimeout when showdown is reached
+      table._onShowdown = () => {
         handlePostAction(table);
       };
     }

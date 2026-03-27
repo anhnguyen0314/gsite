@@ -495,7 +495,13 @@ class Table {
     if (canAct) {
       this._startActionTimer();
     } else {
-      this.actionTimer = setTimeout(() => this._nextAction(), 1500);
+      this.actionTimer = setTimeout(() => {
+        this._nextAction();
+        // If the runout completed and reached showdown, notify the server
+        if (this.state === STATE.SHOWDOWN && typeof this._onShowdown === 'function') {
+          this._onShowdown();
+        }
+      }, 1500);
     }
   }
 
@@ -560,17 +566,25 @@ class Table {
   // Called by server after showdown to set up next hand
   scheduleNextHand(callback, delay = 5000) {
     setTimeout(() => {
+      // Identify broke real players before removing them
+      const brokePlayers = this.players.filter(p => p.chips === 0 && !p.userId.startsWith('bot_'));
+
       // Remove broke players (0 chips)
       this.players = this.players.filter(p => {
         if (p.chips === 0) { p.sitting = false; return false; }
         return true;
       });
+
+      // Remove bots if no real players remain
+      const realRemain = this.players.some(p => p.sitting && !p.userId.startsWith('bot_'));
+      if (!realRemain) this.players = [];
+
       if (this.players.filter(p => p.sitting).length >= 2) {
         const info = this._dealHand();
-        callback(info);
+        callback(info, brokePlayers);
       } else {
         this.state = STATE.WAITING;
-        callback(null);
+        callback(null, brokePlayers);
       }
     }, delay);
   }
