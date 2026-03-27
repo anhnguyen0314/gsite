@@ -316,6 +316,8 @@
     import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, onAuthStateChanged, signOut }
       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, serverTimestamp }
+      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
@@ -328,6 +330,7 @@
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db   = getFirestore(app);
 
     // ── IMPORTANT: Replace this with your actual Render.com URL after deploying ──
     const SERVER_URL = 'https://gamezone-poker.onrender.com';
@@ -335,6 +338,41 @@
     let socket = null;
     let currentUser = null;
     let myChips = 0;
+
+    // ── Firestore chip sync (source of truth for display) ──────
+    async function syncChipsFromFirestore(userId, username) {
+      try {
+        const ref   = doc(db, 'users', userId);
+        const snap  = await getDoc(ref);
+        const today = new Date().toDateString();
+        let chips;
+
+        if (!snap.exists()) {
+          await setDoc(ref, {
+            userId, username,
+            chips: 1000,
+            lastDailyBonus: today,
+            createdAt: serverTimestamp()
+          });
+          chips = 1000;
+        } else {
+          const data = snap.data();
+          if (data.lastDailyBonus !== today) {
+            await updateDoc(ref, { chips: increment(500), lastDailyBonus: today });
+            chips = (data.chips || 0) + 500;
+          } else {
+            chips = data.chips || 0;
+          }
+        }
+
+        myChips = chips;
+        // Update chip display if the lobby is already rendered
+        const el = document.getElementById('chipDisplay');
+        if (el) el.textContent = chips.toLocaleString();
+      } catch (err) {
+        console.warn('Lobby: could not sync chips from Firestore:', err);
+      }
+    }
 
     // Nav
     const navAuth = document.getElementById('navAuth');
@@ -351,7 +389,9 @@
           await signOut(auth);
           window.location.reload();
         });
+        // Connect socket AND sync chips from Firestore in parallel
         connectSocket(user);
+        syncChipsFromFirestore(user.uid, name);
       } else {
         showLoginPrompt();
       }
@@ -393,9 +433,13 @@
       });
 
       socket.on('authed', (data) => {
-        myChips = data.chips;
         window._myUserId = data.userId;
         renderLobby(data);
+        // Re-sync chips from Firestore now that the chip display element exists
+        if (currentUser) {
+          const name = currentUser.displayName || currentUser.email.split('@')[0];
+          syncChipsFromFirestore(currentUser.uid, name);
+        }
       });
 
       socket.on('lobbyUpdate', (tables) => {
@@ -425,7 +469,8 @@
 
     // ── Render ─────────────────────────────────────────────────
     function renderLobby(playerData) {
-      myChips = playerData.chips;
+      // Use server chips as initial value; Firestore sync will update it
+      if (!myChips) myChips = playerData.chips;
       const main = document.getElementById('mainContent');
       main.innerHTML = `
         <div class="chip-bar">

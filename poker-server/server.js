@@ -196,14 +196,22 @@ io.on('connection', (socket) => {
       return;
     }
 
-    const result = table.addPlayer({
+    let result = table.addPlayer({
       userId,
       username:  pdata.username,
       socketId:  socket.id,
       chips:     pdata.chips
     });
 
-    if (!result.ok) { socket.emit('error', result.reason); return; }
+    if (!result.ok) {
+      if (result.reason === 'Already seated') {
+        // Player navigated from lobby → game page; update their socket ID and continue
+        table.updateSocket(userId, socket.id);
+      } else {
+        socket.emit('error', result.reason);
+        return;
+      }
+    }
 
     pdata.tableId = tableId;
     socket.join(`table:${tableId}`);
@@ -347,11 +355,20 @@ io.on('connection', (socket) => {
     if (!userId) return;
 
     const pdata = players.get(userId);
-    if (pdata && pdata.tableId) {
+    if (!pdata) return;
+
+    // If the player has already reconnected with a new socket, skip cleanup
+    // to avoid wiping out the new session's player entry (race condition fix)
+    if (pdata.socketId !== socket.id) return;
+
+    if (pdata.tableId) {
       const table = tables.get(pdata.tableId);
       if (table) {
         table.removePlayer(userId);
         broadcastTableState(table);
+        // Save chips back to Firestore
+        const p = table.players.find(p => p.userId === userId);
+        if (p) await savePlayerChips(userId, p.chips);
         if (table.players.length === 0) tables.delete(pdata.tableId);
         broadcastLobbyUpdate();
       }
