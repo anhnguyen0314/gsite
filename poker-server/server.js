@@ -369,7 +369,17 @@ io.on('connection', (socket) => {
         // Save chips back to Firestore
         const p = table.players.find(p => p.userId === userId);
         if (p) await savePlayerChips(userId, p.chips);
-        if (table.players.length === 0) tables.delete(pdata.tableId);
+        if (table.players.length === 0) {
+          // Delay deletion so a player navigating lobby→game has time to rejoin
+          const emptyTableId = pdata.tableId;
+          setTimeout(() => {
+            const t = tables.get(emptyTableId);
+            if (t && t.players.length === 0) {
+              tables.delete(emptyTableId);
+              broadcastLobbyUpdate();
+            }
+          }, 15000);
+        }
         broadcastLobbyUpdate();
       }
       pdata.tableId = null;
