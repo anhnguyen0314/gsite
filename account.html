@@ -444,6 +444,12 @@
           <div class="member-badge">⭐ GameZone Member</div>
         </div>
 
+        <!-- Reset password -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+          <button id="resetPwBtn" class="btn-outline" onclick="resetPassword()"
+            style="font-size:13px;padding:8px 16px;">🔑 Reset Password</button>
+        </div>
+
         <!-- Chip balance (site-wide) -->
         <div class="section-title">My Chips</div>
         <div class="stats-grid" style="margin-bottom:16px;">
@@ -520,7 +526,6 @@
           <a href="chips.html"       class="btn-outline">🪙 Chips</a>
           <a href="leaderboard.html" class="btn-outline">🏆 Leaderboard</a>
           <a href="index.html"       class="btn-outline">← All Games</a>
-          <button id="resetPwBtn" class="btn-outline" onclick="resetPassword()">🔑 Reset Password</button>
         </div>
       `;
     }
@@ -577,15 +582,21 @@
       if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
       try {
         await sendPasswordResetEmail(auth, user.email);
-        showToast('✅ Password reset email sent to ' + user.email);
+        showToast('✅ Reset email sent to ' + user.email + ' — check your spam folder too.');
       } catch (err) {
-        showToast('❌ Could not send reset email. Try again.', true);
+        console.error('Password reset error:', err.code, err.message);
+        const friendly = {
+          'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
+          'auth/user-not-found':    'No account found for this email.',
+          'auth/network-request-failed': 'Network error. Check your connection.',
+        };
+        showToast('❌ ' + (friendly[err.code] || err.message || 'Could not send reset email.'), true);
       }
       if (btn) {
         setTimeout(() => {
           btn.disabled = false;
           btn.textContent = '🔑 Reset Password';
-        }, 5000);
+        }, 6000);
       }
     };
   </script>

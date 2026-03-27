@@ -312,6 +312,8 @@ class Table {
     // Action starts left of big blind
     this.actionIdx = this._nextSittingAfter(bbIdx);
     this._startActionTimer();
+    // Notify server so it can broadcast the new hand state to all players
+    if (typeof this._onHandStart === 'function') this._onHandStart();
     return { sbIdx, bbIdx };
   }
 
@@ -493,6 +495,7 @@ class Table {
     };
 
     this.pot = 0;
+    this.lastHandWinnerIds = winners.map(w => w.userId); // server reads this for stats
     return result;
   }
 
@@ -503,6 +506,8 @@ class Table {
       const p = this.players[this.actionIdx];
       if (p) p.folded = true;
       this._nextAction();
+      // Notify server so it can broadcast and handle showdown
+      if (typeof this._onAutoAction === 'function') this._onAutoAction();
     }, ACTION_TIMEOUT);
   }
 

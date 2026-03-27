@@ -11,20 +11,22 @@
 
     /* ── Layout ── */
     .game-wrap {
-      max-width: 860px;
+      max-width: 700px;
       margin: 0 auto;
-      padding: 12px 12px 80px;
+      padding: 12px 12px 100px;
     }
 
     .top-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       flex-wrap: wrap;
       gap: 8px;
     }
-    .top-bar h2 { font-size: 18px; font-weight: 700; color: #fff; }
+    .top-bar h2 { font-size: 17px; font-weight: 700; color: #fff; }
+    .top-bar-right { display: flex; align-items: center; gap: 10px; }
+
     .btn-leave {
       background: transparent;
       border: 1px solid #3a3a6a;
@@ -34,183 +36,240 @@
       font-size: 13px;
       font-family: 'Segoe UI', sans-serif;
       cursor: pointer;
+      white-space: nowrap;
     }
     .btn-leave:hover { background: #1a1a2e; color: #e0e0e0; }
 
-    /* ── Poker table ── */
-    .poker-table {
-      background: #0d3320;
-      border: 6px solid #6b4200;
-      border-radius: 120px;
-      position: relative;
-      min-height: 320px;
-      padding: 28px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 20px;
-    }
-
-    .pot-display {
-      position: absolute;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.5);
+    .chips-badge {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
       border-radius: 20px;
-      padding: 4px 14px;
+      padding: 5px 12px;
       font-size: 13px;
-      color: #facc15;
-      font-weight: 600;
+      color: #9090b0;
       white-space: nowrap;
     }
+    .chips-badge strong { color: #a78bfa; }
 
-    /* Community cards */
-    .community-area {
+    /* ── Opponents row ── */
+    .opponents-row {
       display: flex;
       gap: 8px;
       justify-content: center;
       flex-wrap: wrap;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      min-height: 90px;
     }
 
-    /* Player seats around the table */
-    .seats {
-      position: absolute;
-      inset: 0;
-      pointer-events: none;
-    }
-
-    /* Card styling */
-    .card {
-      width: 48px;
-      height: 66px;
-      background: #fff;
-      border-radius: 6px;
+    .opp-pod {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 14px;
+      padding: 10px 12px;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      font-weight: 700;
-      border: 2px solid #ddd;
-      user-select: none;
+      gap: 5px;
+      min-width: 100px;
+      max-width: 150px;
+      flex: 1;
       position: relative;
+      transition: border-color 0.2s;
+    }
+    .opp-pod.active { border-color: #a78bfa; box-shadow: 0 0 10px rgba(167,139,250,0.25); }
+    .opp-pod.folded { opacity: 0.4; }
+
+    .opp-avatar {
+      width: 34px; height: 34px;
+      background: #2a2a4a;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+    }
+    .opp-name {
+      font-size: 12px; font-weight: 600; color: #d0d0e0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 120px; text-align: center;
+    }
+    .opp-chips { font-size: 11px; color: #facc15; }
+    .opp-bet   { font-size: 11px; color: #a78bfa; }
+
+    .opp-cards { display: flex; gap: 3px; }
+    .opp-cards .card { width: 30px; height: 42px; font-size: 10px; }
+    .opp-cards .card .suit-icon { font-size: 13px; }
+
+    .badge {
+      position: absolute;
+      top: -8px; right: -8px;
+      background: #facc15; color: #000;
+      border-radius: 10px;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 6px;
+      line-height: 1.4;
+    }
+    .badge.allin  { background: #f97316; color: #fff; }
+    .badge.folded-badge { background: #4b5563; color: #9ca3af; }
+    .badge.dealer { background: #facc15; color: #000; }
+
+    /* ── Board area ── */
+    .board-area {
+      background: #111128;
+      border: 1px solid #1e1e3a;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .board-meta {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .pot-pill {
+      background: rgba(250,204,21,0.12);
+      border: 1px solid rgba(250,204,21,0.3);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 13px; font-weight: 700;
+      color: #facc15;
+    }
+    .state-pill {
+      background: rgba(167,139,250,0.12);
+      border: 1px solid rgba(167,139,250,0.3);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px; font-weight: 600;
+      color: #a78bfa;
+    }
+    .state-pill.your-turn {
+      background: rgba(74,222,128,0.12);
+      border-color: rgba(74,222,128,0.4);
+      color: #4ade80;
+    }
+
+    .community-cards {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      flex-wrap: nowrap;
+    }
+    .community-cards .card { width: 54px; height: 76px; font-size: 15px; }
+    .community-cards .card .suit-icon { font-size: 20px; }
+
+    /* ── My area ── */
+    .my-area {
+      background: #14142a;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .my-hole-cards {
+      display: flex;
+      gap: 8px;
       flex-shrink: 0;
     }
-    .card.back {
-      background: linear-gradient(135deg, #1e1480 0%, #3730a3 100%);
-      border-color: #4338ca;
-    }
-    .card.hearts, .card.diamonds { color: #dc2626; }
-    .card.spades,  .card.clubs   { color: #111; }
-    .card.placeholder {
-      background: rgba(255,255,255,0.05);
-      border: 2px dashed #2a4a2a;
-      border-radius: 6px;
-    }
-    .card .suit-icon { font-size: 18px; line-height: 1; }
+    .my-hole-cards .card { width: 62px; height: 88px; font-size: 18px; }
+    .my-hole-cards .card .suit-icon { font-size: 26px; }
 
-    /* Seat pods */
-    .seat-pod {
-      position: absolute;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      pointer-events: auto;
+    .my-info {
+      flex: 1;
+      min-width: 100px;
     }
-    .seat-label {
-      font-size: 11px;
-      color: #7070a0;
+    .my-name {
+      font-size: 13px; font-weight: 600; color: #4ade80;
+      margin-bottom: 4px;
+    }
+    .my-chips-line { font-size: 13px; color: #facc15; margin-bottom: 2px; }
+    .my-bet-line   { font-size: 12px; color: #a78bfa; }
+
+    .my-badges { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .my-badge {
+      font-size: 10px; font-weight: 700;
+      border-radius: 8px; padding: 2px 8px;
+    }
+    .my-badge.dealer-tag { background: #facc15; color: #000; }
+    .my-badge.allin-tag  { background: #f97316; color: #fff; }
+    .my-badge.folded-tag { background: #374151; color: #9ca3af; }
+
+    /* ── Waiting state ── */
+    .waiting-area {
+      background: #111128;
+      border: 1px solid #1e1e3a;
+      border-radius: 16px;
+      padding: 40px 20px;
+      margin-bottom: 14px;
       text-align: center;
-      line-height: 1.2;
     }
-    .seat-pod.active-player .seat-label { color: #a78bfa; }
-    .seat-pod.is-you .seat-label { color: #4ade80; }
-    .seat-pod.folded-player { opacity: 0.4; }
+    .waiting-area h3 { font-size: 18px; color: #e0e0e0; margin-bottom: 8px; }
+    .waiting-area p { font-size: 14px; color: #5050a0; margin-bottom: 20px; }
 
-    .seat-name {
-      font-size: 13px;
-      font-weight: 600;
-      color: #e0e0e0;
-      white-space: nowrap;
-      max-width: 80px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .seat-chips { font-size: 11px; color: #facc15; }
-    .seat-bet   { font-size: 11px; color: #a78bfa; }
-    .dealer-btn {
-      background: #facc15;
-      color: #000;
-      border-radius: 50%;
-      width: 18px;
-      height: 18px;
-      font-size: 10px;
-      font-weight: 700;
+    .seat-dots {
       display: flex;
-      align-items: center;
+      gap: 10px;
       justify-content: center;
+      margin-bottom: 24px;
     }
-    .hole-cards { display: flex; gap: 4px; }
-    .hole-cards .card { width: 38px; height: 52px; font-size: 12px; }
-
-    /* Empty seat */
-    .empty-seat {
-      width: 60px;
-      height: 60px;
+    .seat-dot {
+      width: 40px; height: 40px;
       border-radius: 50%;
       background: rgba(255,255,255,0.04);
       border: 2px dashed #2a2a4a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      transition: all 0.2s;
     }
-
-    /* ── Game state message ── */
-    .state-banner {
-      text-align: center;
-      padding: 8px 20px;
-      background: rgba(0,0,0,0.5);
-      border-radius: 20px;
-      font-size: 14px;
-      color: #d0d0e0;
-      margin-bottom: 8px;
+    .seat-dot.filled {
+      background: #1a1a2e;
+      border: 2px solid #7c3aed;
     }
-    .state-banner.your-turn {
-      background: rgba(124,58,237,0.5);
-      color: #fff;
-      font-weight: 600;
+    .btn-add-bot {
+      background: #1a1a3e;
+      border: 1px solid #7c3aed;
+      border-radius: 10px;
+      color: #a78bfa;
+      padding: 10px 24px;
+      font-size: 14px; font-weight: 600;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-
-    /* ── Hand result overlay ── */
-    .result-overlay {
-      display: none;
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.65);
-      border-radius: 114px;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 8px;
-      z-index: 10;
-    }
-    .result-overlay.show { display: flex; }
-    .result-overlay h3 { font-size: 22px; color: #facc15; font-weight: 700; }
-    .result-overlay p  { font-size: 15px; color: #e0e0e0; }
+    .btn-add-bot:hover { background: #2a1a5e; }
 
     /* ── Action panel ── */
     .action-panel {
       background: #1a1a2e;
       border: 1px solid #2a2a4a;
       border-radius: 16px;
-      padding: 16px 20px;
+      padding: 14px 16px;
     }
     .action-panel.hidden { display: none; }
+
+    .timer-bar-wrap {
+      height: 4px;
+      background: #2a2a4a;
+      border-radius: 2px;
+      margin-bottom: 14px;
+      overflow: hidden;
+    }
+    .timer-bar {
+      height: 100%;
+      background: #7c3aed;
+      width: 100%;
+      transition: width 1s linear, background 0.3s;
+    }
+    .timer-bar.urgent { background: #ef4444; }
 
     .bet-row {
       display: flex;
@@ -222,11 +281,11 @@
     .bet-label { font-size: 13px; color: #7070a0; flex-shrink: 0; }
     .bet-slider {
       flex: 1;
-      min-width: 120px;
+      min-width: 100px;
       accent-color: #7c3aed;
     }
     .bet-input {
-      width: 100px;
+      width: 90px;
       background: #0f0f1a;
       border: 1px solid #2a2a4a;
       border-radius: 8px;
@@ -240,7 +299,7 @@
 
     .action-buttons {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
       gap: 8px;
     }
     .act-btn {
@@ -261,50 +320,70 @@
     .btn-raise  { background: #4c1d95; color: #c4b5fd; }
     .btn-allin  { background: #78350f; color: #fbbf24; }
 
-    .timer-bar-wrap {
-      height: 4px;
-      background: #2a2a4a;
-      border-radius: 2px;
-      margin-bottom: 12px;
-      overflow: hidden;
-    }
-    .timer-bar {
-      height: 100%;
-      background: #7c3aed;
-      width: 100%;
-      transition: width 1s linear;
-    }
-
-    /* ── Waiting state ── */
-    .waiting-box {
-      text-align: center;
-      padding: 40px 20px;
-    }
-    .waiting-box p { color: #7070a0; font-size: 15px; margin-bottom: 16px; }
-
-    /* ── Sidebar (chip count) ── */
-    .info-bar {
-      display: flex;
+    /* ── Hand result overlay ── */
+    .result-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
       gap: 12px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
+      z-index: 100;
+      padding: 20px;
     }
-    .info-chip {
-      background: #1a1a2e;
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
-      padding: 8px 14px;
-      font-size: 13px;
-      color: #9090b0;
-    }
-    .info-chip strong { color: #a78bfa; }
+    .result-overlay.show { display: flex; }
 
-    @media (max-width: 600px) {
-      .poker-table { border-radius: 60px; min-height: 240px; }
-      .result-overlay { border-radius: 54px; }
-      .card { width: 36px; height: 50px; font-size: 12px; }
-      .card .suit-icon { font-size: 14px; }
-      .hole-cards .card { width: 30px; height: 42px; font-size: 10px; }
+    .result-card {
+      background: #1a1a2e;
+      border: 1px solid #3a3a6a;
+      border-radius: 20px;
+      padding: 28px 36px;
+      text-align: center;
+      max-width: 360px;
+      width: 100%;
+    }
+    .result-card h3 { font-size: 24px; color: #facc15; font-weight: 700; margin-bottom: 8px; }
+    .result-card .hand-name { font-size: 15px; color: #a78bfa; margin-bottom: 6px; }
+    .result-card .result-cards { display: flex; gap: 6px; justify-content: center; margin: 14px 0; flex-wrap: wrap; }
+    .result-card .result-cards .card { width: 48px; height: 68px; font-size: 14px; }
+    .result-card .result-cards .card .suit-icon { font-size: 18px; }
+    .result-card .next-msg { font-size: 13px; color: #5050a0; }
+
+    /* ── Card ── */
+    .card {
+      background: #fff;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      border: 1px solid #ddd;
+      user-select: none;
+      position: relative;
+      flex-shrink: 0;
+      gap: 1px;
+    }
+    .card.back {
+      background: linear-gradient(135deg, #1e1480 0%, #3730a3 100%);
+      border-color: #4338ca;
+    }
+    .card.hearts, .card.diamonds { color: #dc2626; }
+    .card.spades,  .card.clubs   { color: #111; }
+    .card.placeholder {
+      background: rgba(255,255,255,0.04);
+      border: 2px dashed #2a3a2a;
+    }
+    .card .suit-icon { line-height: 1; }
+
+    @media (max-width: 500px) {
+      .community-cards .card { width: 44px; height: 62px; font-size: 13px; }
+      .community-cards .card .suit-icon { font-size: 17px; }
+      .my-hole-cards .card { width: 52px; height: 74px; font-size: 15px; }
+      .my-hole-cards .card .suit-icon { font-size: 22px; }
+      .opp-pod { min-width: 80px; padding: 8px; }
     }
   </style>
 </head>
@@ -319,15 +398,19 @@
   <div class="game-wrap">
     <div class="top-bar">
       <h2 id="tableTitle">♠️ Poker</h2>
-      <button class="btn-leave" onclick="leaveTable()">Leave Table</button>
+      <div class="top-bar-right">
+        <div class="chips-badge" id="chipsBadge" style="display:none;">🪙 <strong id="chipsDisplay">0</strong></div>
+        <button class="btn-leave" onclick="leaveTable()">Leave Table</button>
+      </div>
     </div>
-
-    <div class="info-bar" id="infoBar"></div>
 
     <div id="statusBox">
       <div style="text-align:center;padding:60px;color:#5050a0;">Connecting to table…</div>
     </div>
   </div>
+
+  <!-- Hand result overlay (outside game-wrap so it covers full screen) -->
+  <div class="result-overlay" id="resultOverlay"></div>
 
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
@@ -346,16 +429,15 @@
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    // ── IMPORTANT: Replace with your Render.com URL ──
     const SERVER_URL = 'https://gamezone-poker.onrender.com';
 
     const params  = new URLSearchParams(window.location.search);
     const tableId = params.get('table');
 
-    let socket     = null;
-    let myUserId   = null;
-    let myChips    = 0;
+    let socket        = null;
+    let myUserId      = null;
     let timerInterval = null;
+    let timerSecs     = 30;
 
     const navAuth = document.getElementById('navAuth');
 
@@ -365,7 +447,7 @@
 
       const name = user.displayName || user.email.split('@')[0];
       navAuth.innerHTML = `
-        <a href="../../account.html" class="nav-username" style="text-decoration:none;">👾 ${name}</a>
+        <a href="../../account.html" class="nav-username" style="text-decoration:none;">👾 ${escHtml(name)}</a>
         <button class="btn-secondary" id="logoutBtn">Log out</button>
       `;
       document.getElementById('logoutBtn').addEventListener('click', async () => {
@@ -403,9 +485,7 @@
         });
       });
 
-      socket.on('authed', (data) => {
-        myChips = data.chips;
-        // Join table from URL param
+      socket.on('authed', () => {
         if (tableId) socket.emit('joinTable', { tableId, inviteCode: null });
       });
 
@@ -431,147 +511,147 @@
       });
     }
 
-    // ── Render table state ─────────────────────────────────────
+    // ── Render table state ──────────────────────────────────────
     function renderTable(state) {
-      const myPlayer = state.players.find(p => p.userId === myUserId);
-      if (myPlayer) myChips = myPlayer.chips;
+      const me = state.players.find(p => p.userId === myUserId);
 
-      updateInfoBar(state);
+      // Update chips badge in top bar
+      if (me) {
+        document.getElementById('chipsDisplay').textContent = me.chips.toLocaleString();
+        document.getElementById('chipsBadge').style.display = '';
+      }
+
+      // Update table title with blinds + hand number
+      const stakeLabels = { low: '25/50', mid: '100/200', high: '500/1000' };
+      document.getElementById('tableTitle').textContent =
+        `♠️ Poker  ·  ${stakeLabels[state.stakeLevel] || ''}  ·  Hand #${state.handNumber}`;
 
       const sb = document.getElementById('statusBox');
       if (state.state === 'waiting') {
         sb.innerHTML = buildWaiting(state);
         return;
       }
-      sb.innerHTML = buildGameUI(state);
-      setupActions(state);
+      sb.innerHTML = buildGameUI(state, me);
+      setupActions(state, me);
     }
 
-    function updateInfoBar(state) {
-      const me = state.players.find(p => p.userId === myUserId);
-      if (!me) return;
-      const stakeLabels = { low: '25/50', mid: '100/200', high: '500/1000' };
-      document.getElementById('infoBar').innerHTML = `
-        <div class="info-chip">🪙 Chips: <strong>${me.chips.toLocaleString()}</strong></div>
-        <div class="info-chip">🎯 Blinds: <strong>${stakeLabels[state.stakeLevel] || ''}</strong></div>
-        <div class="info-chip">🃏 Hand #<strong>${state.handNumber}</strong></div>
-        ${state.pot > 0 ? `<div class="info-chip">💰 Pot: <strong>${state.pot.toLocaleString()}</strong></div>` : ''}
-      `;
-    }
-
+    // ── Waiting screen ──────────────────────────────────────────
     function buildWaiting(state) {
       const seated  = state.players.filter(p => p.sitting).length;
       const hasBot  = state.players.some(p => p.userId && p.userId.startsWith('bot_'));
       const iAlone  = seated === 1 && state.players.some(p => p.userId === myUserId);
       const showBtn = iAlone && !hasBot;
 
+      let dots = '';
+      for (let i = 0; i < 5; i++) {
+        dots += `<div class="seat-dot ${i < seated ? 'filled' : ''}">
+          ${i < seated ? '👤' : ''}
+        </div>`;
+      }
+
       return `
-        <div class="poker-table">
-          <div class="waiting-box">
-            <p>Waiting for players… (${seated}/${5} seated)</p>
-            <p style="font-size:13px;color:#5050a0;">Game starts when 2+ players are seated.</p>
-            ${showBtn ? `
-              <button class="btn-leave" style="margin-top:12px;border-color:#7c3aed;color:#a78bfa;padding:9px 20px;"
-                onclick="addBot()">🤖 Play vs Bot</button>
-            ` : ''}
-          </div>
+        <div class="waiting-area">
+          <h3>Waiting for players</h3>
+          <p>${seated} of 5 seated · Game starts when 2+ players join</p>
+          <div class="seat-dots">${dots}</div>
+          ${showBtn ? `<button class="btn-add-bot" onclick="addBot()">🤖 Play vs Bot</button>` : ''}
         </div>
-        ${buildActionPanel(null, null)}
+        <div class="action-panel hidden" id="actionPanel"></div>
       `;
     }
 
-    function buildGameUI(state) {
-      const me          = state.players.find(p => p.userId === myUserId);
-      const isMyTurn    = me && state.players[state.actionIdx]?.userId === myUserId;
-      const stateLabel  = { preflop:'Pre-flop', flop:'Flop', turn:'Turn', river:'River', showdown:'Showdown', starting:'Starting…' };
+    // ── Game UI ─────────────────────────────────────────────────
+    function buildGameUI(state, me) {
+      const isMyTurn   = me && state.players[state.actionIdx]?.userId === myUserId;
+      const stateLabel = { preflop:'Pre-flop', flop:'Flop', turn:'Turn', river:'River', showdown:'Showdown', starting:'Starting…' };
+
+      // Opponents = everyone except me
+      const opponents = state.players.filter(p => p.userId !== myUserId);
+
+      let opponentsHtml = '';
+      if (opponents.length === 0) {
+        opponentsHtml = `<div style="color:#3a3a6a;font-size:13px;padding:20px;">No opponents yet</div>`;
+      } else {
+        opponentsHtml = opponents.map(p => buildOpponentPod(p, state)).join('');
+      }
 
       return `
-        <div class="poker-table" id="pokerTable">
-          <div class="pot-display">💰 Pot: ${state.pot.toLocaleString()}</div>
+        <!-- Opponents -->
+        <div class="opponents-row">${opponentsHtml}</div>
 
-          ${buildSeats(state)}
-
-          <!-- Community cards in center -->
-          <div class="community-area">
+        <!-- Board: community cards + pot -->
+        <div class="board-area">
+          <div class="board-meta">
+            <div class="pot-pill">💰 Pot: ${state.pot.toLocaleString()}</div>
+            <div class="state-pill ${isMyTurn ? 'your-turn' : ''}">
+              ${stateLabel[state.state] || state.state}${isMyTurn ? ' — Your turn!' : ''}
+            </div>
+          </div>
+          <div class="community-cards">
             ${buildCommunityCards(state.community)}
           </div>
-
-          <div class="state-banner ${isMyTurn ? 'your-turn' : ''}">
-            ${stateLabel[state.state] || state.state}
-            ${isMyTurn ? ' — Your turn!' : ''}
-          </div>
-
-          <div class="result-overlay" id="resultOverlay"></div>
         </div>
 
+        <!-- My area -->
+        ${me ? buildMyArea(me, state) : ''}
+
+        <!-- Action panel -->
         ${buildActionPanel(state, me)}
       `;
     }
 
-    function buildCommunityCards(cards) {
-      const slots = 5;
-      let html = '';
-      for (let i = 0; i < slots; i++) {
-        if (i < cards.length) {
-          html += buildCard(cards[i]);
-        } else {
-          html += `<div class="card placeholder"></div>`;
-        }
-      }
-      return html;
+    function buildOpponentPod(p, state) {
+      const isActive  = state.players[state.actionIdx]?.userId === p.userId;
+      const isDealer  = state.players.indexOf(state.players.find(pl => pl.userId === p.userId)) === state.dealerIdx;
+      const classes   = ['opp-pod', isActive ? 'active' : '', p.folded ? 'folded' : ''].filter(Boolean).join(' ');
+
+      let badge = '';
+      if (isDealer && !p.folded && !p.allIn) badge = `<div class="badge dealer">D</div>`;
+      if (p.allIn)  badge = `<div class="badge allin">ALL-IN</div>`;
+      if (p.folded) badge = `<div class="badge folded-badge">FOLD</div>`;
+
+      return `
+        <div class="${classes}">
+          ${badge}
+          <div class="opp-avatar">${p.userId.startsWith('bot_') ? '🤖' : '👤'}</div>
+          <div class="opp-name">${escHtml(p.username)}</div>
+          <div class="opp-chips">🪙 ${p.chips.toLocaleString()}</div>
+          ${p.bet > 0 ? `<div class="opp-bet">Bet: ${p.bet.toLocaleString()}</div>` : ''}
+          <div class="opp-cards">${p.cards.map(c => buildCard(c, 'opp')).join('')}</div>
+        </div>`;
     }
 
-    // Seat positions: 5 players around an oval
-    // Positions as percentages of table width/height
-    const SEAT_POSITIONS = [
-      { bottom: '8%',  left: '50%',  transform: 'translateX(-50%)' },  // 0 — bottom center (hero)
-      { bottom: '15%', left: '8%',   transform: '' },                    // 1 — bottom left
-      { top:    '15%', left: '8%',   transform: '' },                    // 2 — top left
-      { top:    '8%',  left: '50%',  transform: 'translateX(-50%)' },   // 3 — top center
-      { top:    '15%', right: '8%',  transform: '' },                    // 4 — top right
-    ];
+    function buildMyArea(me, state) {
+      const isDealer = state.players.indexOf(state.players.find(p => p.userId === me.userId)) === state.dealerIdx;
+      let badges = '';
+      if (isDealer) badges += `<span class="my-badge dealer-tag">Dealer</span>`;
+      if (me.allIn)  badges += `<span class="my-badge allin-tag">ALL-IN</span>`;
+      if (me.folded) badges += `<span class="my-badge folded-tag">Folded</span>`;
 
-    function buildSeats(state) {
-      const players = state.players.filter(p => p.sitting);
-      // Find my seat and arrange so I'm always at position 0 (bottom)
-      const myIdx = players.findIndex(p => p.userId === myUserId);
-      const ordered = myIdx >= 0
-        ? [...players.slice(myIdx), ...players.slice(0, myIdx)]
-        : players;
+      return `
+        <div class="my-area">
+          <div class="my-hole-cards">
+            ${me.cards.map(c => buildCard(c, 'mine')).join('')}
+          </div>
+          <div class="my-info">
+            <div class="my-name">You</div>
+            <div class="my-chips-line">🪙 ${me.chips.toLocaleString()}</div>
+            ${me.bet > 0 ? `<div class="my-bet-line">Bet: ${me.bet.toLocaleString()}</div>` : ''}
+            ${badges ? `<div class="my-badges">${badges}</div>` : ''}
+          </div>
+        </div>`;
+    }
 
-      let html = '<div class="seats">';
-      ordered.forEach((p, i) => {
-        const pos = SEAT_POSITIONS[i];
-        if (!pos) return;
-        const posStyle = Object.entries(pos).map(([k, v]) => v ? `${k}:${v}` : '').filter(Boolean).join(';');
-        const isYou      = p.userId === myUserId;
-        const isDealer   = state.players.indexOf(state.players.find(pl => pl.userId === p.userId)) === state.dealerIdx;
-        const isActive   = state.players.indexOf(state.players.find(pl => pl.userId === p.userId)) === state.actionIdx;
-        const classList  = [
-          'seat-pod',
-          isYou    ? 'is-you'         : '',
-          isActive ? 'active-player'  : '',
-          p.folded ? 'folded-player'  : ''
-        ].filter(Boolean).join(' ');
-
-        html += `
-          <div class="${classList}" style="position:absolute;${posStyle};text-align:center;">
-            <div class="hole-cards">${p.cards.map(c => buildCard(c)).join('')}</div>
-            <div class="seat-name">${escHtml(p.username)}${isYou ? ' (You)' : ''}</div>
-            <div class="seat-chips">🪙 ${p.chips.toLocaleString()}</div>
-            ${p.bet > 0 ? `<div class="seat-bet">Bet: ${p.bet.toLocaleString()}</div>` : ''}
-            ${isDealer ? `<div class="dealer-btn">D</div>` : ''}
-            ${p.allIn ? `<span style="font-size:10px;color:#fbbf24;">ALL-IN</span>` : ''}
-          </div>`;
-      });
-      html += '</div>';
+    function buildCommunityCards(cards) {
+      let html = '';
+      for (let i = 0; i < 5; i++) {
+        html += i < cards.length ? buildCard(cards[i], 'community') : `<div class="card placeholder"></div>`;
+      }
       return html;
     }
 
     function buildActionPanel(state, me) {
-      if (!state || !me) {
-        return `<div class="action-panel hidden" id="actionPanel"></div>`;
-      }
+      if (!state || !me) return `<div class="action-panel hidden" id="actionPanel"></div>`;
       const isMyTurn = state.players[state.actionIdx]?.userId === myUserId;
       if (!isMyTurn || me.folded || me.allIn || state.state === 'showdown' || state.state === 'waiting') {
         return `<div class="action-panel hidden" id="actionPanel"></div>`;
@@ -579,6 +659,7 @@
       const canCheck = me.bet >= state.currentBet;
       const toCall   = state.currentBet - me.bet;
       const minRaise = state.currentBet + (state.stakeLevel === 'low' ? 50 : state.stakeLevel === 'mid' ? 200 : 1000);
+      const maxBet   = me.chips + me.bet;
 
       return `
         <div class="action-panel" id="actionPanel">
@@ -586,65 +667,73 @@
           <div class="bet-row">
             <span class="bet-label">Raise to:</span>
             <input type="range" class="bet-slider" id="betSlider"
-              min="${minRaise}" max="${me.chips + me.bet}" step="50"
+              min="${minRaise}" max="${maxBet}" step="50"
               value="${minRaise}" oninput="syncBet(this.value)"/>
             <input type="number" class="bet-input" id="betInput"
-              min="${minRaise}" max="${me.chips + me.bet}"
+              min="${minRaise}" max="${maxBet}"
               value="${minRaise}" oninput="syncSlider(this.value)"/>
           </div>
           <div class="action-buttons">
             <button class="act-btn btn-fold"  onclick="sendAction('fold')">Fold</button>
-            <button class="act-btn btn-check" onclick="sendAction('check')"  ${canCheck ? '' : 'disabled'}>Check</button>
-            <button class="act-btn btn-call"  onclick="sendAction('call')"   ${toCall <= 0 ? 'disabled' : ''}>
-              Call ${toCall > 0 ? toCall.toLocaleString() : ''}
+            <button class="act-btn btn-check" onclick="sendAction('check')" ${canCheck ? '' : 'disabled'}>Check</button>
+            <button class="act-btn btn-call"  onclick="sendAction('call')"  ${toCall <= 0 ? 'disabled' : ''}>
+              Call${toCall > 0 ? ' ' + toCall.toLocaleString() : ''}
             </button>
             <button class="act-btn btn-raise" onclick="sendAction('raise')">Raise</button>
             <button class="act-btn btn-allin" onclick="sendAction('allin')">All-in</button>
           </div>
-        </div>
-      `;
+        </div>`;
     }
 
-    function setupActions(state) {
-      const me = state.players.find(p => p.userId === myUserId);
+    function setupActions(state, me) {
       if (!me) return;
       const isMyTurn = state.players[state.actionIdx]?.userId === myUserId;
       if (!isMyTurn) return;
 
-      // Start timer bar
       clearInterval(timerInterval);
-      let secs = 30;
+      timerSecs = 30;
       const bar = document.getElementById('timerBar');
       if (bar) {
         timerInterval = setInterval(() => {
-          secs--;
-          if (bar) bar.style.width = `${(secs/30)*100}%`;
-          if (secs <= 0) clearInterval(timerInterval);
+          timerSecs--;
+          if (bar) {
+            bar.style.width = `${(timerSecs / 30) * 100}%`;
+            if (timerSecs <= 8) bar.classList.add('urgent');
+          }
+          if (timerSecs <= 0) clearInterval(timerInterval);
         }, 1000);
       }
     }
 
-    // ── Hand result overlay ────────────────────────────────────
+    // ── Hand result overlay ─────────────────────────────────────
     function showHandResult(result) {
       const overlay = document.getElementById('resultOverlay');
       if (!overlay) return;
-      overlay.classList.add('show');
-      const names = result.winners.map(w => escHtml(w.username)).join(', ');
-      const hand  = result.winners[0]?.handName || '';
+
+      const names   = result.winners.map(w => escHtml(w.username)).join(', ');
+      const hand    = result.winners[0]?.handName || '';
+      const winCards = (result.community || []).slice(0, 5);
+      const cardHtml = winCards.map(c => buildCard(c, 'result')).join('');
+
       overlay.innerHTML = `
-        <h3>🏆 ${names} wins!</h3>
-        <p>${hand}</p>
-        <p style="font-size:13px;color:#7070a0;margin-top:8px;">Next hand starting soon…</p>
-      `;
+        <div class="result-card">
+          <h3>🏆 ${names} wins!</h3>
+          ${hand ? `<div class="hand-name">${escHtml(hand)}</div>` : ''}
+          ${cardHtml ? `<div class="result-cards">${cardHtml}</div>` : ''}
+          <div class="next-msg">Next hand starting soon…</div>
+        </div>`;
+
+      overlay.classList.add('show');
       setTimeout(() => overlay.classList.remove('show'), 4500);
     }
 
-    // ── Card builder ───────────────────────────────────────────
+    // ── Card builder ────────────────────────────────────────────
     const SUIT_SYMBOLS = { s: '♠', h: '♥', d: '♦', c: '♣' };
     const SUIT_CLASSES  = { s: 'spades', h: 'hearts', d: 'diamonds', c: 'clubs' };
     const RANK_DISPLAY  = { T: '10', J: 'J', Q: 'Q', K: 'K', A: 'A' };
 
-    function buildCard(card) {
+    // sizeCtx: 'opp' | 'mine' | 'community' | 'result'
+    function buildCard(card, sizeCtx) {
       if (!card || card.rank === '?') {
         return `<div class="card back"></div>`;
       }
@@ -653,16 +742,16 @@
       const suitSym   = SUIT_SYMBOLS[card.suit] || card.suit;
       return `
         <div class="card ${suitClass}">
-          <span style="font-size:11px;line-height:1;">${rankStr}</span>
+          <span style="font-size:0.75em;line-height:1;">${rankStr}</span>
           <span class="suit-icon">${suitSym}</span>
         </div>`;
     }
 
     function escHtml(s) {
-      return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    // ── Exposed to non-module onclick handlers ─────────────────
+    // ── Exposed to non-module onclick handlers ──────────────────
     window.sendAction = (action) => {
       if (!socket) return;
       let amount = 0;

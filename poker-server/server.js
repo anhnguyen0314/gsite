@@ -115,6 +115,46 @@ function broadcastLobbyUpdate() {
   io.emit('lobbyUpdate', list);
 }
 
+// ── Shared post-action handler ────────────────────────────────
+// Called after any action (human, bot, or auto-timeout) resolves.
+async function handlePostAction(table) {
+  if (table.state === STATE.SHOWDOWN) {
+    // lastHandWinnerIds is set by engine._awardPot — these are the actual winners
+    const winnerIds  = (table.lastHandWinnerIds || []).filter(uid => !uid.startsWith('bot_'));
+    const allRealIds = table.players
+      .filter(p => !p.userId.startsWith('bot_'))
+      .map(p => p.userId);
+
+    broadcastTableState(table);
+    io.to(`table:${table.tableId}`).emit('handResult', {
+      winners:   table.players.filter(p => !p.folded && p.sitting).map(p => ({
+        userId:   p.userId,
+        username: p.username,
+        handName: p.handEval ? p.handEval.name : 'Last standing',
+        cards:    p.cards
+      })),
+      community: table.community
+    });
+
+    table.scheduleNextHand(async () => {
+      for (const p of table.players) {
+        if (!p.userId.startsWith('bot_')) await savePlayerChips(p.userId, p.chips);
+      }
+      // Winners get wins+gamesPlayed; losers get only gamesPlayed
+      for (const uid of winnerIds) await recordWin(uid);
+      for (const uid of allRealIds) {
+        if (!winnerIds.includes(uid)) await recordGamePlayed(uid);
+      }
+      broadcastTableState(table);
+      broadcastLobbyUpdate();
+      triggerBotIfNeeded(table);
+    });
+  } else {
+    broadcastTableState(table);
+    triggerBotIfNeeded(table);
+  }
+}
+
 // ── Bot logic ─────────────────────────────────────────────────
 const RANK_VALUES = { '2':2,'3':3,'4':4,'5':5,'6':6,'7':7,'8':8,'9':9,'T':10,'J':11,'Q':12,'K':13,'A':14 };
 
@@ -202,38 +242,7 @@ function triggerBotIfNeeded(table) {
     const result = table.handleAction(actor.userId, action, amount);
     if (!result.ok) return;
 
-    if (table.state === STATE.SHOWDOWN) {
-      // Determine winners (real players only for recording)
-      const winnerIds = table.players
-        .filter(p => p.chips > 0 && !p.userId.startsWith('bot_'))
-        .map(p => p.userId);
-
-      broadcastTableState(table);
-      io.to(`table:${table.tableId}`).emit('handResult', {
-        winners:   table.players.filter(p => !p.folded && p.sitting).map(p => ({
-          userId:   p.userId,
-          username: p.username,
-          handName: p.handEval ? p.handEval.name : 'Last standing',
-          cards:    p.cards
-        })),
-        community: table.community
-      });
-
-      table.scheduleNextHand(async (info) => {
-        for (const p of table.players) {
-          if (!p.userId.startsWith('bot_')) {
-            await savePlayerChips(p.userId, p.chips);
-          }
-        }
-        for (const uid of winnerIds) await recordWin(uid);
-        broadcastTableState(table);
-        broadcastLobbyUpdate();
-        triggerBotIfNeeded(table);
-      });
-    } else {
-      broadcastTableState(table);
-      triggerBotIfNeeded(table);
-    }
+    handlePostAction(table);
   }, delay);
 }
 
@@ -373,19 +382,17 @@ io.on('connection', (socket) => {
     broadcastTableState(table);
     broadcastLobbyUpdate();
 
-    // Hook up next-hand callback once
+    // Hook up engine callbacks once per table
     if (!table._handCallbackSet) {
       table._handCallbackSet = true;
-      table._onHandDone = async (result, winnerIds) => {
-        // Save chip counts and record wins (savePlayerChips updates pdata.chips internally)
-        for (const p of table.players) {
-          await savePlayerChips(p.userId, p.chips);
-        }
-        if (winnerIds) {
-          for (const uid of winnerIds) await recordWin(uid);
-        }
+      // Fired by engine._dealHand — broadcasts fresh hand state to all clients
+      table._onHandStart = () => {
         broadcastTableState(table);
-        broadcastLobbyUpdate();
+        triggerBotIfNeeded(table);
+      };
+      // Fired by engine._startActionTimer when a player's clock runs out
+      table._onAutoAction = () => {
+        handlePostAction(table);
       };
     }
   });
@@ -438,37 +445,7 @@ io.on('connection', (socket) => {
     const result = table.handleAction(userId, action, amount);
     if (!result.ok) { socket.emit('error', result.reason); return; }
 
-    // After action: check if showdown/hand ended
-    if (table.state === STATE.SHOWDOWN) {
-      const winnerIds = table.players
-        .filter(p => p.chips > 0)
-        .map(p => p.userId);
-
-      broadcastTableState(table);
-      io.to(`table:${table.tableId}`).emit('handResult', {
-        winners: table.players.filter(p => !p.folded && p.sitting).map(p => ({
-          userId:   p.userId,
-          username: p.username,
-          handName: p.handEval ? p.handEval.name : 'Last standing',
-          cards:    p.cards
-        })),
-        community: table.community
-      });
-
-      // Save and schedule next hand
-      table.scheduleNextHand(async (info) => {
-        for (const p of table.players) {
-          await savePlayerChips(p.userId, p.chips); // skips bots; updates pdata.chips
-        }
-        for (const uid of winnerIds) await recordWin(uid);
-        broadcastTableState(table);
-        broadcastLobbyUpdate();
-        triggerBotIfNeeded(table); // start bot if it acts first in new hand
-      });
-    } else {
-      broadcastTableState(table);
-      triggerBotIfNeeded(table); // bot may be next to act
-    }
+    handlePostAction(table);
   });
 
   // ── addBot ─────────────────────────────────────────────────
@@ -493,9 +470,7 @@ io.on('connection', (socket) => {
 
     broadcastTableState(table);
     broadcastLobbyUpdate();
-
-    // If hand starts automatically (2+ players), trigger bot after dealing delay
-    setTimeout(() => triggerBotIfNeeded(table), 3500);
+    // _onHandStart callback (set in joinTable) will fire when the engine deals the hand
   });
 
   // ── getPlayerProfile ───────────────────────────────────────
