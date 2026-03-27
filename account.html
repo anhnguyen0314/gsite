@@ -225,12 +225,57 @@
       100% { background-position: -200% 0; }
     }
 
+    /* ── Stats table (Best Scores) ── */
+    .stats-table {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .stats-table-header,
+    .stats-table-row {
+      display: grid;
+      grid-template-columns: 1fr 60px 72px 72px 96px;
+      align-items: center;
+      padding: 11px 18px;
+      gap: 8px;
+    }
+    .stats-table-header {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: #5050a0;
+      font-weight: 600;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    .stats-table-row {
+      border-bottom: 1px solid #1e1e3a;
+    }
+    .stats-table-row:last-child { border-bottom: none; }
+    .stats-table-row:hover { background: #1f1f38; }
+    .tbl-game {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px; font-weight: 500; color: #d0d0e0;
+    }
+    .tbl-game span { font-size: 18px; }
+    .tbl-val {
+      font-size: 14px; font-weight: 700;
+      color: #a78bfa; text-align: right;
+    }
+    .tbl-val.dim { color: #2e2e5a; font-weight: 400; }
+    .tbl-none { font-size: 13px; color: #3a3a6a; font-style: italic; text-align: right; }
+
     @media (max-width: 600px) {
       .profile-header { flex-direction: column; text-align: center; }
       .member-badge   { margin-left: 0; }
       .rank-banner    { flex-direction: column; text-align: center; }
       .actions-row    { flex-direction: column; }
       .btn-poker, .btn-outline { text-align: center; }
+      .stats-table-header,
+      .stats-table-row { grid-template-columns: 1fr 56px 66px 80px; }
+      .col-played { display: none; }
+      .stats-table-header .col-played { display: none; }
     }
   </style>
 </head>
@@ -423,56 +468,60 @@
           </div>
         </div>
 
-        <!-- Poker stats -->
-        <div class="section-title">Poker Stats</div>
-        <div class="stats-grid">
-          <div class="stat-card">
-            <div class="stat-icon">🏆</div>
-            <div class="stat-value">${wins.toLocaleString()}</div>
-            <div class="stat-label">Wins</div>
+        <!-- Unified game stats table -->
+        <div class="section-title">My Game Stats</div>
+        <div class="stats-table">
+          <!-- Header -->
+          <div class="stats-table-header">
+            <div>Game</div>
+            <div class="tbl-val">Wins</div>
+            <div class="tbl-val col-played">Played</div>
+            <div class="tbl-val">Win Rate</div>
+            <div class="tbl-val">Best Score</div>
           </div>
-          <div class="stat-card">
-            <div class="stat-icon">🃏</div>
-            <div class="stat-value">${gamesPlayed.toLocaleString()}</div>
-            <div class="stat-label">Games Played</div>
-          </div>
-          <div class="stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-value">${gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) + '%' : '—'}</div>
-            <div class="stat-label">Win Rate</div>
-          </div>
-        </div>
 
-        <!-- Leaderboard rank -->
-        ${pokerRank ? `
-          <div class="rank-banner">
-            <div class="rank-left">
-              <h3>♠️ Poker Leaderboard Rank</h3>
-              <p>Based on total wins</p>
+          <!-- Snake -->
+          <div class="stats-table-row">
+            <div class="tbl-game"><span>🐍</span> Snake</div>
+            <div class="tbl-val dim">—</div>
+            <div class="tbl-val dim col-played">—</div>
+            <div class="tbl-val dim">—</div>
+            <div class="${snakeScore !== null ? 'tbl-val' : 'tbl-none'}">
+              ${snakeScore !== null ? Number(snakeScore).toLocaleString() + ' pts' : 'No score yet'}
             </div>
-            <div class="rank-number">#${pokerRank}<small> / wins</small></div>
-          </div>` : ''}
+          </div>
 
-        <!-- Game best scores -->
-        <div class="section-title">Best Scores</div>
-        <div class="scores-card">
-          <div class="score-row">
-            <div class="score-game"><span>🐍</span> Snake</div>
-            ${snakeScore !== null
-              ? `<div class="score-value">${Number(snakeScore).toLocaleString()} pts</div>`
-              : `<div class="score-none">No score yet</div>`}
+          <!-- Tetris -->
+          <div class="stats-table-row">
+            <div class="tbl-game"><span>🟦</span> Tetris</div>
+            <div class="tbl-val dim">—</div>
+            <div class="tbl-val dim col-played">—</div>
+            <div class="tbl-val dim">—</div>
+            <div class="${tetrisScore !== null ? 'tbl-val' : 'tbl-none'}">
+              ${tetrisScore !== null ? Number(tetrisScore).toLocaleString() + ' pts' : 'No score yet'}
+            </div>
           </div>
-          <div class="score-row">
-            <div class="score-game"><span>🟦</span> Tetris</div>
-            ${tetrisScore !== null
-              ? `<div class="score-value">${Number(tetrisScore).toLocaleString()} pts</div>`
-              : `<div class="score-none">No score yet</div>`}
+
+          <!-- Solitaire -->
+          <div class="stats-table-row">
+            <div class="tbl-game"><span>🃏</span> Solitaire</div>
+            <div class="tbl-val dim">—</div>
+            <div class="tbl-val dim col-played">—</div>
+            <div class="tbl-val dim">—</div>
+            <div class="${solitaireScore !== null ? 'tbl-val' : 'tbl-none'}">
+              ${solitaireScore !== null ? formatTime(solitaireScore) : 'No score yet'}
+            </div>
           </div>
-          <div class="score-row">
-            <div class="score-game"><span>♠️</span> Solitaire</div>
-            ${solitaireScore !== null
-              ? `<div class="score-value">${formatTime(solitaireScore)}</div>`
-              : `<div class="score-none">No score yet</div>`}
+
+          <!-- Poker -->
+          <div class="stats-table-row">
+            <div class="tbl-game"><span>♠️</span> Poker
+              ${pokerRank ? `<span style="font-size:11px;color:#5050a0;font-weight:400;"> · Rank #${pokerRank}</span>` : ''}
+            </div>
+            <div class="tbl-val">${wins.toLocaleString()}</div>
+            <div class="tbl-val col-played">${gamesPlayed.toLocaleString()}</div>
+            <div class="tbl-val">${gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) + '%' : '—'}</div>
+            <div class="tbl-val dim">—</div>
           </div>
         </div>
 
