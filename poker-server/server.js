@@ -31,6 +31,92 @@ app.use(express.json());
 // Health check
 app.get('/', (req, res) => res.send('GameZone Poker Server running ✅'));
 
+// ── Admin API ────────────────────────────────────────────────
+// Protected by ADMIN_KEY environment variable.
+// Set ADMIN_KEY in Render → Environment before using these endpoints.
+
+function adminAuth(req, res, next) {
+  const key = process.env.ADMIN_KEY;
+  if (!key) return res.status(503).json({ error: 'ADMIN_KEY not configured on server' });
+  if (req.headers['x-admin-key'] !== key) return res.status(401).json({ error: 'Unauthorized' });
+  next();
+}
+
+// GET /admin/users — list all users with chip balances
+app.get('/admin/users', adminAuth, async (req, res) => {
+  try {
+    // Fetch all users from Firebase Auth (paginated, up to 1000)
+    const listResult = await admin.auth().listUsers(1000);
+    const uids = listResult.users.map(u => u.uid);
+
+    // Batch-fetch Firestore user docs
+    const chunks = [];
+    for (let i = 0; i < uids.length; i += 10) chunks.push(uids.slice(i, i + 10));
+    const firestoreUsers = {};
+    for (const chunk of chunks) {
+      const refs = chunk.map(uid => db.collection('users').doc(uid));
+      const docs = await db.getAll(...refs);
+      docs.forEach(d => { if (d.exists) firestoreUsers[d.id] = d.data(); });
+    }
+
+    const users = listResult.users.map(u => ({
+      uid:      u.uid,
+      email:    u.email || '',
+      username: firestoreUsers[u.uid]?.username || '(no username)',
+      chips:    firestoreUsers[u.uid]?.chips ?? 0,
+      created:  u.metadata.creationTime,
+      disabled: u.disabled
+    }));
+
+    res.json({ users });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /admin/chips — set chip balance for a user
+// Body: { uid, chips }
+app.post('/admin/chips', adminAuth, async (req, res) => {
+  const { uid, chips } = req.body;
+  if (!uid || chips == null) return res.status(400).json({ error: 'uid and chips required' });
+  const amount = parseInt(chips, 10);
+  if (isNaN(amount) || amount < 0) return res.status(400).json({ error: 'chips must be a non-negative integer' });
+  try {
+    await db.collection('users').doc(uid).update({ chips: amount });
+    res.json({ ok: true, uid, chips: amount });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /admin/reset-password — send Firebase password reset email
+// Body: { email }
+app.post('/admin/reset-password', adminAuth, async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'email required' });
+  try {
+    const link = await admin.auth().generatePasswordResetLink(email);
+    res.json({ ok: true, link });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /admin/user — delete user from Auth + Firestore
+// Body: { uid }
+app.delete('/admin/user', adminAuth, async (req, res) => {
+  const { uid } = req.body;
+  if (!uid) return res.status(400).json({ error: 'uid required' });
+  try {
+    await admin.auth().deleteUser(uid);
+    await db.collection('users').doc(uid).delete().catch(() => {});
+    await db.collection('poker_players').doc(uid).delete().catch(() => {});
+    res.json({ ok: true, uid });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── In-memory state ──────────────────────────────────────────
 const tables  = new Map();   // tableId → Table
 const players = new Map();   // userId  → { socketId, username, chips, tableId }

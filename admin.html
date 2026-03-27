@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GameZone Admin</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f0f1a;
+      color: #c0c0e0;
+      font-family: 'Segoe UI', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Lock screen ── */
+    #lockScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .lock-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 16px;
+      padding: 40px 36px;
+      width: 340px;
+      text-align: center;
+    }
+    .lock-card h1 { font-size: 22px; color: #a78bfa; margin-bottom: 6px; }
+    .lock-card p  { font-size: 13px; color: #5050a0; margin-bottom: 24px; }
+    .lock-card input {
+      width: 100%; padding: 10px 14px;
+      background: #0f0f1a; border: 1px solid #2a2a4a;
+      border-radius: 8px; color: #c0c0e0; font-size: 14px;
+      margin-bottom: 14px; outline: none;
+    }
+    .lock-card input:focus { border-color: #7c3aed; }
+    .lock-card button {
+      width: 100%; padding: 10px;
+      background: #7c3aed; color: #fff;
+      border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .lock-card button:hover { background: #6d28d9; }
+    .lock-error { color: #f87171; font-size: 12px; margin-top: 10px; display: none; }
+
+    /* ── Main layout ── */
+    #adminApp { display: none; }
+
+    header {
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 18px; color: #a78bfa; }
+    header .server-url { font-size: 11px; color: #5050a0; }
+    #btnLogout {
+      background: none; border: 1px solid #2a2a4a;
+      color: #7070a0; border-radius: 8px;
+      padding: 6px 14px; font-size: 12px; cursor: pointer;
+    }
+    #btnLogout:hover { border-color: #f87171; color: #f87171; }
+
+    .main-content { padding: 28px; max-width: 1100px; margin: 0 auto; }
+
+    /* ── Stat chips ── */
+    .stats-row { display: flex; gap: 14px; margin-bottom: 24px; flex-wrap: wrap; }
+    .stat-chip {
+      background: #1a1a2e; border: 1px solid #2a2a4a;
+      border-radius: 12px; padding: 14px 20px;
+      min-width: 140px;
+    }
+    .stat-chip .label { font-size: 11px; color: #5050a0; margin-bottom: 4px; }
+    .stat-chip .value { font-size: 22px; font-weight: 700; color: #a78bfa; }
+
+    /* ── Toolbar ── */
+    .toolbar {
+      display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap;
+      align-items: center;
+    }
+    .toolbar input {
+      flex: 1; min-width: 180px; max-width: 300px;
+      padding: 8px 12px; background: #1a1a2e;
+      border: 1px solid #2a2a4a; border-radius: 8px;
+      color: #c0c0e0; font-size: 13px; outline: none;
+    }
+    .toolbar input:focus { border-color: #7c3aed; }
+    .btn-refresh {
+      padding: 8px 16px; background: #1a1a2e;
+      border: 1px solid #2a2a4a; border-radius: 8px;
+      color: #a78bfa; font-size: 13px; cursor: pointer;
+    }
+    .btn-refresh:hover { border-color: #7c3aed; }
+
+    /* ── Table ── */
+    .table-wrap {
+      background: #1a1a2e; border: 1px solid #2a2a4a;
+      border-radius: 12px; overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead th {
+      background: #111128; padding: 10px 14px;
+      text-align: left; font-size: 11px;
+      color: #5050a0; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    tbody tr { border-bottom: 1px solid #181830; }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: #111128; }
+    tbody td { padding: 10px 14px; font-size: 13px; vertical-align: middle; }
+
+    .username-cell { color: #c0c0e0; font-weight: 600; }
+    .email-cell    { color: #7070a0; font-size: 12px; }
+    .chips-cell    { color: #facc15; font-weight: 700; }
+    .uid-cell      { color: #3a3a6a; font-size: 10px; font-family: monospace; }
+
+    /* inline chip editor */
+    .chip-editor { display: flex; gap: 6px; align-items: center; }
+    .chip-input {
+      width: 90px; padding: 5px 8px;
+      background: #0f0f1a; border: 1px solid #2a2a4a;
+      border-radius: 6px; color: #facc15;
+      font-size: 13px; font-weight: 700; outline: none;
+    }
+    .chip-input:focus { border-color: #facc15; }
+    .btn-save-chips {
+      padding: 5px 10px; background: #7c3aed;
+      border: none; border-radius: 6px;
+      color: #fff; font-size: 12px; cursor: pointer;
+    }
+    .btn-save-chips:hover { background: #6d28d9; }
+
+    /* action buttons */
+    .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-action {
+      padding: 5px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      cursor: pointer; border: none;
+    }
+    .btn-reset  { background: rgba(251,191,36,0.12); color: #fbbf24; }
+    .btn-reset:hover  { background: rgba(251,191,36,0.22); }
+    .btn-delete { background: rgba(239,68,68,0.1); color: #f87171; }
+    .btn-delete:hover { background: rgba(239,68,68,0.2); }
+
+    .badge-disabled {
+      font-size: 10px; padding: 2px 7px;
+      background: rgba(239,68,68,0.1); color: #f87171;
+      border-radius: 6px; margin-left: 6px;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1a1a2e; border: 1px solid #2a2a4a;
+      border-radius: 10px; padding: 12px 18px;
+      font-size: 13px; color: #c0c0e0;
+      opacity: 0; transition: opacity 0.3s;
+      pointer-events: none; max-width: 320px;
+      z-index: 999;
+    }
+    #toast.show { opacity: 1; }
+    #toast.ok  { border-color: #a78bfa; color: #c4b5fd; }
+    #toast.err { border-color: #f87171; color: #fca5a5; }
+
+    /* ── Empty / loading state ── */
+    .empty-row td { text-align: center; color: #3a3a6a; padding: 40px; }
+
+    @media (max-width: 700px) {
+      .main-content { padding: 16px; }
+      .uid-cell { display: none; }
+      thead th:last-child { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Lock screen ──────────────────────────────────────────── -->
+<div id="lockScreen">
+  <div class="lock-card">
+    <h1>🔐 GameZone Admin</h1>
+    <p>Enter your admin key to continue</p>
+    <input type="password" id="keyInput" placeholder="Admin key" />
+    <button onclick="unlock()">Unlock</button>
+    <div class="lock-error" id="lockError">Invalid key — try again</div>
+  </div>
+</div>
+
+<!-- ── Admin app ─────────────────────────────────────────────── -->
+<div id="adminApp">
+  <header>
+    <div>
+      <h1>🎮 GameZone Admin</h1>
+      <div class="server-url" id="serverUrlLabel"></div>
+    </div>
+    <button id="btnLogout" onclick="logout()">Logout</button>
+  </header>
+
+  <div class="main-content">
+    <!-- Stats row -->
+    <div class="stats-row">
+      <div class="stat-chip">
+        <div class="label">Total Users</div>
+        <div class="value" id="statTotal">—</div>
+      </div>
+      <div class="stat-chip">
+        <div class="label">Total Chips in Play</div>
+        <div class="value" id="statChips">—</div>
+      </div>
+      <div class="stat-chip">
+        <div class="label">Avg Chips / User</div>
+        <div class="value" id="statAvg">—</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <input type="text" id="searchInput" placeholder="Search username or email…" oninput="filterTable()" />
+      <button class="btn-refresh" onclick="loadUsers()">↻ Refresh</button>
+    </div>
+
+    <!-- Users table -->
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Email</th>
+            <th>Chips</th>
+            <th>Joined</th>
+            <th>Chips Action</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="userTableBody">
+          <tr class="empty-row"><td colspan="6">Loading…</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Config ──────────────────────────────────────────────────
+  const SERVER_URL = 'https://gamezone-poker.onrender.com';
+
+  let adminKey   = '';
+  let allUsers   = [];
+
+  // ── Lock / unlock ───────────────────────────────────────────
+  document.getElementById('keyInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') unlock();
+  });
+
+  async function unlock() {
+    const key = document.getElementById('keyInput').value.trim();
+    if (!key) return;
+
+    // Test key against server
+    try {
+      const res = await fetch(`${SERVER_URL}/admin/users`, {
+        headers: { 'x-admin-key': key }
+      });
+      if (res.status === 401 || res.status === 503) {
+        document.getElementById('lockError').style.display = 'block';
+        return;
+      }
+      adminKey = key;
+      document.getElementById('lockScreen').style.display  = 'none';
+      document.getElementById('adminApp').style.display    = 'block';
+      document.getElementById('serverUrlLabel').textContent = SERVER_URL;
+      const data = await res.json();
+      renderUsers(data.users || []);
+    } catch (err) {
+      document.getElementById('lockError').style.display = 'block';
+      document.getElementById('lockError').textContent   = 'Could not reach server';
+    }
+  }
+
+  function logout() {
+    adminKey = '';
+    allUsers = [];
+    document.getElementById('keyInput').value = '';
+    document.getElementById('lockError').style.display = 'none';
+    document.getElementById('lockScreen').style.display = 'flex';
+    document.getElementById('adminApp').style.display   = 'none';
+  }
+
+  // ── Load users ──────────────────────────────────────────────
+  async function loadUsers() {
+    document.getElementById('userTableBody').innerHTML =
+      '<tr class="empty-row"><td colspan="6">Loading…</td></tr>';
+    try {
+      const res  = await apiFetch('/admin/users');
+      const data = await res.json();
+      renderUsers(data.users || []);
+    } catch (err) {
+      showToast('Failed to load users: ' + err.message, 'err');
+    }
+  }
+
+  function renderUsers(users) {
+    allUsers = users;
+    updateStats(users);
+    filterTable();
+  }
+
+  function updateStats(users) {
+    const totalChips = users.reduce((s, u) => s + (u.chips || 0), 0);
+    document.getElementById('statTotal').textContent = users.length;
+    document.getElementById('statChips').textContent = totalChips.toLocaleString();
+    document.getElementById('statAvg').textContent   =
+      users.length ? Math.round(totalChips / users.length).toLocaleString() : '0';
+  }
+
+  function filterTable() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    const filtered = allUsers.filter(u =>
+      u.username.toLowerCase().includes(q) || u.email.toLowerCase().includes(q)
+    );
+    renderTable(filtered);
+  }
+
+  function renderTable(users) {
+    const tbody = document.getElementById('userTableBody');
+    if (!users.length) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="6">No users found</td></tr>';
+      return;
+    }
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td class="username-cell">
+          ${esc(u.username)}
+          ${u.disabled ? '<span class="badge-disabled">disabled</span>' : ''}
+        </td>
+        <td class="email-cell">${esc(u.email)}</td>
+        <td class="chips-cell">🪙 ${(u.chips || 0).toLocaleString()}</td>
+        <td style="font-size:11px;color:#5050a0">${fmtDate(u.created)}</td>
+        <td>
+          <div class="chip-editor">
+            <input class="chip-input" id="chip-${u.uid}" type="number" min="0" value="${u.chips || 0}" />
+            <button class="btn-save-chips" onclick="saveChips('${u.uid}')">Set</button>
+          </div>
+        </td>
+        <td>
+          <div class="actions-cell">
+            <button class="btn-action btn-reset" onclick="resetPassword('${u.uid}', '${esc(u.email)}')">
+              Reset PW
+            </button>
+            <button class="btn-action btn-delete" onclick="deleteUser('${u.uid}', '${esc(u.username)}')">
+              Delete
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+  }
+
+  // ── Admin actions ───────────────────────────────────────────
+  async function saveChips(uid) {
+    const input = document.getElementById('chip-' + uid);
+    const chips = parseInt(input.value, 10);
+    if (isNaN(chips) || chips < 0) { showToast('Enter a valid chip amount', 'err'); return; }
+    try {
+      const res  = await apiFetch('/admin/chips', 'POST', { uid, chips });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      // Update local cache
+      const u = allUsers.find(x => x.uid === uid);
+      if (u) u.chips = chips;
+      updateStats(allUsers);
+      showToast(`✓ Chips updated to ${chips.toLocaleString()}`, 'ok');
+    } catch (err) {
+      showToast('Error: ' + err.message, 'err');
+    }
+  }
+
+  async function resetPassword(uid, email) {
+    if (!email) { showToast('No email on record for this user', 'err'); return; }
+    if (!confirm(`Send password reset email to ${email}?`)) return;
+    try {
+      const res  = await apiFetch('/admin/reset-password', 'POST', { email });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      showToast(`✓ Reset email sent to ${email}`, 'ok');
+    } catch (err) {
+      showToast('Error: ' + err.message, 'err');
+    }
+  }
+
+  async function deleteUser(uid, username) {
+    if (!confirm(`Permanently delete user "${username}"?\nThis removes their account and all data. This cannot be undone.`)) return;
+    try {
+      const res  = await apiFetch('/admin/user', 'DELETE', { uid });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      allUsers = allUsers.filter(u => u.uid !== uid);
+      updateStats(allUsers);
+      filterTable();
+      showToast(`✓ User "${username}" deleted`, 'ok');
+    } catch (err) {
+      showToast('Error: ' + err.message, 'err');
+    }
+  }
+
+  // ── Helpers ─────────────────────────────────────────────────
+  function apiFetch(path, method = 'GET', body = null) {
+    const opts = {
+      method,
+      headers: { 'x-admin-key': adminKey, 'Content-Type': 'application/json' }
+    };
+    if (body) opts.body = JSON.stringify(body);
+    return fetch(SERVER_URL + path, opts);
+  }
+
+  function esc(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+  }
+
+  let toastTimer;
+  function showToast(msg, type = 'ok') {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = 'show ' + type;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 3500);
+  }
+</script>
+</body>
+</html>
