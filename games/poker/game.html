@@ -320,6 +320,64 @@
     .btn-raise  { background: #4c1d95; color: #c4b5fd; }
     .btn-allin  { background: #78350f; color: #fbbf24; }
 
+    /* ── Broke / rebuy modal ── */
+    .broke-modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 20px;
+    }
+    .broke-modal.show { display: flex; }
+    .broke-card {
+      background: #1a1a2e;
+      border: 1px solid #3a3a6a;
+      border-radius: 20px;
+      padding: 32px 28px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+    }
+    .broke-card .broke-icon { font-size: 48px; margin-bottom: 10px; }
+    .broke-card h2 { font-size: 20px; color: #f87171; font-weight: 700; margin-bottom: 6px; }
+    .broke-card .wallet-balance {
+      font-size: 13px; color: #7070a0; margin-bottom: 20px;
+    }
+    .broke-card .wallet-balance strong { color: #facc15; }
+    .rebuy-row {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px; justify-content: center;
+    }
+    .rebuy-row label { font-size: 13px; color: #a0a0c0; white-space: nowrap; }
+    .rebuy-input {
+      width: 110px; padding: 8px 10px;
+      background: #0f0f1a; border: 1px solid #2a2a4a;
+      border-radius: 8px; color: #facc15;
+      font-size: 14px; font-weight: 700;
+      text-align: center; outline: none;
+    }
+    .rebuy-input:focus { border-color: #7c3aed; }
+    .broke-btns { display: flex; flex-direction: column; gap: 10px; }
+    .btn-rebuy {
+      padding: 12px; border-radius: 10px;
+      background: #7c3aed; color: #fff;
+      font-size: 14px; font-weight: 700;
+      border: none; cursor: pointer;
+    }
+    .btn-rebuy:hover { background: #6d28d9; }
+    .btn-rebuy:disabled { opacity: 0.5; cursor: default; }
+    .btn-leave-broke {
+      padding: 12px; border-radius: 10px;
+      background: none; color: #7070a0;
+      font-size: 14px; font-weight: 600;
+      border: 1px solid #2a2a4a; cursor: pointer;
+    }
+    .btn-leave-broke:hover { border-color: #5050a0; color: #c0c0e0; }
+    .rebuy-error { font-size: 12px; color: #f87171; margin-top: -4px; min-height: 16px; }
+
     /* ── Hand result overlay ── */
     .result-overlay {
       display: none;
@@ -538,10 +596,33 @@
   <!-- Hand result overlay (outside game-wrap so it covers full screen) -->
   <div class="result-overlay" id="resultOverlay"></div>
 
+  <!-- Out of chips / rebuy modal -->
+  <div class="broke-modal" id="brokeModal">
+    <div class="broke-card">
+      <div class="broke-icon">😬</div>
+      <h2>You're out of chips!</h2>
+      <div class="wallet-balance" id="brokeWalletLine">Checking wallet…</div>
+      <div class="rebuy-row" id="rebuySelectorRow" style="display:none;">
+        <label>Buy in:</label>
+        <input class="rebuy-input" id="rebuyAmount" type="number" min="1000" step="500" value="1000" />
+        <span style="font-size:12px;color:#7070a0;">chips</span>
+      </div>
+      <div class="rebuy-error" id="rebuyError"></div>
+      <div class="broke-btns">
+        <button class="btn-rebuy" id="btnRebuy" style="display:none;" onclick="rebuySeat()">
+          Sit Back In
+        </button>
+        <button class="btn-leave-broke" onclick="leaveBroke()">Leave Table</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, onAuthStateChanged, signOut }
       from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+    import { getFirestore, doc, getDoc, updateDoc }
+      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
     const firebaseConfig = {
       apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
@@ -554,6 +635,7 @@
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
+    const db   = getFirestore(app);
 
     const SERVER_URL = 'https://gamezone-poker.onrender.com';
 
@@ -623,6 +705,44 @@
 
       socket.on('handResult', (result) => {
         showHandResult(result);
+      });
+
+      socket.on('brokeOut', async () => {
+        // Wait for hand result overlay to finish, then show rebuy modal
+        setTimeout(async () => {
+          document.getElementById('resultOverlay')?.classList.remove('show');
+          const modal       = document.getElementById('brokeModal');
+          const walletLine  = document.getElementById('brokeWalletLine');
+          const selectorRow = document.getElementById('rebuySelectorRow');
+          const rebuyBtn    = document.getElementById('btnRebuy');
+          const amtInput    = document.getElementById('rebuyAmount');
+          if (!modal) return;
+
+          // Load current wallet balance from Firestore
+          try {
+            const user = auth.currentUser;
+            if (user) {
+              const snap = await getDoc(doc(db, 'users', user.uid));
+              const walletChips = snap.exists() ? (snap.data().chips || 0) : 0;
+
+              if (walletChips >= 1000) {
+                walletLine.innerHTML = `Wallet: <strong>${walletChips.toLocaleString()} 🪙</strong> — choose a buy-in to stay:`;
+                amtInput.max   = walletChips;
+                amtInput.value = Math.min(1000, walletChips);
+                selectorRow.style.display = '';
+                rebuyBtn.style.display    = '';
+              } else {
+                walletLine.innerHTML = `Wallet: <strong>${walletChips.toLocaleString()} 🪙</strong> — not enough chips to rebuy (min 1,000).`;
+                selectorRow.style.display = 'none';
+                rebuyBtn.style.display    = 'none';
+              }
+            }
+          } catch (err) {
+            walletLine.textContent = 'Could not load wallet.';
+          }
+
+          modal.classList.add('show');
+        }, 6000);
       });
 
       socket.on('error', (msg) => {
@@ -1024,6 +1144,43 @@
       if (!header || !list) return;
       const open = list.classList.toggle('visible');
       header.classList.toggle('open', open);
+    };
+
+    // ── Rebuy / leave modal handlers ────────────────────────────
+    window.rebuySeat = () => {
+      const amtInput = document.getElementById('rebuyAmount');
+      const errorEl  = document.getElementById('rebuyError');
+      const btn      = document.getElementById('btnRebuy');
+      errorEl.textContent = '';
+
+      let buyIn = Math.round((parseInt(amtInput?.value) || 1000) / 500) * 500;
+      buyIn = Math.max(1000, buyIn);
+
+      if (!tableId) { errorEl.textContent = 'Table ID missing — cannot rejoin.'; return; }
+
+      btn.disabled    = true;
+      btn.textContent = 'Rejoining…';
+
+      // Rejoin via the existing joinTable event — server treats this as a fresh buy-in
+      socket.emit('joinTable', { tableId, inviteCode: null, buyIn });
+
+      // Listen for confirmation or error (one-time)
+      const onJoined = () => {
+        document.getElementById('brokeModal')?.classList.remove('show');
+        socket.off('error', onErr);
+      };
+      const onErr = (msg) => {
+        errorEl.textContent = msg;
+        btn.disabled    = false;
+        btn.textContent = 'Sit Back In';
+        socket.off('joinedTable', onJoined);
+      };
+      socket.once('joinedTable', onJoined);
+      socket.once('error', onErr);
+    };
+
+    window.leaveBroke = () => {
+      window.location.href = 'lobby.html';
     };
 
     // ── Card builder ────────────────────────────────────────────
