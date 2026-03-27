@@ -130,6 +130,7 @@ async function handlePostAction(table) {
 
     // Build handResult with correct winners (from lastHandWinnerIds) and all revealed hands
     const nonFolded   = table.players.filter(p => p.sitting && !p.folded);
+    const folded      = table.players.filter(p => p.sitting && p.folded);
     io.to(`table:${table.tableId}`).emit('handResult', {
       // actual pot winners only
       winners: nonFolded
@@ -147,6 +148,12 @@ async function handlePostAction(table) {
         handName: p.handEval ? p.handEval.name : 'Last standing',
         cards:    p.cards,
         isWinner: actualWinnerIds.includes(p.userId)
+      })),
+      // players who folded during this hand
+      foldedPlayers: folded.map(p => ({
+        userId:   p.userId,
+        username: p.username,
+        cards:    p.cards
       })),
       community: table.community
     });

@@ -488,9 +488,10 @@
       font-size: 10px; font-weight: 700;
       border-radius: 6px; padding: 2px 7px;
     }
-    .history-outcome.won  { background: rgba(250,204,21,0.15); color: #facc15; }
-    .history-outcome.lost { background: rgba(239,68,68,0.1);   color: #f87171; }
-    .history-outcome.mucked { background: rgba(80,80,160,0.1); color: #5050a0; }
+    .history-outcome.won    { background: rgba(250,204,21,0.15);  color: #facc15; }
+    .history-outcome.lost   { background: rgba(239,68,68,0.1);    color: #f87171; }
+    .history-outcome.mucked { background: rgba(80,80,160,0.1);    color: #5050a0; }
+    .history-outcome.folded { background: rgba(100,100,140,0.12); color: #7070a0; }
 
     @media (max-width: 500px) {
       .community-cards .card { width: 46px; height: 66px; font-size: 14px; }
@@ -852,7 +853,8 @@
         shownSet[p.userId] = p.isWinner || p.userId.startsWith('bot_');
       }
 
-      _currentResult = { handNumber: lastHandNumber, winners, allPlayers, community, shownSet };
+      const foldedPlayers = result.foldedPlayers || [];
+      _currentResult = { handNumber: lastHandNumber, winners, allPlayers, foldedPlayers, community, shownSet };
 
       function renderOverlay() {
         const communityHtml = community.map(c => buildCard(c, 'result')).join('');
@@ -946,7 +948,7 @@
         const communityHtml = (h.community || []).map(c => buildCard(c, 'history')).join('');
 
         const playersHtml = (h.allPlayers || []).map(p => {
-          const shown    = h.shownSet ? h.shownSet[p.userId] : p.isWinner;
+          const shown     = h.shownSet ? h.shownSet[p.userId] : p.isWinner;
           const showCards = shown === true;
           const mucked    = shown === 'mucked' || shown === false;
           const isMe      = p.userId === myUserId;
@@ -972,6 +974,16 @@
             </div>`;
         }).join('');
 
+        const foldedHtml = (h.foldedPlayers || []).map(p => `
+            <div class="history-player-row">
+              <span class="history-player-name loser-name">${escHtml(p.username)}</span>
+              <div class="history-player-cards">
+                ${(p.cards || []).map(() => `<div class="card back"></div>`).join('')}
+              </div>
+              <span class="history-player-handname"></span>
+              <span class="history-outcome folded">Folded</span>
+            </div>`).join('');
+
         return `
           <div class="history-entry">
             <div class="history-entry-top">
@@ -979,7 +991,7 @@
               <span class="history-winner">🏆 ${winnerNames} · ${escHtml(winnerHandName)}</span>
             </div>
             <div class="history-community">${communityHtml}</div>
-            <div class="history-players">${playersHtml}</div>
+            <div class="history-players">${playersHtml}${foldedHtml}</div>
           </div>`;
       }).join('');
     }
