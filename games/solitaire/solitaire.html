@@ -27,9 +27,17 @@
       border-bottom: 1px solid #2a2a4a;
     }
 
-    .back-btn { color: #a78bfa; text-decoration: none; font-size: 14px; }
-    .back-btn:hover { text-decoration: underline; }
-    h1 { font-size: 20px; color: #fff; }
+    .back-btn {
+      background: none;
+      border: 1px solid #2a2a4a;
+      color: #a78bfa;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: #2a2a4a; }
+    h1 { font-size: 18px; font-weight: 700; color: #a78bfa; }
 
     .header-stats {
       display: flex;
@@ -254,6 +262,7 @@
   <p>Click or drag cards to build the foundation piles</p>
   <p class="chip-hint">💰 Complete the game to earn 1,000 chips!</p>
   <button class="btn" onclick="startSolitaire()">Start Game</button>
+  <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
 </div>
 
 <div id="win-screen">

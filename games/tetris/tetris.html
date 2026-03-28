@@ -15,31 +15,46 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
-      padding: 20px;
+      padding: 0 20px 20px;
     }
 
-    header {
-      width: 100%;
-      max-width: 560px;
+    .header {
+      width: calc(100% + 40px);
+      margin-left: -20px;
+      margin-right: -20px;
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+      padding: 12px 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 16px;
+      gap: 12px;
+      margin-bottom: 20px;
     }
 
     .back-btn {
+      background: none;
+      border: 1px solid #2a2a4a;
       color: #a78bfa;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
       text-decoration: none;
-      font-size: 14px;
     }
 
-    .back-btn:hover { text-decoration: underline; }
+    .back-btn:hover { background: #2a2a4a; }
 
-    h1 {
-      font-size: 24px;
-      font-weight: 700;
-      color: #ffffff;
+    .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; }
+
+    .chip-display {
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+      white-space: nowrap;
     }
+    .chip-display span { font-weight: 700; color: #a78bfa; }
 
     .game-wrap {
       display: flex;
@@ -200,11 +215,11 @@
 </head>
 <body>
 
-  <header>
-    <a href="../../index.html" class="back-btn">← Back to PlayDen</a>
-    <h1>🟦 Tetris</h1>
-    <div style="width:120px"></div>
-  </header>
+  <div class="header">
+    <a href="../../index.html" class="back-btn">← Back</a>
+    <div class="header-title">🟦 Tetris</div>
+    <div class="chip-display">🪙 <span id="chipCount">—</span></div>
+  </div>
 
   <div class="game-wrap">
     <div class="canvas-wrap">
@@ -214,6 +229,7 @@
         <p id="overlay-msg">Use ← → to move · ↑ to rotate<br>↓ to soft drop · Space to hard drop</p>
         <p class="chip-hint">💰 Earn +100 chips per 1,000 points</p>
         <button class="btn" onclick="startGame()">Start Game</button>
+        <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
       </div>
     </div>
 
@@ -561,7 +577,16 @@
     const db   = getFirestore(app);
 
     let currentUser = null;
-    onAuthStateChanged(auth, (user) => { currentUser = user; });
+    onAuthStateChanged(auth, async (user) => {
+      currentUser = user;
+      if (user) {
+        try {
+          const snap = await getDoc(doc(db, 'users', user.uid));
+          const chips = snap.exists() ? (snap.data().chips || 0) : 0;
+          document.getElementById('chipCount').textContent = chips.toLocaleString();
+        } catch(e) {}
+      }
+    });
 
     window.firestoreSaveScore = async function(game, score) {
       if (!currentUser || score === 0) return;
