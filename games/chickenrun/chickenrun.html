@@ -300,8 +300,10 @@ function makeMovingLane(type, r) {
     const spd   = (28 + Math.random() * 38) * (1 + d * .4);
     const logs  = [];
     for (let i = 0; i < count; i++) {
-      const lw = CELL * (1.8 + Math.random() * 2.4);
-      logs.push({ x: (W / count) * i + Math.random() * CELL * 0.5, w: lw });
+      // Snap width and x to cell grid so chicken always lands on a whole square
+      const lw = Math.max(2, Math.round(1.8 + Math.random() * 2.4)) * CELL;
+      const rawX = (W / count) * i + Math.random() * CELL * 0.5;
+      logs.push({ x: Math.round(rawX / CELL) * CELL, w: lw });
     }
     return { type, row:r, dir, spd, obs:logs };
   }
@@ -410,14 +412,17 @@ function checkLanding() {
   if (ln.type === 'water') {
     const lg = getLog(ln, player.px);
     if (!lg) { kill(); return; }
-    // Nudge player away from log ends — avoids standing on the very edge,
-    // which looks unrealistic and makes drift feel glitchy at the boundary.
-    const margin = Math.min(CELL * 0.4, lg.w * 0.25);
-    player.px  = Math.max(lg.x + margin, Math.min(lg.x + lg.w - margin, player.px));
-    player.col = Math.max(0, Math.min(COLS - 1, Math.floor(player.px / CELL)));
+    // Snap to the centre of whichever log-square the chicken landed on.
+    // Using screen-grid centres (nc * CELL + 0.5) doesn't work because the
+    // log keeps drifting during the hop animation, so the log grid and screen
+    // grid are never in sync. Snapping relative to log.x is the only fix.
+    const numSq = Math.max(1, Math.floor(lg.w / CELL));
+    const sqIdx = Math.max(0, Math.min(numSq - 1, Math.floor((player.px - lg.x) / CELL)));
+    player.px   = lg.x + (sqIdx + 0.5) * CELL;
+    player.col  = Math.max(0, Math.min(COLS - 1, Math.floor(player.px / CELL)));
   } else {
     // Snap to column centre — prevents fractional positions after jumping off a drifting log
-    player.col = Math.max(0, Math.min(COLS - 1, Math.round(player.px / CELL)));
+    player.col = Math.max(0, Math.min(COLS - 1, Math.floor(player.px / CELL)));
     player.px  = player.col * CELL + CELL * 0.5;
   }
 
@@ -504,8 +509,24 @@ function tryMove(dr, dc) {
   if (nc < 0 || nc >= COLS || nr < 0) return;
   player.fRow = player.row; player.fCol = player.col;
   player.tRow = nr;         player.tCol = nc;
-  player.fPx  = player.px;
-  player.tPx  = player.px + dc * CELL;  // hop exactly 1 cell from current (drifted) position
+  player.fPx = player.px;
+
+  if (dc !== 0) {
+    // Lateral hop: target the adjacent log-square centre so the animation
+    // distance is always exactly 1 cell and no post-hop snap is visible.
+    const ln = lanes[player.row];
+    const lg = (ln && ln.type === 'water') ? getLog(ln, player.px) : null;
+    if (lg) {
+      const sqIdx = Math.floor((player.px - lg.x) / CELL);
+      player.tPx  = lg.x + (sqIdx + dc + 0.5) * CELL;
+    } else {
+      player.tPx = nc * CELL + CELL * 0.5;
+    }
+  } else {
+    // Forward / backward: keep the same x; checkLanding snaps on arrival.
+    player.tPx = player.px;
+  }
+
   player.hopping   = true;
   player.hopT      = 0;
   player.idleTimer = IDLE_MAX;
