@@ -261,6 +261,7 @@
   <div style="padding:16px 16px 0; display:block;" id="mobilePickerWrap">
     <select class="lb-mobile-select" id="mobileSelect" onchange="switchGame(this.value)">
       <option value="snake">🐍 Snake</option>
+      <option value="chickenrun">🐔 Chicken Run</option>
       <option value="snakeio">🐍 Snake.io</option>
       <option value="tetris">🟦 Tetris</option>
       <option value="solitaire">♠️ Solitaire</option>
@@ -286,6 +287,10 @@
         <div class="lb-game-item active" data-game="snake" data-name="snake" onclick="switchGame('snake')">
           <span class="lb-game-icon">🐍</span>
           <span class="lb-game-name">Snake</span>
+        </div>
+        <div class="lb-game-item" data-game="chickenrun" data-name="chicken run chickenrun frogger" onclick="switchGame('chickenrun')">
+          <span class="lb-game-icon">🐔</span>
+          <span class="lb-game-name">Chicken Run</span>
         </div>
         <div class="lb-game-item" data-game="snakeio" data-name="snake io snakeio multiplayer" onclick="switchGame('snakeio')">
           <span class="lb-game-icon">🐍</span>
@@ -377,6 +382,7 @@
     // ── Game config ────────────────────────────────────────────────
     const GAME_META = {
       snake:        { icon: '🐍', name: 'Snake',        ascending: false, label: 'Score',       fmt: v => v.toLocaleString() },
+      chickenrun:   { icon: '🐔', name: 'Chicken Run',  ascending: false, label: 'Distance',    fmt: v => v.toLocaleString() + ' rows' },
       snakeio:      { icon: '🐍', name: 'Snake.io',     ascending: false, label: 'Best Score',  fmt: v => v.toLocaleString() },
       tetris:       { icon: '🟦', name: 'Tetris',       ascending: false, label: 'Score',       fmt: v => v.toLocaleString() },
       solitaire:    { icon: '♠️',  name: 'Solitaire',   ascending: true,  label: 'Best Time',   fmt: v => {

@@ -1,0 +1,804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>Chicken Run — PlayDen</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{background:#0f0f1a;overflow:hidden;font-family:'Segoe UI',sans-serif;touch-action:none;}
+    #c{display:block;position:fixed;inset:0;}
+
+    /* ── HUD ── */
+    #hud{
+      position:fixed;top:14px;left:14px;z-index:10;pointer-events:none;
+      background:rgba(26,26,46,.88);border:1px solid rgba(167,139,250,.3);
+      border-radius:12px;padding:10px 18px;backdrop-filter:blur(6px);
+    }
+    .hud-row{display:flex;gap:22px;}
+    .hl{font-size:10px;color:#5050a0;text-transform:uppercase;letter-spacing:.08em;}
+    .hv{font-size:22px;font-weight:800;color:#a78bfa;}
+
+    #livesEl{
+      position:fixed;top:14px;right:14px;z-index:10;pointer-events:none;
+      background:rgba(26,26,46,.88);border:1px solid rgba(167,139,250,.3);
+      border-radius:12px;padding:9px 13px;font-size:22px;letter-spacing:3px;
+      backdrop-filter:blur(6px);
+    }
+
+    /* ── Chip popup ── */
+    .chip-pop{
+      position:fixed;left:50%;transform:translateX(-50%);
+      background:#fbbf24;color:#1a0a00;border-radius:20px;
+      padding:5px 18px;font-size:15px;font-weight:800;
+      pointer-events:none;z-index:30;white-space:nowrap;
+      animation:floatUp 1.8s ease forwards;
+    }
+    @keyframes floatUp{0%{opacity:1;top:58%}100%{opacity:0;top:38%}}
+
+    /* ── Back ── */
+    #backBtn{
+      position:fixed;bottom:16px;left:14px;z-index:10;
+      background:rgba(26,26,46,.85);border:1px solid #2a2a4a;
+      border-radius:8px;padding:7px 13px;
+      color:#6060a0;text-decoration:none;font-size:12px;
+    }
+    #backBtn:hover{color:#a78bfa;border-color:#a78bfa;}
+
+    /* ── Overlays ── */
+    .ov{
+      position:fixed;inset:0;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;
+      background:rgba(13,13,26,.93);z-index:50;backdrop-filter:blur(8px);
+    }
+    .ov h1{font-size:34px;color:#a78bfa;margin-bottom:6px;}
+    .ov .sub{color:#6060a0;font-size:13px;margin-bottom:22px;}
+    .stat-row{display:flex;gap:36px;margin:6px 0 22px;}
+    .si{text-align:center;}
+    .sl{font-size:10px;color:#5050a0;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px;}
+    .sn{font-size:44px;font-weight:800;color:#fff;}
+    .chips-line{color:#fbbf24;font-size:17px;font-weight:700;margin-bottom:22px;}
+    .btn{
+      background:#7c3aed;color:#fff;border:none;border-radius:10px;
+      padding:12px 36px;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:12px;
+    }
+    .btn:hover{background:#6d28d9;}
+    .back-a{color:#5050a0;font-size:13px;text-decoration:none;}
+    .back-a:hover{color:#a78bfa;}
+
+    /* ── Mobile D-pad ── */
+    #dpad{
+      position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+      width:160px;height:160px;display:none;z-index:20;
+    }
+    .db{
+      position:absolute;width:50px;height:50px;
+      background:rgba(124,58,237,.45);border:2px solid rgba(167,139,250,.4);
+      border-radius:10px;display:flex;align-items:center;justify-content:center;
+      font-size:22px;cursor:pointer;user-select:none;-webkit-user-select:none;
+    }
+    #dU{top:0;left:50%;transform:translateX(-50%);}
+    #dD{bottom:0;left:50%;transform:translateX(-50%);}
+    #dL{left:0;top:50%;transform:translateY(-50%);}
+    #dR{right:0;top:50%;transform:translateY(-50%);}
+    @media(pointer:coarse){#dpad{display:block;}}
+  </style>
+</head>
+<body>
+
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div class="hud-row">
+    <div><div class="hl">Distance</div><div class="hv" id="hDist">0</div></div>
+    <div><div class="hl">Best</div><div class="hv" id="hBest">0</div></div>
+    <div><div class="hl">Chips 🪙</div><div class="hv" id="hChips">0</div></div>
+  </div>
+</div>
+<div id="livesEl">🐔🐔🐔</div>
+<a id="backBtn" href="../../index.html">← Back</a>
+
+<!-- Mobile D-pad -->
+<div id="dpad">
+  <div class="db" id="dU">↑</div>
+  <div class="db" id="dL">←</div>
+  <div class="db" id="dR">→</div>
+  <div class="db" id="dD">↓</div>
+</div>
+
+<!-- Start overlay -->
+<div class="ov" id="ovStart">
+  <div style="font-size:72px;margin-bottom:6px;">🐔</div>
+  <h1>Chicken Run</h1>
+  <p class="sub">Cross roads, dodge trains, hop on logs to survive!</p>
+  <div style="font-size:12px;color:#4040a0;margin-bottom:22px;">Arrow keys / WASD · Swipe on mobile</div>
+  <button class="btn" id="btnStart">Start Game</button>
+  <a class="back-a" href="../../index.html">← Back to Arcade</a>
+</div>
+
+<!-- Death overlay -->
+<div class="ov" id="ovDeath" style="display:none;">
+  <div style="font-size:56px;margin-bottom:4px;">💀</div>
+  <h1>Squawk!</h1>
+  <div class="stat-row">
+    <div class="si"><div class="sl">Distance</div><div class="sn" id="dDist">0</div></div>
+    <div class="si"><div class="sl">Best</div><div class="sn" id="dBest">0</div></div>
+  </div>
+  <div class="chips-line" id="dChips">+0 🪙 chips earned</div>
+  <button class="btn" id="btnRetry">Try Again</button>
+  <a class="back-a" href="../../index.html">← Back to Arcade</a>
+</div>
+
+<script type="module">
+import { initializeApp }  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+// ── Firebase ──────────────────────────────────────────────────
+const app  = initializeApp({
+  apiKey:"AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+  authDomain:"gamezone-6487a.firebaseapp.com",
+  projectId:"gamezone-6487a",
+  storageBucket:"gamezone-6487a.firebasestorage.app",
+  messagingSenderId:"266519256159",
+  appId:"1:266519256159:web:34d6be085083cda5ff4fea"
+});
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+let currentUser = null;
+let localBest   = parseInt(localStorage.getItem('chickenBest') || '0');
+
+onAuthStateChanged(auth, async user => {
+  currentUser = user;
+  if (user) {
+    try {
+      const snap = await getDoc(doc(db,'games','chickenrun','scores',user.uid));
+      if (snap.exists()) {
+        const fb = snap.data().score || 0;
+        if (fb > localBest) { localBest = fb; localStorage.setItem('chickenBest', fb); }
+      }
+    } catch(_){}
+  }
+  document.getElementById('hBest').textContent = localBest;
+});
+
+async function saveRun(score, chips) {
+  if (score > localBest) { localBest = score; localStorage.setItem('chickenBest', score); }
+  if (!currentUser) return;
+  try {
+    const ref  = doc(db,'games','chickenrun','scores',currentUser.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists() || score > (snap.data().score || 0)) {
+      const username = currentUser.displayName || currentUser.email.split('@')[0];
+      await setDoc(ref,{ userId:currentUser.uid, username, score, updatedAt:serverTimestamp() });
+    }
+    if (chips > 0) {
+      await updateDoc(doc(db,'users',currentUser.uid),{ chips: increment(chips) });
+    }
+  } catch(e){ console.warn('Save error:',e.message); }
+}
+
+// ── Canvas ────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+const COLS   = 9;
+const PY_FRAC = 0.60;       // player's screen Y as fraction of canvas height
+
+let CELL, OX;
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  CELL = Math.min(Math.floor(canvas.width / COLS), 76);
+  OX   = (canvas.width - COLS * CELL) / 2;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ── Palette ───────────────────────────────────────────────────
+const CAR_COLS = ['#e74c3c','#e67e22','#3498db','#2ecc71','#9b59b6','#1abc9c','#e91e8c'];
+const MILESTONES = [
+  {row:10,chips:15},{row:25,chips:30},{row:50,chips:60},
+  {row:100,chips:120},{row:200,chips:250},{row:500,chips:600}
+];
+
+// ── Game state ────────────────────────────────────────────────
+let gameState = 'start'; // start | playing | dead
+let lanes, player, lives, score, chips, mileIdx, shakeT, lastT;
+
+function initGame() {
+  lanes = [];
+  genUpTo(40);
+
+  player = {
+    col: Math.floor(COLS / 2),
+    row: 0,
+    aCol: Math.floor(COLS / 2), // animated col (float)
+    aRow: 0,                    // animated row (float)
+    hopping: false,
+    hopT: 0,           // 0→1 progress
+    fCol: 0, tCol: 0,  // from/to col
+    fRow: 0, tRow: 0,  // from/to row
+    alive: true,
+    deadT: 0           // countdown after death
+  };
+  lives    = 3;
+  score    = 0;
+  chips    = 0;
+  mileIdx  = 0;
+  shakeT   = 0;
+  lastT    = null;
+  updHUD();
+  updLives();
+}
+
+// ── Lane generation ───────────────────────────────────────────
+function genUpTo(max) {
+  while (lanes.length <= max) lanes.push(makeLane(lanes.length));
+}
+
+function diff(row) { return Math.min(row / 80, 2.0); }
+
+function makeLane(r) {
+  if (r === 0 || r <= 2) return { type:'grass', row:r, decor:makeDecor(false) };
+  if (r % 5 === 0)        return { type:'grass', row:r, decor:makeDecor(true)  };
+
+  const d = diff(r), rng = Math.random();
+  let type;
+  if      (rng < 0.55 + d * 0.05) type = 'road';
+  else if (rng < 0.75)             type = 'rail';
+  else                              type = 'water';
+  return makeMovingLane(type, r);
+}
+
+function makeDecor(sparse) {
+  const out = [];
+  for (let c = 0; c < COLS; c++)
+    if (Math.random() < (sparse ? 0.12 : 0.22)) out.push(c);
+  return out;
+}
+
+function makeMovingLane(type, r) {
+  const d   = diff(r);
+  const dir = Math.random() < .5 ? 1 : -1;
+  const W   = COLS * CELL;
+
+  if (type === 'road') {
+    const count = 1 + Math.floor(Math.random() * 3);
+    const spd   = (55 + Math.random() * 60) * (1 + d);
+    const cars  = [], minGap = CELL * 2.2;
+    for (let i = 0; i < count; i++) {
+      let x, tries = 0;
+      do { x = Math.random() * W; tries++; }
+      while (tries < 20 && cars.some(c => Math.abs(c.x - x) < minGap + CELL));
+      cars.push({ x, w: CELL * (1 + Math.floor(Math.random() * 1.6 + 0.2)),
+                  col: CAR_COLS[Math.random() * CAR_COLS.length | 0] });
+    }
+    return { type, row:r, dir, spd, obs:cars };
+  }
+
+  if (type === 'rail') {
+    const spd = (220 + Math.random() * 130) * (1 + d * .5);
+    return { type, row:r, dir, spd,
+      trainX: null,
+      nextTrain: 2.5 + Math.random() * 4,
+      warning: false,
+      trainLen: W + CELL * 2,
+      obs: [] };
+  }
+
+  if (type === 'water') {
+    const count = 2 + Math.floor(Math.random() * 3);
+    const spd   = (28 + Math.random() * 38) * (1 + d * .4);
+    const logs  = [];
+    for (let i = 0; i < count; i++) {
+      const lw = CELL * (1.8 + Math.random() * 2.4);
+      logs.push({ x: (W / count) * i + Math.random() * CELL * 0.5, w: lw });
+    }
+    return { type, row:r, dir, spd, obs:logs };
+  }
+}
+
+// ── Physics ───────────────────────────────────────────────────
+function update(ts) {
+  if (!lastT) lastT = ts;
+  const dt = Math.min((ts - lastT) / 1000, 0.05);
+  lastT = ts;
+  if (gameState !== 'playing') return;
+
+  if (shakeT > 0) shakeT -= dt;
+
+  // Hop animation
+  if (player.hopping) {
+    player.hopT += dt * 8.5; // completes in ~0.12s
+    if (player.hopT >= 1) {
+      player.hopT   = 1;
+      player.hopping = false;
+      player.row    = player.tRow;
+      player.col    = player.tCol;
+      player.aRow   = player.tRow;
+      player.aCol   = player.tCol;
+      checkLanding();
+    } else {
+      const t = easeOut(player.hopT);
+      player.aRow = player.fRow + (player.tRow - player.fRow) * t;
+      player.aCol = player.fCol + (player.tCol - player.fCol) * t;
+    }
+  }
+
+  // Move obstacles
+  genUpTo(player.row + 40);
+  const W = COLS * CELL;
+
+  for (const ln of lanes) {
+    if (ln.type === 'road') {
+      for (const car of ln.obs) {
+        car.x += ln.dir * ln.spd * dt;
+        if (ln.dir > 0 && car.x > W + car.w)   car.x -= W + car.w + CELL;
+        if (ln.dir < 0 && car.x + car.w < -CELL) car.x += W + car.w + CELL;
+      }
+    }
+    if (ln.type === 'rail') {
+      ln.nextTrain -= dt;
+      ln.warning    = ln.nextTrain < 1.0 && ln.nextTrain > 0;
+      if (ln.nextTrain <= 0 && ln.trainX === null)
+        ln.trainX = ln.dir > 0 ? -ln.trainLen : W;
+      if (ln.trainX !== null) {
+        ln.trainX += ln.dir * ln.spd * dt;
+        const gone = ln.dir > 0 ? ln.trainX > W + CELL : ln.trainX + ln.trainLen < -CELL;
+        if (gone) { ln.trainX = null; ln.nextTrain = 2 + Math.random() * 4; ln.warning = false; }
+      }
+    }
+    if (ln.type === 'water') {
+      for (const log of ln.obs) {
+        log.x += ln.dir * ln.spd * dt;
+        if (ln.dir > 0 && log.x > W + log.w)    log.x -= W + log.w + CELL;
+        if (ln.dir < 0 && log.x + log.w < -CELL) log.x += W + log.w + CELL;
+      }
+    }
+  }
+
+  // Continuous collision for standing player
+  if (!player.hopping && player.alive) {
+    const ln = lanes[player.row];
+    if (ln) checkStanding(ln);
+  }
+}
+
+function easeOut(t) { return 1 - (1 - t) * (1 - t); }
+
+function checkLanding() {
+  if (!player.alive) return;
+  const ln = lanes[player.row];
+  if (!ln) return;
+  if      (ln.type === 'road'  && hitsObstacle(ln))  kill();
+  else if (ln.type === 'rail'  && hitsRail(ln))      kill();
+  else if (ln.type === 'water' && !onALog(ln))        kill();
+
+  if (player.row > score) {
+    score = player.row;
+    document.getElementById('hDist').textContent = score;
+    if (score > localBest) document.getElementById('hBest').textContent = score;
+    checkMilestones();
+  }
+}
+
+function checkStanding(ln) {
+  if      (ln.type === 'road'  && hitsObstacle(ln)) kill();
+  else if (ln.type === 'rail'  && hitsRail(ln))     kill();
+  else if (ln.type === 'water' && !onALog(ln))       kill();
+}
+
+function hitsObstacle(ln) {
+  const p1 = player.col * CELL + 6, p2 = (player.col + 1) * CELL - 6;
+  return ln.obs.some(o => o.x < p2 && o.x + o.w > p1);
+}
+
+function hitsRail(ln) {
+  if (ln.trainX === null) return false;
+  const p1 = player.col * CELL + 6, p2 = (player.col + 1) * CELL - 6;
+  return ln.trainX < p2 && ln.trainX + ln.trainLen > p1;
+}
+
+function onALog(ln) {
+  const cx = player.col * CELL + CELL * 0.5;
+  return ln.obs.some(log => log.x < cx && log.x + log.w > cx);
+}
+
+function kill() {
+  if (!player.alive) return;
+  player.alive = false;
+  lives--;
+  shakeT = 0.35;
+  updLives();
+  if (lives <= 0) {
+    setTimeout(showDeath, 900);
+  } else {
+    setTimeout(respawn, 700);
+  }
+}
+
+function respawn() {
+  // Find nearest grass lane at or below current score
+  let r = Math.max(0, score - 1);
+  while (r > 0 && lanes[r] && lanes[r].type !== 'grass') r--;
+  player.row    = r;
+  player.col    = Math.floor(COLS / 2);
+  player.aRow   = r;
+  player.aCol   = player.col;
+  player.hopping = false;
+  player.alive  = true;
+}
+
+function checkMilestones() {
+  while (mileIdx < MILESTONES.length && score >= MILESTONES[mileIdx].row) {
+    const m = MILESTONES[mileIdx];
+    chips += m.chips;
+    document.getElementById('hChips').textContent = chips;
+    showChipPop('+' + m.chips + ' 🪙');
+    mileIdx++;
+  }
+}
+
+function showChipPop(txt) {
+  const el = document.createElement('div');
+  el.className = 'chip-pop';
+  el.textContent = txt;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1900);
+}
+
+// ── Controls ──────────────────────────────────────────────────
+function tryMove(dr, dc) {
+  if (gameState !== 'playing' || player.hopping || !player.alive) return;
+  const nr = player.row + dr, nc = player.col + dc;
+  if (nc < 0 || nc >= COLS || nr < 0) return;
+  player.fRow = player.row; player.fCol = player.col;
+  player.tRow = nr;         player.tCol = nc;
+  player.hopping = true;    player.hopT = 0;
+}
+
+window.addEventListener('keydown', e => {
+  if (gameState === 'start' && (e.code === 'Space' || e.key === 'Enter')) { startGame(); return; }
+  if (gameState !== 'playing') return;
+  switch (e.code) {
+    case 'ArrowUp':    case 'KeyW': e.preventDefault(); tryMove(1,0);  break;
+    case 'ArrowDown':  case 'KeyS': e.preventDefault(); tryMove(-1,0); break;
+    case 'ArrowLeft':  case 'KeyA': e.preventDefault(); tryMove(0,-1); break;
+    case 'ArrowRight': case 'KeyD': e.preventDefault(); tryMove(0,1);  break;
+  }
+});
+
+// D-pad
+const DMAP = { dU:[1,0], dD:[-1,0], dL:[0,-1], dR:[0,1] };
+for (const [id, args] of Object.entries(DMAP)) {
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', e => { e.preventDefault(); tryMove(...args); }, {passive:false});
+  el.addEventListener('mousedown',  () => tryMove(...args));
+}
+
+// Swipe
+let swipeStart = null;
+canvas.addEventListener('touchstart', e => { swipeStart = e.touches[0]; }, {passive:true});
+canvas.addEventListener('touchend', e => {
+  if (!swipeStart) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipeStart.clientX, dy = t.clientY - swipeStart.clientY;
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 18) return;
+  if (Math.abs(dx) > Math.abs(dy)) tryMove(0, dx > 0 ? 1 : -1);
+  else                              tryMove(dy < 0 ? 1 : -1, 0);
+  swipeStart = null;
+}, {passive:true});
+
+// ── Drawing helpers ───────────────────────────────────────────
+function rrect(x, y, w, h, r) {
+  r = Math.min(r, w / 2, h / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.arcTo(x + w, y, x + w, y + r, r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+  ctx.lineTo(x + r, y + h);
+  ctx.arcTo(x, y + h, x, y + h - r, r);
+  ctx.lineTo(x, y + r);
+  ctx.arcTo(x, y, x + r, y, r);
+  ctx.closePath();
+}
+
+function shade(hex, amt) {
+  let n = parseInt(hex.replace('#',''), 16);
+  const r = Math.max(0, Math.min(255, (n >> 16) + amt));
+  const g = Math.max(0, Math.min(255, ((n >> 8) & 0xff) + amt));
+  const b = Math.max(0, Math.min(255, (n & 0xff) + amt));
+  return `rgb(${r},${g},${b})`;
+}
+
+// ── Lane renderers ────────────────────────────────────────────
+function drawLane(ln, sy) {
+  const W = COLS * CELL;
+  // Base fill
+  const bg = { grass:'#2d6120', road:'#4a4a4a', rail:'#232323', water:'#1667a0' }[ln.type] || '#333';
+  ctx.fillStyle = bg;
+  ctx.fillRect(OX, sy, W, CELL);
+
+  if (ln.type === 'grass') {
+    ctx.fillStyle = '#356e22';
+    ctx.fillRect(OX, sy + 2, W, 5);
+    ctx.fillRect(OX, sy + CELL - 7, W, 5);
+    for (const c of ln.decor) drawTree(OX + c * CELL + CELL * .5, sy + CELL * .5);
+  }
+
+  if (ln.type === 'road') {
+    // Edge lines
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(OX, sy + 2, W, 3);
+    ctx.fillRect(OX, sy + CELL - 5, W, 3);
+    // Dashed center
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([22, 18]);
+    ctx.beginPath(); ctx.moveTo(OX, sy + CELL * .5); ctx.lineTo(OX + W, sy + CELL * .5); ctx.stroke();
+    ctx.setLineDash([]);
+    for (const car of ln.obs) drawCar(car, sy, ln.dir);
+  }
+
+  if (ln.type === 'rail') {
+    // Ties
+    ctx.fillStyle = '#5c3a16';
+    for (let x = 0; x < W; x += 28) ctx.fillRect(OX + x, sy + 5, 18, CELL - 10);
+    // Rails
+    ctx.fillStyle = '#909090';
+    ctx.fillRect(OX, sy + CELL * .26, W, 5);
+    ctx.fillRect(OX, sy + CELL * .68, W, 5);
+    // Warning flash
+    if (ln.warning) {
+      const alpha = 0.3 + 0.28 * Math.sin(Date.now() / 55);
+      ctx.fillStyle = `rgba(255,50,0,${alpha})`;
+      ctx.fillRect(OX, sy, W, CELL);
+      // Warning signs
+      ctx.font = `bold ${CELL * .4}px sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ff3300';
+      ctx.fillText('⚠️', OX + CELL * .5, sy + CELL * .5);
+      ctx.fillText('⚠️', OX + W - CELL * .5, sy + CELL * .5);
+    }
+    if (ln.trainX !== null) drawTrain(ln.trainX, sy, ln.trainLen, ln.dir);
+  }
+
+  if (ln.type === 'water') {
+    // Animated ripples
+    const t = Date.now() / 1200;
+    ctx.strokeStyle = '#1e8bc3';
+    ctx.lineWidth = 1.8;
+    for (let wx = 0; wx < W; wx += 38) {
+      const wy = sy + CELL * .38 + Math.sin(t + wx * .12) * 4;
+      ctx.beginPath(); ctx.arc(OX + wx + 14, wy, 11, Math.PI, 0); ctx.stroke();
+    }
+    for (const log of ln.obs) drawLog(log, sy);
+  }
+}
+
+function drawTree(cx, cy) {
+  ctx.fillStyle = '#5c3a10';
+  ctx.fillRect(cx - 4, cy + 2, 8, 16);
+  ctx.fillStyle = '#1a5c18';
+  ctx.beginPath(); ctx.arc(cx, cy - 5, 16, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#2a7820';
+  ctx.beginPath(); ctx.arc(cx - 5, cy - 3, 10, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 6, cy - 7,  9, 0, Math.PI*2); ctx.fill();
+}
+
+function drawCar(car, sy, dir) {
+  const x = OX + car.x, y = sy + 5, w = car.w, h = CELL - 10;
+  ctx.fillStyle = car.col;
+  rrect(x, y, w, h, 7); ctx.fill();
+
+  // Roof
+  ctx.fillStyle = shade(car.col, -35);
+  ctx.fillRect(x + w * .2, y + 2, w * .6, h * .42);
+
+  // Windshield
+  ctx.fillStyle = 'rgba(180,220,255,.65)';
+  const ws = w * .26;
+  ctx.fillRect(dir > 0 ? x + w - ws - 5 : x + 5, y + 5, ws, h * .44);
+
+  // Headlights
+  ctx.fillStyle = dir > 0 ? '#fffaaa' : '#ff5555';
+  ctx.fillRect(dir > 0 ? x + w - 5 : x, y + h * .18, 4, h * .28);
+
+  // Wheels
+  ctx.fillStyle = '#111';
+  const wy = y + h, wr = 5;
+  for (const wx of [x + 10, x + w - 10]) {
+    ctx.beginPath(); ctx.arc(wx, wy - wr, wr, 0, Math.PI*2); ctx.fill();
+  }
+}
+
+function drawTrain(tx, sy, len, dir) {
+  const x = OX + tx, y = sy + 2, h = CELL - 4;
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillRect(x, y, len, h);
+  // Windows
+  ctx.fillStyle = 'rgba(255,210,80,.55)';
+  for (let wx = 10; wx < len - 24; wx += 42)
+    ctx.fillRect(x + wx, y + h * .18, 24, h * .38);
+  // Locomotive stripe
+  ctx.fillStyle = '#c0392b';
+  const lx = dir > 0 ? x + len - 44 : x;
+  ctx.fillRect(lx, y, 44, h);
+  // Exhaust
+  ctx.fillStyle = 'rgba(160,160,160,.4)';
+  const ex = dir > 0 ? x + len + 6 : x - 14;
+  ctx.beginPath(); ctx.arc(ex, y + 10, 11, 0, Math.PI*2); ctx.fill();
+}
+
+function drawLog(log, sy) {
+  const x = OX + log.x, y = sy + 9, h = CELL - 18;
+  ctx.fillStyle = '#7a4820';
+  rrect(x, y, log.w, h, 9); ctx.fill();
+  ctx.strokeStyle = '#5a3010';
+  ctx.lineWidth = 1.5;
+  for (let gx = 14; gx < log.w - 10; gx += 18) {
+    ctx.beginPath(); ctx.moveTo(x + gx, y + 4); ctx.lineTo(x + gx, y + h - 4); ctx.stroke();
+  }
+  // End caps
+  ctx.fillStyle = '#4e2808';
+  ctx.beginPath(); ctx.ellipse(x + 5, y + h/2, 5, h/2 - 2, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(x + log.w - 5, y + h/2, 5, h/2 - 2, 0, 0, Math.PI*2); ctx.fill();
+}
+
+function drawChicken(sx, sy, hopT, alive) {
+  const bounce = alive && player.hopping ? Math.sin(hopT * Math.PI) * CELL * .32 : 0;
+  const scale  = alive ? (1 + Math.sin(hopT * Math.PI) * .12) : 0.9;
+
+  ctx.save();
+  ctx.translate(sx, sy - bounce);
+  ctx.scale(scale, scale);
+  if (!alive) {
+    ctx.rotate(Math.PI / 5);
+    ctx.globalAlpha = 0.55;
+  }
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,.25)';
+  ctx.beginPath(); ctx.ellipse(0, CELL * .28, CELL * .27, 7, 0, 0, Math.PI*2); ctx.fill();
+
+  // Body
+  ctx.fillStyle = '#f5f0dc';
+  ctx.beginPath(); ctx.ellipse(0, 0, CELL * .27, CELL * .22, 0, 0, Math.PI*2); ctx.fill();
+
+  // Wing highlight
+  ctx.fillStyle = '#e4ddc8';
+  ctx.beginPath(); ctx.ellipse(-CELL*.13, CELL*.05, CELL*.15, CELL*.12, -.25, 0, Math.PI*2); ctx.fill();
+
+  // Head
+  ctx.fillStyle = '#f5f0dc';
+  ctx.beginPath(); ctx.arc(0, -CELL * .22, CELL * .145, 0, Math.PI*2); ctx.fill();
+
+  // Comb
+  ctx.fillStyle = '#e74c3c';
+  ctx.beginPath(); ctx.arc(-CELL*.03, -CELL*.37, 5.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc( CELL*.05, -CELL*.40,   4, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(-CELL*.10, -CELL*.35,   3, 0, Math.PI*2); ctx.fill();
+
+  // Wattle
+  ctx.fillStyle = '#c0392b';
+  ctx.beginPath(); ctx.ellipse(CELL*.06, -CELL*.17, 4, 5, 0.3, 0, Math.PI*2); ctx.fill();
+
+  // Eye
+  ctx.fillStyle = '#111';
+  ctx.beginPath(); ctx.arc(CELL*.065, -CELL*.24, 3.8, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(CELL*.075, -CELL*.255, 1.6, 0, Math.PI*2); ctx.fill();
+
+  // Beak
+  ctx.fillStyle = '#f39c12';
+  ctx.beginPath();
+  ctx.moveTo(CELL * .13, -CELL * .22);
+  ctx.lineTo(CELL * .25, -CELL * .19);
+  ctx.lineTo(CELL * .13, -CELL * .16);
+  ctx.closePath(); ctx.fill();
+
+  // Feet
+  ctx.fillStyle = '#f39c12';
+  ctx.fillRect(-9, CELL * .21, 7, 5);
+  ctx.fillRect(2,  CELL * .21, 7, 5);
+  ctx.fillRect(-12, CELL * .26, 5, 3);  // toes left
+  ctx.fillRect(9,   CELL * .26, 5, 3);  // toes right
+
+  ctx.restore();
+}
+
+// ── Main render loop ──────────────────────────────────────────
+function render(ts) {
+  requestAnimationFrame(render);
+  update(ts);
+
+  const W = canvas.width, H = canvas.height;
+
+  // Shake offset
+  const sx = shakeT > 0 ? (Math.random() - .5) * 9 : 0;
+  const sy = shakeT > 0 ? (Math.random() - .5) * 9 : 0;
+
+  ctx.save();
+  ctx.translate(sx, sy);
+
+  // Sky gradient
+  const sky = ctx.createLinearGradient(0, 0, 0, H);
+  sky.addColorStop(0, '#5ba3d9');
+  sky.addColorStop(1, '#87ceeb');
+  ctx.fillStyle = sky;
+  ctx.fillRect(0, 0, W, H);
+
+  // Render lanes
+  const psy = H * PY_FRAC;
+  const topRow    = Math.ceil(player.aRow + psy / CELL) + 2;
+  const bottomRow = Math.floor(player.aRow - (H - psy) / CELL) - 2;
+
+  for (let r = bottomRow; r <= topRow; r++) {
+    if (r < 0) continue;
+    if (!lanes[r]) genUpTo(r);
+    const ln = lanes[r];
+    if (!ln) continue;
+    const lsy = Math.round(psy - (r - player.aRow + .5) * CELL);
+    if (lsy > H + CELL || lsy < -CELL * 2) continue;
+    drawLane(ln, lsy);
+  }
+
+  // Player
+  if (gameState === 'playing') {
+    const psx = OX + player.aCol * CELL + CELL * .5;
+    drawChicken(psx, psy, player.hopT, player.alive);
+  }
+
+  // Side panels (fill outside game world on wide screens)
+  if (OX > 0) {
+    ctx.fillStyle = '#0f0f1a';
+    ctx.fillRect(0, 0, OX, H);
+    ctx.fillRect(OX + COLS * CELL, 0, W, H);
+  }
+
+  ctx.restore();
+}
+requestAnimationFrame(render);
+
+// ── UI ────────────────────────────────────────────────────────
+function updHUD() {
+  document.getElementById('hDist').textContent  = score;
+  document.getElementById('hBest').textContent  = Math.max(score, localBest);
+  document.getElementById('hChips').textContent = chips;
+}
+function updLives() {
+  document.getElementById('livesEl').textContent = '🐔'.repeat(Math.max(0, lives));
+}
+
+async function showDeath() {
+  gameState = 'dead';
+  const best = Math.max(score, localBest);
+  document.getElementById('dDist').textContent  = score;
+  document.getElementById('dBest').textContent  = best;
+  document.getElementById('dChips').textContent = `+${chips} 🪙 chips earned`;
+  document.getElementById('ovDeath').style.display = 'flex';
+  document.getElementById('hBest').textContent = best;
+  await saveRun(score, chips);
+}
+
+function startGame() {
+  document.getElementById('ovStart').style.display = 'none';
+  initGame();
+  gameState = 'playing';
+  lastT = null;
+}
+
+document.getElementById('btnStart').addEventListener('click', startGame);
+document.getElementById('btnRetry').addEventListener('click', () => {
+  document.getElementById('ovDeath').style.display = 'none';
+  initGame();
+  gameState = 'playing';
+  lastT = null;
+});
+</script>
+</body>
+</html>
