@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(where node:*)",
+      "Bash(where npx:*)",
+      "Bash(command -v node)",
+      "Read(//usr/bin/**)",
+      "Bash(command -v npx)",
+      "Bash(echo $PATH)",
+      "Read(//usr/local/**)",
+      "Read(//c/Program Files/**)",
+      "Read(//c/Users/anguyen/AppData/Roaming/**)",
+      "Read(//c/Users/anguyen/.nvm/**)",
+      "Bash(powershell.exe -Command \"Get-Command node,npx -ErrorAction SilentlyContinue | Select-Object Name,Source\")",
+      "Bash(cmd.exe /c \"where node & where npx\")",
+      "Bash(cmd.exe /c \"where python & where python3 & where py\")",
+      "Bash(find /c/Users/anguyen/AppData/Local -name claude* -o -name anthropic*)",
+      "Bash(cmd.exe /c \"where ruby & where php & where python3\")",
+      "Bash(\"/c/Users/anguyen/AppData/Local/Microsoft/WindowsApps/python\" --version)",
+      "Bash(\"/c/Users/anguyen/AppData/Local/Microsoft/WindowsApps/python3\" --version)",
+      "Bash(powershell.exe -Command \"Get-Command powershell | Select-Object -ExpandProperty Source\")",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(powershell.exe -Command \"Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_OwningProcess -Force -ErrorAction SilentlyContinue }\")",
+      "Bash(powershell.exe -Command \"Get-Process -Name powershell | Where-Object { $_.MainWindowTitle -eq '''' } | Stop-Process -Force\")"
+    ]
+  }
+}

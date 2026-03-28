@@ -1,0 +1,22 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Frontend (static)",
+      "runtimeExecutable": "powershell",
+      "runtimeArgs": [
+        "-NoProfile",
+        "-ExecutionPolicy", "Bypass",
+        "-Command",
+        "$port=8080; $root='C:\\Users\\anguyen\\OneDrive - Alameda County Employees\\x27 Retirement Association\\Anh-PCNS\\PowerShell\\personal\\claude_projects\\gsite\\.claude\\worktrees\\interesting-einstein'; $l=[Net.HttpListener]::new(); $l.Prefixes.Add(\"http://localhost:$port/\"); $l.Start(); Write-Host \"Serving on http://localhost:$port\"; while($l.IsListening){$c=$l.GetContext(); $p=$c.Request.Url.LocalPath; if($p -eq '/'){$p='/index.html'}; $f=Join-Path $root ($p.TrimStart('/')-replace'/','\\')); if(Test-Path $f){$b=[IO.File]::ReadAllBytes($f); $c.Response.ContentLength64=$b.Length; $c.Response.OutputStream.Write($b,0,$b.Length)}else{$c.Response.StatusCode=404}; $c.Response.OutputStream.Close()}"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "Poker Server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["poker-server/server.js"],
+      "port": 3000
+    }
+  ]
+}
