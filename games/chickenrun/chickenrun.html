@@ -113,7 +113,7 @@
   <h1>Chicken Run</h1>
   <p class="sub">Cross roads, dodge trains, hop on logs to survive!</p>
   <div style="font-size:12px;color:#4040a0;margin-bottom:12px;">Arrow keys / WASD · Swipe on mobile</div>
-  <p class="chip-hint">💰 Reach row milestones to earn chips (row 10 → 15 chips, row 25 → 30, row 50 → 60, and more)</p>
+  <p class="chip-hint">💰 Reach row milestones to earn chips (row 10 → 15 chips, row 25 → 30, row 50 → 60, and more)<br>⚡ Difficulty increases every 30 rows — watch for bushes blocking the grass!<br>☠️ One life only — no second chances!</p>
   <button class="btn" id="btnStart">Start Game</button>
   <a class="back-a" href="../../index.html">← Back to Arcade</a>
 </div>
@@ -230,7 +230,7 @@ function initGame() {
     deadT:     0,
     idleTimer: IDLE_MAX      // seconds until idle death on dangerous lane
   };
-  lives    = 3;
+  lives    = 1;
   score    = 0;
   chips    = 0;
   mileIdx  = 0;
@@ -245,11 +245,20 @@ function genUpTo(max) {
   while (lanes.length <= max) lanes.push(makeLane(lanes.length));
 }
 
-function diff(row) { return Math.min(row / 80, 2.0); }
+function diff(row) {
+  if (row >= 120) return 2.0;
+  if (row >= 90)  return 1.5;
+  if (row >= 60)  return 1.0;
+  if (row >= 30)  return 0.5;
+  return 0;
+}
 
 function makeLane(r) {
-  if (r === 0 || r <= 2) return { type:'grass', row:r, decor:makeDecor(false) };
-  if (r % 5 === 0)        return { type:'grass', row:r, decor:makeDecor(true)  };
+  if (r === 0 || r <= 2) return { type:'grass', row:r, decor:makeDecor(false), bushes:[] };
+  if (r % 5 === 0) {
+    const decor = makeDecor(true);
+    return { type:'grass', row:r, decor, bushes:makeBushes(r, decor) };
+  }
 
   const d = diff(r), rng = Math.random();
   let type;
@@ -264,6 +273,24 @@ function makeDecor(sparse) {
   for (let c = 0; c < COLS; c++)
     if (Math.random() < (sparse ? 0.12 : 0.22)) out.push(c);
   return out;
+}
+
+function makeBushes(r, excludeCols = []) {
+  const d = diff(r);
+  if (d === 0 || r < 5) return [];
+  // Available columns (not already occupied by a tree)
+  const avail = [];
+  for (let c = 0; c < COLS; c++)
+    if (!excludeCols.includes(c)) avail.push(c);
+  // Count scales with difficulty; always leave ≥ 3 free columns
+  const count = Math.min(Math.floor(d * 2 + Math.random() * 2), avail.length - 3);
+  if (count <= 0) return [];
+  // Fisher-Yates shuffle then take first `count`
+  for (let i = avail.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [avail[i], avail[j]] = [avail[j], avail[i]];
+  }
+  return avail.slice(0, count).sort((a, b) => a - b);
 }
 
 function makeMovingLane(type, r) {
@@ -427,10 +454,12 @@ function checkLanding() {
   }
 
   if (player.row > score) {
+    const prevDiff = diff(score);
     score = player.row;
     document.getElementById('hDist').textContent = score;
     if (score > localBest) document.getElementById('hBest').textContent = score;
     checkMilestones();
+    if (diff(score) > prevDiff) showChipPop('⚡ Harder!');
   }
 }
 
@@ -507,6 +536,9 @@ function tryMove(dr, dc) {
   if (gameState !== 'playing' || player.hopping || !player.alive) return;
   const nr = player.row + dr, nc = player.col + dc;
   if (nc < 0 || nc >= COLS || nr < 0) return;
+  // Block moves into bush cells on grass lanes
+  const destLn = lanes[nr];
+  if (destLn && destLn.type === 'grass' && destLn.bushes && destLn.bushes.includes(nc)) return;
   player.fRow = player.row; player.fCol = player.col;
   player.tRow = nr;         player.tCol = nc;
   player.fPx = player.px;
@@ -601,6 +633,7 @@ function drawLane(ln, sy) {
     ctx.fillRect(OX, sy + 2, W, 5);
     ctx.fillRect(OX, sy + CELL - 7, W, 5);
     for (const c of ln.decor) drawTree(OX + c * CELL + CELL * .5, sy + CELL * .5);
+    if (ln.bushes) for (const c of ln.bushes) drawBush(OX + c * CELL + CELL * .5, sy + CELL * .5);
   }
 
   if (ln.type === 'road') {
@@ -661,6 +694,26 @@ function drawTree(cx, cy) {
   ctx.fillStyle = '#2a7820';
   ctx.beginPath(); ctx.arc(cx - 5, cy - 3, 10, 0, Math.PI*2); ctx.fill();
   ctx.beginPath(); ctx.arc(cx + 6, cy - 7,  9, 0, Math.PI*2); ctx.fill();
+}
+
+function drawBush(cx, cy) {
+  // Wide low shrub — visually distinct from the tall trees
+  ctx.fillStyle = '#1e4d10';
+  ctx.beginPath(); ctx.arc(cx - 10, cy + 4, 11, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 9,  cy + 4, 11, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,      cy + 2, 13, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#2e7018';
+  ctx.beginPath(); ctx.arc(cx - 7,  cy - 3,  9, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 7,  cy - 3,  9, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,      cy - 5, 10, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#3d8a22';
+  ctx.beginPath(); ctx.arc(cx - 3,  cy - 7,  6, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 4,  cy - 7,  5, 0, Math.PI*2); ctx.fill();
+  // Red berries so the player can clearly spot it as an obstacle
+  ctx.fillStyle = '#c0392b';
+  ctx.beginPath(); ctx.arc(cx - 5, cy - 2, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx + 4, cy - 4, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(cx,     cy + 1, 2.5, 0, Math.PI*2); ctx.fill();
 }
 
 function drawCar(car, sy, dir) {
