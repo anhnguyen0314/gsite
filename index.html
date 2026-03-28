@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GameZone</title>
+  <title>PlayDen</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
   <!-- Navigation -->
   <nav>
-    <div class="nav-logo">🎮 GameZone</div>
+    <div class="nav-logo">🎮 PlayDen</div>
     <ul class="nav-links">
       <li><a href="#arcade">Arcade</a></li>
       <li><a href="#puzzle">Puzzle</a></li>
@@ -18,18 +18,26 @@
       <li><a href="#multiplayer">Multiplayer</a></li>
       <li><a href="leaderboard.html">🏆 Leaderboard</a></li>
       <li><a href="account.html">👾 Account</a></li>
+      <li><a href="about.html">About</a></li>
     </ul>
-    <div class="nav-auth">
-      <a href="login.html" class="btn-secondary">Log in</a>
-      <a href="signup.html" class="btn-primary">Sign up</a>
+    <div class="nav-right">
+      <div class="nav-chips hidden" id="navChips">🪙 <span id="navChipCount">0</span></div>
+      <div class="nav-auth" id="navAuth">
+        <a href="login.html" class="btn-secondary">Log in</a>
+        <a href="signup.html" class="btn-primary">Sign up</a>
+      </div>
     </div>
   </nav>
 
   <!-- Hero -->
   <section class="hero">
-    <h1>Play Free Games Online</h1>
-    <p>Hundreds of browser games — no download, no install. Just play.</p>
-    <a href="#arcade" class="btn-primary btn-large">Browse Games</a>
+    <h1>Play. Compete. Earn Chips.</h1>
+    <p>Browser games, no download required. Create a free account to save your scores, climb the leaderboards, and collect chips as you play.</p>
+    <div class="hero-actions">
+      <a href="signup.html" class="btn-primary btn-large">Create Free Account</a>
+      <a href="#arcade" class="btn-secondary btn-large">Browse Games</a>
+    </div>
+    <p class="hero-note">Already have an account? <a href="login.html">Sign in →</a></p>
   </section>
 
   <!-- Arcade -->
@@ -50,15 +58,15 @@
           <h3>Space Blaster</h3>
           <span class="tag">Arcade</span>
         </div>
-        <a href="#" class="btn-play">Play</a>
+        <a href="games/spaceblaster/spaceblaster.html" class="btn-play">Play</a>
       </div>
       <div class="game-card">
-        <div class="game-thumb">🏃</div>
+        <div class="game-thumb">🐦</div>
         <div class="game-info">
-          <h3>Endless Run</h3>
+          <h3>Flappy Bird</h3>
           <span class="tag">Arcade</span>
         </div>
-        <a href="#" class="btn-play">Play</a>
+        <a href="games/flappybird/flappybird.html" class="btn-play">Play</a>
       </div>
     </div>
   </section>
@@ -76,20 +84,20 @@
         <a href="games/tetris/tetris.html" class="btn-play">Play</a>
       </div>
       <div class="game-card">
-        <div class="game-thumb">⭐</div>
-        <div class="game-info">
-          <h3>Star Match</h3>
-          <span class="tag">Puzzle</span>
-        </div>
-        <a href="#" class="btn-play">Play</a>
-      </div>
-      <div class="game-card">
         <div class="game-thumb">🧠</div>
         <div class="game-info">
           <h3>Memory Match</h3>
           <span class="tag">Puzzle</span>
         </div>
-        <a href="#" class="btn-play">Play</a>
+        <a href="games/memorymatch/memorymatch.html" class="btn-play">Play</a>
+      </div>
+      <div class="game-card">
+        <div class="game-thumb">🔢</div>
+        <div class="game-info">
+          <h3>Sudoku</h3>
+          <span class="tag">Puzzle</span>
+        </div>
+        <a href="games/sudoku/sudoku.html" class="btn-play">Play</a>
       </div>
     </div>
   </section>
@@ -120,7 +128,7 @@
           <h3>Blackjack</h3>
           <span class="tag">Card</span>
         </div>
-        <a href="#" class="btn-play">Play</a>
+        <a href="games/blackjack/blackjack.html" class="btn-play">Play</a>
       </div>
     </div>
   </section>
@@ -138,17 +146,17 @@
         <a href="games/poker/lobby.html" class="btn-play">Play</a>
       </div>
       <div class="game-card">
+        <div class="game-thumb">🐍</div>
+        <div class="game-info">
+          <h3>Snake.io</h3>
+          <span class="tag">Multiplayer</span>
+        </div>
+        <a href="games/snakeio/snakeio.html" class="btn-play">Play</a>
+      </div>
+      <div class="game-card">
         <div class="game-thumb">🎲</div>
         <div class="game-info">
           <h3>Dice Duel</h3>
-          <span class="tag">Multiplayer</span>
-        </div>
-        <a href="signup.html" class="btn-play">Play</a>
-      </div>
-      <div class="game-card">
-        <div class="game-thumb">🏆</div>
-        <div class="game-info">
-          <h3>Quiz Clash</h3>
           <span class="tag">Multiplayer</span>
         </div>
         <a href="signup.html" class="btn-play">Play</a>
@@ -157,7 +165,7 @@
   </section>
 
   <footer>
-    <p>© 2026 GameZone · Built with ❤️</p>
+    <p>© 2026 PlayDen · <a href="about.html" style="color:#5050a0;">About</a> · <a href="privacy.html" style="color:#5050a0;">Privacy</a> · Built with ❤️ by one person</p>
   </footer>
 
   <script type="module" src="script.js"></script>

@@ -1,5 +1,5 @@
 // ============================================================
-//  GameZone Poker Server — Socket.io + Express
+//  PlayDen Poker Server — Socket.io + Express
 // ============================================================
 const express    = require('express');
 const http       = require('http');
@@ -29,7 +29,7 @@ app.use(cors());
 app.use(express.json());
 
 // Health check
-app.get('/', (req, res) => res.send('GameZone Poker Server running ✅'));
+app.get('/', (req, res) => res.send('PlayDen Poker Server running ✅'));
 
 // ── Admin API ────────────────────────────────────────────────
 // Protected by ADMIN_KEY environment variable.
@@ -704,6 +704,275 @@ io.on('connection', (socket) => {
       pdata.tableId = null;
     }
     players.delete(userId);
+  });
+});
+
+// ============================================================
+//  Snake.io — Real-time multiplayer arena
+// ============================================================
+const SWORLD     = 5000;    // world size (pixels, square)
+const STICK      = 50;      // game loop ms (20 tps)
+const SPD_N      = 3.5;     // normal speed px/tick
+const SPD_B      = 7.0;     // boost speed px/tick
+const BOOST_DRAIN = 0.25;   // target-length lost per tick while boosting
+const SEG_SP     = 7;       // segment spacing px
+const MIN_LEN    = 8;
+const START_LEN  = 30;
+const FOOD_CAP   = 350;
+const PU_CAP     = 12;
+const PU_INT_MS  = 6000;    // powerup spawn interval ms
+const MAX_SEGS   = 80;      // max segments sent to clients per snake
+
+const snk         = io.of('/snake');
+const snkPlayers  = new Map();   // socketId → snake
+const snkFood     = new Map();   // id → food
+const snkPU       = new Map();   // id → powerup
+let   snkFoodId   = 0;
+let   snkPUID     = 0;
+
+function sRnd(a, b) { return Math.random() * (b - a) + a; }
+function sDist(ax, ay, bx, by) { const dx = ax - bx, dy = ay - by; return Math.sqrt(dx * dx + dy * dy); }
+function sHue(str) { return (str || '').split('').reduce((a, c) => a + c.charCodeAt(0), 0) % 360; }
+
+function snkSpawnFood(n) {
+  const batch = [];
+  for (let i = 0; i < n; i++) {
+    const id = snkFoodId++;
+    const v  = Math.random() < 0.15 ? 3 : Math.random() < 0.35 ? 2 : 1;
+    const f  = { id, x: sRnd(40, SWORLD - 40), y: sRnd(40, SWORLD - 40), v, r: 3 + v * 2, c: `hsl(${Math.random() * 360 | 0},80%,60%)` };
+    snkFood.set(id, f);
+    batch.push(f);
+  }
+  return batch;
+}
+
+function snkSpawnPU() {
+  if (snkPU.size >= PU_CAP) return null;
+  const types = ['shield', 'ghost', 'speed'];
+  const type  = types[Math.random() * 3 | 0];
+  const id    = snkPUID++;
+  const pu    = { id, x: sRnd(100, SWORLD - 100), y: sRnd(100, SWORLD - 100), type };
+  snkPU.set(id, pu);
+  return pu;
+}
+
+function snkCreate(socketId, userId, username) {
+  const hue  = sHue(userId || socketId);
+  const x    = sRnd(300, SWORLD - 300);
+  const y    = sRnd(300, SWORLD - 300);
+  const ang  = Math.random() * Math.PI * 2;
+  const segs = [];
+  for (let i = 0; i < START_LEN; i++) {
+    segs.push({ x: x - Math.cos(ang) * i * SEG_SP, y: y - Math.sin(ang) * i * SEG_SP });
+  }
+  return { socketId, userId, username, x, y, ang, segs, len: START_LEN,
+    alive: true, boosting: false, score: 0, kills: 0, hue,
+    shield: 0, ghost: 0, speedBoost: 0 };
+}
+
+function snkKill(s, killerSid) {
+  if (!s.alive) return;
+  s.alive = false;
+  const dropped = [];
+  s.segs.forEach((seg, i) => {
+    if (i % 3 === 0) {
+      const id = snkFoodId++;
+      const f  = { id, x: seg.x + sRnd(-8, 8), y: seg.y + sRnd(-8, 8), v: 2, r: 7, c: `hsl(${s.hue},70%,55%)` };
+      snkFood.set(id, f);
+      dropped.push(f);
+    }
+  });
+  if (dropped.length) snk.emit('foodSpawned', dropped);
+  if (killerSid) {
+    const killer = snkPlayers.get(killerSid);
+    if (killer && killer.alive) { killer.kills++; killer.score += 100; }
+  }
+  const sock = snk.sockets.get(s.socketId);
+  if (sock) sock.emit('youDied', { score: s.score, kills: s.kills, len: Math.ceil(s.len) });
+}
+
+function snkTick() {
+  if (snkPlayers.size === 0) return;
+
+  const eatenFood = [];
+  const eatenPU   = [];
+
+  for (const s of snkPlayers.values()) {
+    if (!s.alive) continue;
+    const spd = (s.boosting || s.speedBoost > 0) ? SPD_B : SPD_N;
+    s.x += Math.cos(s.ang) * spd;
+    s.y += Math.sin(s.ang) * spd;
+
+    if (s.x < 10 || s.x > SWORLD - 10 || s.y < 10 || s.y > SWORLD - 10) {
+      snkKill(s, null); continue;
+    }
+
+    s.segs.unshift({ x: s.x, y: s.y });
+    if (s.boosting && s.len > MIN_LEN + 3) s.len = Math.max(MIN_LEN, s.len - BOOST_DRAIN);
+    while (s.segs.length > Math.ceil(s.len) + 1) s.segs.pop();
+
+    if (s.shield > 0)     s.shield--;
+    if (s.ghost > 0)      s.ghost--;
+    if (s.speedBoost > 0) s.speedBoost--;
+
+    // Food
+    for (const [id, f] of snkFood) {
+      if (sDist(s.x, s.y, f.x, f.y) < 10 + f.r) {
+        s.len += f.v * 4;
+        s.score += f.v;
+        snkFood.delete(id);
+        eatenFood.push(id);
+      }
+    }
+
+    // Power-ups
+    for (const [id, pu] of snkPU) {
+      if (sDist(s.x, s.y, pu.x, pu.y) < 24) {
+        snkPU.delete(id);
+        eatenPU.push(id);
+        const DUR = 240; // ticks ≈ 12 seconds
+        if (pu.type === 'shield')     s.shield     = DUR;
+        else if (pu.type === 'ghost') s.ghost      = DUR;
+        else                          s.speedBoost = DUR;
+        const sock = snk.sockets.get(s.socketId);
+        if (sock) sock.emit('gotPowerup', { type: pu.type, ticks: DUR });
+      }
+    }
+  }
+
+  // Snake vs snake collisions
+  const alive = Array.from(snkPlayers.values()).filter(s => s.alive);
+  for (const s of alive) {
+    if (!s.alive || s.ghost > 0) continue;
+    outer: for (const other of alive) {
+      const startIdx = other.socketId === s.socketId ? 8 : 0;
+      for (let i = startIdx; i < other.segs.length; i++) {
+        const seg = other.segs[i];
+        if (sDist(s.x, s.y, seg.x, seg.y) < 9) {
+          if (s.shield > 0) { s.shield = 0; break outer; }
+          snkKill(s, other.socketId === s.socketId ? null : other.socketId);
+          break outer;
+        }
+      }
+    }
+  }
+
+  // Refill food
+  const deficit = FOOD_CAP - snkFood.size;
+  if (deficit > 0) {
+    const spawned = snkSpawnFood(Math.min(deficit, 8));
+    if (spawned.length) snk.emit('foodSpawned', spawned);
+  }
+
+  if (eatenFood.length) snk.emit('foodEaten', eatenFood);
+  if (eatenPU.length)   snk.emit('powerupEaten', eatenPU);
+
+  // Build snake state
+  const snakeData = [];
+  for (const s of snkPlayers.values()) {
+    snakeData.push({
+      sid:   s.socketId,
+      uid:   s.userId,
+      name:  s.username,
+      x:     Math.round(s.x),
+      y:     Math.round(s.y),
+      segs:  s.segs.slice(0, MAX_SEGS).map(sg => [Math.round(sg.x), Math.round(sg.y)]),
+      len:   Math.ceil(s.len),
+      alive: s.alive,
+      score: s.score,
+      kills: s.kills,
+      hue:   s.hue,
+      shield: s.shield > 0,
+      ghost:  s.ghost  > 0,
+      boost:  s.boosting || s.speedBoost > 0
+    });
+  }
+  snk.emit('tick', snakeData);
+}
+
+setInterval(snkTick, STICK);
+snkSpawnFood(FOOD_CAP);
+setInterval(() => {
+  const pu = snkSpawnPU();
+  if (pu) snk.emit('powerupSpawned', [pu]);
+}, PU_INT_MS);
+
+snk.on('connection', socket => {
+  console.log(`Snake socket connected: ${socket.id}`);
+
+  socket.on('join', async ({ idToken, userId, username }) => {
+    try {
+      let uid = userId, uname = (username || 'Guest').substring(0, 20);
+      if (idToken && userId) {
+        const dec = await admin.auth().verifyIdToken(idToken);
+        if (dec.uid !== userId) { socket.emit('err', 'auth'); return; }
+        uid = dec.uid;
+      }
+      const s = snkCreate(socket.id, uid, uname);
+      snkPlayers.set(socket.id, s);
+      socket.data.userId   = uid;
+      socket.data.username = uname;
+      socket.emit('init', {
+        sid:      socket.id,
+        worldSize: SWORLD,
+        mySnake:  { sid: s.socketId, uid: s.userId, name: s.username, x: Math.round(s.x), y: Math.round(s.y), segs: s.segs.map(sg => [Math.round(sg.x), Math.round(sg.y)]), len: s.len, alive: true, score: 0, kills: 0, hue: s.hue, shield: false, ghost: false, boost: false },
+        foods:    Array.from(snkFood.values()),
+        powerups: Array.from(snkPU.values())
+      });
+    } catch (e) {
+      console.error('Snake join error:', e.message);
+      socket.emit('err', 'join failed');
+    }
+  });
+
+  socket.on('dir', ({ angle, boost }) => {
+    const s = snkPlayers.get(socket.id);
+    if (!s || !s.alive) return;
+    if (angle !== undefined && isFinite(angle)) {
+      let diff = angle - s.ang;
+      while (diff >  Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      s.ang += Math.max(-0.12, Math.min(0.12, diff));
+    }
+    if (boost !== undefined) s.boosting = !!boost && s.len > MIN_LEN + 5;
+  });
+
+  socket.on('respawn', () => {
+    const old = snkPlayers.get(socket.id);
+    if (old && old.alive) return;
+    const s = snkCreate(socket.id, socket.data.userId, socket.data.username);
+    snkPlayers.set(socket.id, s);
+    socket.emit('init', {
+      sid: socket.id,
+      worldSize: SWORLD,
+      mySnake: { sid: s.socketId, uid: s.userId, name: s.username, x: Math.round(s.x), y: Math.round(s.y), segs: s.segs.map(sg => [Math.round(sg.x), Math.round(sg.y)]), len: s.len, alive: true, score: 0, kills: 0, hue: s.hue, shield: false, ghost: false, boost: false },
+      foods:    Array.from(snkFood.values()),
+      powerups: Array.from(snkPU.values())
+    });
+  });
+
+  socket.on('saveScore', async ({ score, kills }) => {
+    const uid = socket.data.userId;
+    if (!uid || typeof uid !== 'string' || uid.startsWith('guest_')) return;
+    try {
+      const ref  = db.collection('games').doc('snakeio').collection('scores').doc(uid);
+      const snap = await ref.get();
+      const prev = snap.exists ? (snap.data().score || 0) : 0;
+      if (score > prev) {
+        await ref.set({ userId: uid, username: socket.data.username, score, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+      }
+      const chips = kills * 50 + Math.floor(score / 5);
+      if (chips > 0) {
+        await db.collection('users').doc(uid).update({ chips: admin.firestore.FieldValue.increment(chips) });
+      }
+      socket.emit('scoreSaved', { chips });
+    } catch (e) { console.error('Snake save score error:', e.message); }
+  });
+
+  socket.on('disconnect', () => {
+    const s = snkPlayers.get(socket.id);
+    if (s) { if (s.alive) snkKill(s, null); snkPlayers.delete(socket.id); }
+    console.log(`Snake socket disconnected: ${socket.id}`);
   });
 });
 
