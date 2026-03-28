@@ -143,6 +143,31 @@ Vertical stack — no oval table:
 4. Action panel: timer bar (turns red at ≤8s) + raise slider + Fold/Check/Call/Raise/All-in buttons
 - Hand result: fixed full-screen overlay `.result-overlay` (z-index 100)
 
+## Git workflow
+After every change, give the user these commands to run in the VS Code terminal:
+
+```bash
+git add <changed files>
+git commit -m "short description of what changed"
+git push origin main
+```
+
+If push is rejected (non-fast-forward), run:
+```bash
+git stash
+git pull --rebase origin main
+git stash pop
+git push origin main
+```
+
+To check if local and GitHub are in sync:
+```bash
+git status
+```
+"Your branch is up to date with 'origin/main'. nothing to commit, working tree clean" = in sync.
+
+**Never `git add .`** without checking `git status` first — avoid accidentally staging `.claude/` or other non-project files. Always stage specific files by name.
+
 ## Planned next
 - Chip spending (cost to play certain games)
 - Community: Discord, global leaderboards
