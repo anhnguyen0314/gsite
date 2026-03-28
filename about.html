@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About — PlayDen</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .about-page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 48px 24px 64px;
+    }
+
+    /* ── Hero section ── */
+    .about-hero {
+      text-align: center;
+      padding: 24px 0 48px;
+      border-bottom: 1px solid #2a2a4a;
+      margin-bottom: 48px;
+    }
+    .about-hero .icon { font-size: 64px; margin-bottom: 16px; }
+    .about-hero h1 {
+      font-size: 36px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+    }
+    .about-hero p {
+      font-size: 18px;
+      color: #7070a0;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.65;
+    }
+
+    /* ── Pillar cards ── */
+    .pillars {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin-bottom: 56px;
+    }
+    .pillar {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 14px;
+      padding: 24px 20px;
+      text-align: center;
+    }
+    .pillar .pillar-icon { font-size: 36px; margin-bottom: 10px; }
+    .pillar h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #e2e8f0;
+      margin-bottom: 8px;
+    }
+    .pillar p {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.6;
+    }
+
+    /* ── Prose sections ── */
+    .about-section { margin-bottom: 48px; }
+    .about-section h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #a78bfa;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #2a2a4a;
+    }
+    .about-section p {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #94a3b8;
+      margin-bottom: 14px;
+    }
+    .about-section p:last-child { margin-bottom: 0; }
+    .about-section a { color: #a78bfa; text-decoration: none; }
+    .about-section a:hover { text-decoration: underline; }
+
+    /* ── Transparency bar ── */
+    .transparency-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .t-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .t-card .t-icon { font-size: 24px; flex-shrink: 0; }
+    .t-card .t-body {}
+    .t-card .t-title { font-size: 13px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+    .t-card .t-desc  { font-size: 13px; color: #64748b; line-height: 1.5; }
+
+    /* ── Support / Ko-fi ── */
+    .support-box {
+      background: linear-gradient(135deg, #1a1a2e, #1e1430);
+      border: 1px solid #4c1d95;
+      border-radius: 16px;
+      padding: 32px 28px;
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .support-box .s-icon { font-size: 48px; margin-bottom: 12px; }
+    .support-box h2 {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 10px;
+    }
+    .support-box p {
+      font-size: 15px;
+      color: #94a3b8;
+      max-width: 480px;
+      margin: 0 auto 24px;
+      line-height: 1.7;
+    }
+    .kofi-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: #FF5E5B;
+      color: #fff;
+      padding: 13px 28px;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .kofi-btn:hover { background: #e04d4a; transform: translateY(-2px); }
+    .kofi-note {
+      font-size: 12px;
+      color: #475569;
+      margin-top: 12px;
+    }
+
+    /* ── Contact ── */
+    .contact-card {
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 22px 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .contact-avatar {
+      width: 52px; height: 52px;
+      background: #4c1d95;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      flex-shrink: 0;
+    }
+    .contact-info h3 { font-size: 15px; font-weight: 700; color: #e2e8f0; margin-bottom: 4px; }
+    .contact-info p  { font-size: 14px; color: #64748b; margin: 0; }
+    .contact-info a  { color: #a78bfa; text-decoration: none; }
+    .contact-info a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      .about-hero h1 { font-size: 26px; }
+      .about-hero p  { font-size: 16px; }
+      .support-box   { padding: 24px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 PlayDen</a>
+    <ul class="nav-links">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="leaderboard.html">🏆 Leaderboard</a></li>
+      <li><a href="privacy.html">Privacy</a></li>
+    </ul>
+    <div class="nav-right">
+      <div class="nav-chips hidden" id="navChips">🪙 <span id="navChipCount">0</span></div>
+      <div class="nav-auth" id="navAuth">
+        <a href="login.html" class="btn-secondary">Log in</a>
+        <a href="signup.html" class="btn-primary">Sign up</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="about-page">
+
+    <!-- Hero -->
+    <div class="about-hero">
+      <div class="icon">🎮</div>
+      <h1>About PlayDen</h1>
+      <p>A free, no-nonsense browser gaming hub built for people who just want to play — no downloads, no paywalls, no catch.</p>
+    </div>
+
+    <!-- Pillars -->
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pillar-icon">🆓</div>
+        <h3>Always Free</h3>
+        <p>Every game on PlayDen is free to play. No subscriptions, no pay-to-win, no hidden charges — ever.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon">🤝</div>
+        <h3>Community First</h3>
+        <p>PlayDen exists to bring people together around games. Leaderboards, chips, and friendly competition — that's the whole point.</p>
+      </div>
+      <div class="pillar">
+        <div class="pillar-icon">🔍</div>
+        <h3>Transparent</h3>
+        <p>No hidden agendas. If there are ads, it's to keep the lights on. Everything is explained openly on this page.</p>
+      </div>
+    </div>
+
+    <!-- The story -->
+    <div class="about-section">
+      <h2>The Story</h2>
+      <p>PlayDen started as a personal project — a desire to build something fun that people can just open in their browser and play. No app store, no install, no account required (though creating one earns you chips and saves your scores).</p>
+      <p>This is a one-person operation. Every game, every line of code, every design decision is made by a single developer who also happens to love games. That means things move at a human pace, but it also means there's genuine care behind every feature added.</p>
+      <p>The goal has never been to build the next big gaming platform. It's simply to have a small corner of the internet where people can enjoy classic browser games, compete on leaderboards, and have a bit of fun — for free.</p>
+    </div>
+
+    <!-- Chips system -->
+    <div class="about-section">
+      <h2>The Chip System</h2>
+      <p>PlayDen has a chip economy that's meant to add a fun layer of progression, not gatekeeping. You earn chips just by playing — there's no way to buy them and no way to spend them on anything that gives you an advantage. They're purely for bragging rights and fun.</p>
+      <p>Every day you log in, you get a free bonus of 500 chips. Each game rewards you based on how well you do. The leaderboards show who's put in the most time and skill.</p>
+      <p>If you ever want to understand exactly how chips are earned in each game, visit the <a href="chips.html">Chips page</a>.</p>
+    </div>
+
+    <!-- Revenue transparency -->
+    <div class="about-section">
+      <h2>Revenue &amp; Costs</h2>
+      <p>Running PlayDen costs real money — servers, domains, database hosting, and the poker game server all have ongoing costs. To cover these, the site may show unobtrusive ads via Google AdSense.</p>
+      <div class="transparency-grid">
+        <div class="t-card">
+          <span class="t-icon">📢</span>
+          <div class="t-body">
+            <div class="t-title">Ad Revenue</div>
+            <div class="t-desc">Any ad revenue goes directly toward hosting and server costs. This site is not a business.</div>
+          </div>
+        </div>
+        <div class="t-card">
+          <span class="t-icon">☁️</span>
+          <div class="t-body">
+            <div class="t-title">Hosting Costs</div>
+            <div class="t-desc">Firebase, Render.com, and GitHub Pages are used to keep the site running reliably.</div>
+          </div>
+        </div>
+        <div class="t-card">
+          <span class="t-icon">🚫</span>
+          <div class="t-body">
+            <div class="t-title">No Data Sales</div>
+            <div class="t-desc">Your data is never sold or shared with advertisers. See the <a href="privacy.html">Privacy Policy</a>.</div>
+          </div>
+        </div>
+        <div class="t-card">
+          <span class="t-icon">💛</span>
+          <div class="t-body">
+            <div class="t-title">Optional Support</div>
+            <div class="t-desc">If you enjoy the site and want to help out, Ko-fi donations are always appreciated — but never expected.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Support / Ko-fi -->
+    <div class="support-box">
+      <div class="s-icon">☕</div>
+      <h2>Support PlayDen</h2>
+      <p>PlayDen is free and will stay free. But if you've enjoyed the games and want to help keep the servers running, buying a coffee goes a long way. Every contribution is genuinely appreciated — it's what makes a one-person project like this sustainable.</p>
+      <a class="kofi-btn" href="https://ko-fi.com/playden" target="_blank" rel="noopener">
+        ☕ Buy Me a Coffee on Ko-fi
+      </a>
+      <p class="kofi-note">Ko-fi takes 0% platform fee on one-time donations. 100% goes to the project.</p>
+    </div>
+
+    <!-- Contact -->
+    <div class="about-section">
+      <h2>Get in Touch</h2>
+      <p>Got feedback, found a bug, or just want to say hi? Reach out directly — there's a real person on the other end.</p>
+      <div class="contact-card">
+        <div class="contact-avatar">👾</div>
+        <div class="contact-info">
+          <h3>Ace — PlayDen Developer</h3>
+          <p>Questions, bug reports, game requests: use the feedback form or open an issue on GitHub.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    <p>© 2026 PlayDen · <a href="privacy.html" style="color:#5050a0;">Privacy</a> · <a href="about.html" style="color:#5050a0;">About</a> · Built with ❤️ by one person</p>
+  </footer>
+
+  <script type="module" src="script.js"></script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-// GameZone — main script (auth state + daily chip bonus)
+// PlayDen — main script (auth state + daily chip bonus + nav chip display)
 
 const firebaseConfig = {
   apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
@@ -30,6 +30,14 @@ function showToast(message, duration = 4000) {
   toast._timeout = setTimeout(() => { toast.style.opacity = '0'; }, duration);
 }
 
+function setNavChips(amount) {
+  const pill  = document.getElementById('navChips');
+  const count = document.getElementById('navChipCount');
+  if (!pill || !count) return;
+  count.textContent = Number(amount).toLocaleString();
+  pill.classList.remove('hidden');
+}
+
 (async () => {
   try {
     const { initializeApp }  = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js');
@@ -42,26 +50,36 @@ function showToast(message, duration = 4000) {
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    const navAuth = document.querySelector('.nav-auth');
+    // Support both old .nav-auth and new #navAuth selectors
+    const navAuth = document.getElementById('navAuth') || document.querySelector('.nav-auth');
+
+    // Detect depth for correct path back to root
+    const depth = window.location.pathname.split('/').filter(Boolean).length;
+    const root  = depth >= 3 ? '../../' : '';
 
     onAuthStateChanged(auth, async (user) => {
       if (user) {
         const displayName = user.displayName || user.email.split('@')[0];
 
-        // Detect depth for correct path back to root
-        const depth = window.location.pathname.split('/').filter(Boolean).length;
-        const root  = depth >= 3 ? '../../' : '';
+        if (navAuth) {
+          navAuth.innerHTML = `
+            <a href="${root}account.html" class="nav-username" style="text-decoration:none;">👾 ${displayName}</a>
+            <button class="btn-secondary" id="logoutBtn">Log out</button>
+          `;
+          document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await signOut(auth);
+            window.location.reload();
+          });
+        }
+        // Hide sign-up hero CTA when already signed in
+        const heroNote = document.querySelector('.hero-note');
+        const heroActions = document.querySelector('.hero-actions');
+        if (heroNote) heroNote.style.display = 'none';
+        if (heroActions) {
+          heroActions.innerHTML = `<a href="${root}leaderboard.html" class="btn-primary btn-large">🏆 View Leaderboard</a><a href="#arcade" class="btn-secondary btn-large">Browse Games</a>`;
+        }
 
-        navAuth.innerHTML = `
-          <a href="${root}account.html" class="nav-username" style="text-decoration:none;">👾 ${displayName}</a>
-          <button class="btn-secondary" id="logoutBtn">Log out</button>
-        `;
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-          await signOut(auth);
-          window.location.reload();
-        });
-
-        // ── Daily login bonus & account init ──────────────────
+        // ── Daily login bonus & chip display ──────────────────
         try {
           const userRef  = doc(db, 'users', user.uid);
           const userSnap = await getDoc(userRef);
@@ -76,7 +94,8 @@ function showToast(message, duration = 4000) {
               lastDailyBonus: today,
               createdAt:      serverTimestamp()
             });
-            showToast('🎉 Welcome to GameZone! You start with 1,000 chips.');
+            setNavChips(1000);
+            showToast('🎉 Welcome to PlayDen! You start with 1,000 chips.');
           } else {
             const data = userSnap.data();
             if (data.lastDailyBonus !== today) {
@@ -85,22 +104,30 @@ function showToast(message, duration = 4000) {
                 chips:          increment(500),
                 lastDailyBonus: today
               });
+              setNavChips((data.chips || 0) + 500);
               showToast('🪙 Daily bonus! +500 chips added to your account.');
+            } else {
+              setNavChips(data.chips || 0);
             }
           }
         } catch (err) {
-          console.warn('GameZone: Could not process daily bonus:', err);
+          console.warn('PlayDen: Could not process daily bonus:', err);
         }
 
       } else {
-        navAuth.innerHTML = `
-          <a href="login.html" class="btn-secondary">Log in</a>
-          <a href="signup.html" class="btn-primary">Sign up</a>
-        `;
+        if (navAuth) {
+          navAuth.innerHTML = `
+            <a href="${root}login.html" class="btn-secondary">Log in</a>
+            <a href="${root}signup.html" class="btn-primary">Sign up</a>
+          `;
+        }
+        // Hide chip pill when logged out
+        const pill = document.getElementById('navChips');
+        if (pill) pill.classList.add('hidden');
       }
     });
 
   } catch (err) {
-    console.warn('GameZone: Firebase auth could not be loaded.', err);
+    console.warn('PlayDen: Firebase auth could not be loaded.', err);
   }
 })();

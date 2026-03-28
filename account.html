@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Account — GameZone</title>
+  <title>My Account — PlayDen</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
     .account-wrap {
@@ -282,15 +282,18 @@
 <body>
 
   <nav>
-    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 GameZone</a>
+    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 PlayDen</a>
     <ul class="nav-links">
       <li><a href="index.html#arcade">Arcade</a></li>
       <li><a href="index.html#puzzle">Puzzle</a></li>
       <li><a href="index.html#card">Card</a></li>
     </ul>
-    <div class="nav-auth" id="navAuth">
-      <a href="login.html" class="btn-secondary">Log in</a>
-      <a href="signup.html" class="btn-primary">Sign up</a>
+    <div class="nav-right">
+      <div class="nav-chips hidden" id="navChips">🪙 <span id="navChipCount">0</span></div>
+      <div class="nav-auth" id="navAuth">
+        <a href="login.html" class="btn-secondary">Log in</a>
+        <a href="signup.html" class="btn-primary">Sign up</a>
+      </div>
     </div>
   </nav>
 
@@ -355,6 +358,13 @@
           getPokerRank(user.uid)
         ]);
         renderPage(user, displayName, { snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank });
+        // Show chip balance in nav
+        const navPill  = document.getElementById('navChips');
+        const navCount = document.getElementById('navChipCount');
+        if (navPill && navCount && userData?.chips != null) {
+          navCount.textContent = userData.chips.toLocaleString();
+          navPill.classList.remove('hidden');
+        }
       } catch (err) {
         console.error('Failed to load profile:', err);
         pageContent.innerHTML = `<div class="loading-state" style="color:#f87171;">Failed to load profile. Please refresh.</div>`;
@@ -441,13 +451,15 @@
             <h1>${escHtml(displayName)}</h1>
             <p>${escHtml(user.email)}</p>
           </div>
-          <div class="member-badge">⭐ GameZone Member</div>
+          <div class="member-badge">⭐ PlayDen Member</div>
         </div>
 
-        <!-- Reset password -->
-        <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
-          <button id="resetPwBtn" class="btn-outline" onclick="resetPassword()"
-            style="font-size:13px;padding:8px 16px;">🔑 Reset Password</button>
+        <!-- Quick actions (top) -->
+        <div class="actions-row" style="margin-bottom:24px;">
+          <button id="resetPwBtn" class="btn-outline" onclick="resetPassword()">🔑 Reset Password</button>
+          <a href="chips.html"       class="btn-outline">🪙 Chips</a>
+          <a href="leaderboard.html" class="btn-outline">🏆 Leaderboard</a>
+          <a href="index.html"       class="btn-outline">← All Games</a>
         </div>
 
         <!-- Chip balance (site-wide) -->
@@ -520,13 +532,6 @@
           </div>
         </div>
 
-        <!-- Actions -->
-        <div class="actions-row">
-          <a href="games/poker/lobby.html" class="btn-poker">♠️ Play Poker</a>
-          <a href="chips.html"       class="btn-outline">🪙 Chips</a>
-          <a href="leaderboard.html" class="btn-outline">🏆 Leaderboard</a>
-          <a href="index.html"       class="btn-outline">← All Games</a>
-        </div>
       `;
     }
 
@@ -537,7 +542,7 @@
       `;
       pageContent.innerHTML = `
         <div class="login-prompt">
-          <p>Log in to view your GameZone profile and stats.</p>
+          <p>Log in to view your PlayDen profile and stats.</p>
           <a href="login.html" class="btn-poker">Log in</a>
         </div>
       `;

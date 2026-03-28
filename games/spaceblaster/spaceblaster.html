@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Space Blaster — PlayDen</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .back-btn {
+      background: none;
+      border: 1px solid #2a2a4a;
+      color: #a78bfa;
+      padding: 5px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .back-btn:hover { background: #2a2a4a; }
+    .header-title { font-size: 17px; font-weight: 700; color: #a78bfa; }
+    .hud-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+    .hud-chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 4px 12px;
+      white-space: nowrap;
+    }
+    .hud-chip .val { font-weight: 700; color: #a78bfa; }
+
+    /* ── Game HUD overlay ── */
+    .game-hud {
+      position: absolute;
+      top: 8px;
+      left: 0; right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 14px;
+      pointer-events: none;
+      z-index: 5;
+    }
+    .hud-pill {
+      background: rgba(26,26,46,0.85);
+      border: 1px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    .hud-pill span { color: #a78bfa; }
+
+    /* ── Canvas wrapper ── */
+    .canvas-wrap {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      touch-action: none;
+    }
+
+    /* ── Overlay screens ── */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: rgba(15,15,26,0.88);
+      z-index: 20;
+      padding: 24px;
+      text-align: center;
+    }
+    .overlay.hidden { display: none; }
+    .overlay h2 { font-size: 28px; color: #a78bfa; }
+    .overlay p  { color: #94a3b8; font-size: 15px; max-width: 300px; }
+    .overlay .big { font-size: 22px; font-weight: 700; color: #e2e8f0; }
+    .overlay .chips-earned { color: #a78bfa; font-size: 18px; }
+
+    .btn-primary {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      padding: 13px 32px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-primary:hover { background: #6d28d9; }
+    .btn-secondary {
+      background: #2a2a4a;
+      color: #a78bfa;
+      border: 1px solid #3a3a5a;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* ── D-Pad for mobile ── */
+    .dpad {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      z-index: 10;
+      user-select: none;
+    }
+    .dpad-row { display: flex; gap: 4px; }
+    .dpad-btn {
+      width: 52px;
+      height: 52px;
+      background: rgba(124,58,237,0.3);
+      border: 2px solid rgba(124,58,237,0.5);
+      border-radius: 10px;
+      color: #a78bfa;
+      font-size: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dpad-btn:active { background: rgba(124,58,237,0.6); }
+    .fire-btn {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 70px;
+      height: 70px;
+      background: rgba(124,58,237,0.4);
+      border: 2px solid #7c3aed;
+      border-radius: 50%;
+      color: #fff;
+      font-size: 28px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      touch-action: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .fire-btn:active { background: rgba(124,58,237,0.8); }
+
+    @media (max-width: 600px) {
+      .dpad, .fire-btn { display: flex; }
+    }
+
+    /* ── Auth gate ── */
+    .auth-gate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,15,26,0.96);
+      z-index: 300;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 24px;
+    }
+    .auth-gate.show { display: flex; }
+    .auth-gate h2 { color: #a78bfa; font-size: 26px; }
+    .auth-gate p  { color: #94a3b8; }
+    .auth-gate a {
+      background: #7c3aed;
+      color: #fff;
+      padding: 12px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .auth-gate a.sec { background: #2a2a4a; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- Auth Gate -->
+<div class="auth-gate" id="authGate">
+  <h2>🚀 Space Blaster</h2>
+  <p>Sign in to play and earn chips.</p>
+  <a href="../../login.html">Sign In</a>
+  <a href="../../signup.html" class="sec">Create Account</a>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <a href="../../index.html" class="back-btn">← Back</a>
+  <div class="header-title">🚀 Space Blaster</div>
+  <div class="hud-right">
+    <div class="hud-chip">🪙 <span class="val" id="chipCount">—</span></div>
+  </div>
+</div>
+
+<!-- Canvas area -->
+<div class="canvas-wrap" id="canvasWrap">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- In-game HUD -->
+  <div class="game-hud" id="gameHud">
+    <div class="hud-pill">Score: <span id="hudScore">0</span></div>
+    <div class="hud-pill">Wave: <span id="hudWave">1</span></div>
+    <div class="hud-pill">❤️ <span id="hudLives">3</span></div>
+  </div>
+
+  <!-- Start overlay -->
+  <div class="overlay" id="overlayStart">
+    <div style="font-size:52px">🚀</div>
+    <h2>Space Blaster</h2>
+    <p>Destroy enemy ships, survive waves, earn chips.<br>
+       <strong>+50 chips</strong> per kill · <strong>+200 chips</strong> per wave</p>
+    <p style="font-size:12px;color:#475569;">WASD / Arrow keys to move · Space to fire</p>
+    <button class="btn-primary" id="btnStart">Start Game</button>
+  </div>
+
+  <!-- Game over overlay -->
+  <div class="overlay hidden" id="overlayDead">
+    <div style="font-size:44px">💥</div>
+    <h2>Game Over</h2>
+    <div class="big" id="goScore"></div>
+    <div class="chips-earned" id="goChips"></div>
+    <button class="btn-primary" id="btnRestart">Play Again</button>
+    <a href="../../index.html" class="btn-secondary">Back to Hub</a>
+  </div>
+
+  <!-- Mobile controls -->
+  <div class="dpad" id="dpad">
+    <div class="dpad-row"><button class="dpad-btn" id="dUp">▲</button></div>
+    <div class="dpad-row">
+      <button class="dpad-btn" id="dLeft">◀</button>
+      <button class="dpad-btn" id="dDown">▼</button>
+      <button class="dpad-btn" id="dRight">▶</button>
+    </div>
+  </div>
+  <div class="fire-btn" id="fireBtn">🔥</div>
+</div>
+
+<script type="module">
+import { initializeApp }        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, getDoc, updateDoc, setDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            'AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY',
+  authDomain:        'gamezone-6487a.firebaseapp.com',
+  projectId:         'gamezone-6487a',
+  storageBucket:     'gamezone-6487a.firebasestorage.app',
+  messagingSenderId: '266519256159',
+  appId:             '1:266519256159:web:34d6be085083cda5ff4fea'
+};
+
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+let user         = null;
+let chipBalance  = 0;
+let sessionChips = 0;  // chips earned this game session
+
+// ── Auth ──────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async u => {
+  user = u;
+  if (!u) { document.getElementById('authGate').classList.add('show'); return; }
+  document.getElementById('authGate').classList.remove('show');
+  const snap = await getDoc(doc(db, 'users', u.uid));
+  chipBalance = snap.exists() ? (snap.data().chips || 0) : 0;
+  document.getElementById('chipCount').textContent = chipBalance.toLocaleString();
+});
+
+async function earnChips(amount) {
+  if (!user || amount <= 0) return;
+  chipBalance  += amount;
+  sessionChips += amount;
+  document.getElementById('chipCount').textContent = chipBalance.toLocaleString();
+  await updateDoc(doc(db, 'users', user.uid), { chips: chipBalance });
+}
+
+async function saveScore(score) {
+  if (!user) return;
+  const ref  = doc(db, 'games', 'spaceblaster', 'scores', user.uid);
+  const snap = await getDoc(ref);
+  const prev = snap.exists() ? (snap.data().score || 0) : 0;
+  if (score <= prev) return;
+  const usnap = await getDoc(doc(db, 'users', user.uid));
+  const username = usnap.exists() ? (usnap.data().username || 'Player') : 'Player';
+  await setDoc(ref, { userId: user.uid, username, score, updatedAt: serverTimestamp() });
+}
+
+// ── Canvas setup ──────────────────────────────────────────────────────
+const canvas  = document.getElementById('gameCanvas');
+const ctx     = canvas.getContext('2d');
+const wrap    = document.getElementById('canvasWrap');
+
+function resize() {
+  const W = wrap.clientWidth;
+  const H = wrap.clientHeight;
+  canvas.width  = W;
+  canvas.height = H;
+}
+resize();
+window.addEventListener('resize', () => { resize(); });
+
+// ── Game constants ────────────────────────────────────────────────────
+const SHIP_SPEED  = 5;
+const BULLET_SPEED = 9;
+const ENEMY_BASE_SPEED = 1.2;
+const ENEMY_ROWS  = 3;
+const ENEMY_COLS  = 8;
+const CHIP_PER_KILL = 50;
+const CHIP_PER_WAVE = 200;
+
+// ── Game state ────────────────────────────────────────────────────────
+let running      = false;
+let animId       = null;
+let score        = 0;
+let lives        = 3;
+let wave         = 1;
+let ship         = {};
+let bullets      = [];
+let enemies      = [];
+let enemyBullets = [];
+let stars        = [];
+let particles    = [];
+let enemyDir     = 1;
+let enemyMoveTimer = 0;
+let enemyShootTimer = 0;
+let waveClearing = false;
+
+// Input
+const keys = {};
+const mobileKeys = { up: false, down: false, left: false, right: false, fire: false };
+let fireCooldown = 0;
+
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 80; i++) {
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.5,
+      spd: Math.random() * 0.8 + 0.2
+    });
+  }
+}
+
+function initShip() {
+  ship = {
+    x: canvas.width / 2,
+    y: canvas.height - 70,
+    w: 36,
+    h: 36,
+    color: '#a78bfa'
+  };
+}
+
+function spawnWave(waveNum) {
+  enemies = [];
+  const cols  = Math.min(ENEMY_COLS, 4 + waveNum);
+  const rows  = Math.min(ENEMY_ROWS, 1 + Math.floor(waveNum / 2));
+  const gapX  = Math.min(60, (canvas.width - 60) / (cols + 1));
+  const startX = (canvas.width - gapX * (cols - 1)) / 2;
+  const startY = 60;
+
+  const types = ['👾', '🛸', '👽'];
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      enemies.push({
+        x: startX + c * gapX,
+        y: startY + r * 52,
+        w: 30, h: 30,
+        emoji: types[r % types.length],
+        hp: r === 0 ? 2 : 1,
+        alive: true
+      });
+    }
+  }
+  enemyDir   = 1;
+  waveClearing = false;
+}
+
+function initGame() {
+  score        = 0;
+  lives        = 3;
+  wave         = 1;
+  bullets      = [];
+  enemyBullets = [];
+  particles    = [];
+  fireCooldown = 0;
+  sessionChips = 0;
+  initStars();
+  initShip();
+  spawnWave(wave);
+  updateHUD();
+}
+
+// ── HUD ───────────────────────────────────────────────────────────────
+function updateHUD() {
+  document.getElementById('hudScore').textContent = score.toLocaleString();
+  document.getElementById('hudWave').textContent  = wave;
+  document.getElementById('hudLives').textContent = '❤️'.repeat(lives) || '💀';
+}
+
+// ── Input ─────────────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  keys[e.code] = true;
+  if (['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code)) e.preventDefault();
+});
+window.addEventListener('keyup', e => { keys[e.code] = false; });
+
+function bindMobileBtn(id, prop) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('pointerdown',  e => { e.preventDefault(); mobileKeys[prop] = true; });
+  el.addEventListener('pointerup',    e => { e.preventDefault(); mobileKeys[prop] = false; });
+  el.addEventListener('pointerleave', e => { e.preventDefault(); mobileKeys[prop] = false; });
+}
+bindMobileBtn('dUp',    'up');
+bindMobileBtn('dDown',  'down');
+bindMobileBtn('dLeft',  'left');
+bindMobileBtn('dRight', 'right');
+bindMobileBtn('fireBtn','fire');
+
+// ── Particle effects ──────────────────────────────────────────────────
+function explode(x, y, color = '#a78bfa') {
+  for (let i = 0; i < 10; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = Math.random() * 3 + 1;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      r: Math.random() * 3 + 1,
+      life: 30 + Math.random() * 20,
+      maxLife: 50,
+      color
+    });
+  }
+}
+
+// ── Drawing ───────────────────────────────────────────────────────────
+function drawStars() {
+  stars.forEach(s => {
+    s.y += s.spd;
+    if (s.y > canvas.height) { s.y = 0; s.x = Math.random() * canvas.width; }
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(200,200,255,${0.3 + s.r * 0.2})`;
+    ctx.fill();
+  });
+}
+
+function drawShip(x, y, w, h) {
+  ctx.save();
+  ctx.translate(x, y);
+  // Body
+  ctx.fillStyle = '#7c3aed';
+  ctx.beginPath();
+  ctx.moveTo(0, -h/2);
+  ctx.lineTo(w/2, h/2);
+  ctx.lineTo(-w/2, h/2);
+  ctx.closePath();
+  ctx.fill();
+  // Cockpit
+  ctx.fillStyle = '#a78bfa';
+  ctx.beginPath();
+  ctx.arc(0, -2, 7, 0, Math.PI * 2);
+  ctx.fill();
+  // Engines
+  ctx.fillStyle = '#4c1d95';
+  ctx.fillRect(-w/2, h/2 - 6, 10, 8);
+  ctx.fillRect(w/2 - 10, h/2 - 6, 10, 8);
+  // Thrust
+  ctx.fillStyle = '#f97316';
+  ctx.beginPath();
+  ctx.arc(-w/2 + 5, h/2 + 4, 4, 0, Math.PI * 2);
+  ctx.arc(w/2 - 5, h/2 + 4, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawEnemy(e) {
+  ctx.font = `${e.w}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(e.emoji, e.x, e.y);
+  // HP indicator for 2-hp enemies
+  if (e.hp === 2) {
+    ctx.fillStyle = 'rgba(167,139,250,0.5)';
+    ctx.fillRect(e.x - 14, e.y + 18, 28, 3);
+  }
+}
+
+function drawBullet(b, color) {
+  ctx.fillStyle = color;
+  ctx.shadowBlur = 6;
+  ctx.shadowColor = color;
+  ctx.fillRect(b.x - 2, b.y - 6, 4, 12);
+  ctx.shadowBlur = 0;
+}
+
+function drawParticles() {
+  particles = particles.filter(p => p.life > 0);
+  particles.forEach(p => {
+    p.x  += p.vx; p.y += p.vy;
+    p.vy += 0.05;
+    p.life--;
+    const alpha = p.life / p.maxLife;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = p.color + Math.floor(alpha * 255).toString(16).padStart(2,'0');
+    ctx.fill();
+  });
+}
+
+// ── Game loop ─────────────────────────────────────────────────────────
+function loop() {
+  if (!running) return;
+  animId = requestAnimationFrame(loop);
+
+  ctx.fillStyle = '#0f0f1a';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  drawStars();
+  drawParticles();
+
+  // ── Ship movement ──
+  const goLeft  = keys['ArrowLeft']  || keys['KeyA'] || mobileKeys.left;
+  const goRight = keys['ArrowRight'] || keys['KeyD'] || mobileKeys.right;
+  const goUp    = keys['ArrowUp']    || keys['KeyW'] || mobileKeys.up;
+  const goDown  = keys['ArrowDown']  || keys['KeyS'] || mobileKeys.down;
+  const firing  = keys['Space']      || mobileKeys.fire;
+
+  if (goLeft)  ship.x = Math.max(ship.w/2, ship.x - SHIP_SPEED);
+  if (goRight) ship.x = Math.min(canvas.width - ship.w/2, ship.x + SHIP_SPEED);
+  if (goUp)    ship.y = Math.max(ship.h/2, ship.y - SHIP_SPEED);
+  if (goDown)  ship.y = Math.min(canvas.height - ship.h/2, ship.y + SHIP_SPEED);
+
+  // ── Fire ──
+  fireCooldown--;
+  if (firing && fireCooldown <= 0) {
+    bullets.push({ x: ship.x, y: ship.y - ship.h/2 });
+    fireCooldown = 12;
+  }
+
+  // ── Player bullets ──
+  bullets = bullets.filter(b => b.y > -10);
+  bullets.forEach(b => { b.y -= BULLET_SPEED; });
+
+  // ── Enemies movement ──
+  if (!waveClearing) {
+    enemyMoveTimer++;
+    const liveEnemies = enemies.filter(e => e.alive);
+    const interval = Math.max(10, 35 - wave * 3);
+    if (enemyMoveTimer >= interval) {
+      enemyMoveTimer = 0;
+      const step = 12 + wave;
+      let hitWall = false;
+      liveEnemies.forEach(e => {
+        e.x += step * enemyDir;
+        if (e.x < 20 || e.x > canvas.width - 20) hitWall = true;
+      });
+      if (hitWall) {
+        enemyDir *= -1;
+        liveEnemies.forEach(e => {
+          e.y += 18;
+          e.x += step * enemyDir;
+        });
+      }
+    }
+
+    // ── Enemy shooting ──
+    enemyShootTimer++;
+    const shootInterval = Math.max(30, 90 - wave * 8);
+    if (enemyShootTimer >= shootInterval && liveEnemies.length > 0) {
+      enemyShootTimer = 0;
+      const shooter = liveEnemies[Math.floor(Math.random() * liveEnemies.length)];
+      enemyBullets.push({ x: shooter.x, y: shooter.y + 16 });
+    }
+
+    // ── Enemy bullets ──
+    enemyBullets = enemyBullets.filter(b => b.y < canvas.height + 10);
+    enemyBullets.forEach(b => { b.y += 4 + wave * 0.3; });
+
+    // Draw enemy bullets
+    enemyBullets.forEach(b => drawBullet(b, '#f87171'));
+
+    // ── Collision: player bullets vs enemies ──
+    bullets.forEach(b => {
+      enemies.forEach(e => {
+        if (!e.alive) return;
+        if (Math.abs(b.x - e.x) < e.w/2 + 4 && Math.abs(b.y - e.y) < e.h/2 + 4) {
+          b.y = -999; // mark bullet dead
+          e.hp--;
+          if (e.hp <= 0) {
+            e.alive = false;
+            explode(e.x, e.y, '#f97316');
+            score += 10 * wave;
+            updateHUD();
+            earnChips(CHIP_PER_KILL);
+          }
+        }
+      });
+    });
+
+    // ── Collision: enemy bullets vs ship ──
+    enemyBullets.forEach(b => {
+      if (Math.abs(b.x - ship.x) < ship.w/2 + 2 && Math.abs(b.y - ship.y) < ship.h/2 + 2) {
+        b.y = canvas.height + 999;
+        loseLife();
+      }
+    });
+
+    // ── Enemy reaches bottom ──
+    if (liveEnemies.some(e => e.y > canvas.height - 80)) {
+      loseLife();
+      enemies.forEach(e => e.alive = false);
+    }
+
+    // ── Draw enemies ──
+    enemies.filter(e => e.alive).forEach(drawEnemy);
+
+    // ── Wave clear ──
+    if (liveEnemies.length === 0 && !waveClearing) {
+      waveClearing = true;
+      earnChips(CHIP_PER_WAVE);
+      score += 100 * wave;
+      updateHUD();
+      setTimeout(() => {
+        wave++;
+        enemyBullets = [];
+        bullets = [];
+        spawnWave(wave);
+        updateHUD();
+      }, 1800);
+    }
+  }
+
+  // ── Draw player bullets ──
+  bullets.forEach(b => drawBullet(b, '#a78bfa'));
+
+  // ── Draw ship ──
+  drawShip(ship.x, ship.y, ship.w, ship.h);
+}
+
+function loseLife() {
+  explode(ship.x, ship.y, '#7c3aed');
+  lives--;
+  updateHUD();
+  if (lives <= 0) {
+    endGame();
+  } else {
+    // Brief invincibility flash — just reset ship position
+    initShip();
+  }
+}
+
+function endGame() {
+  running = false;
+  cancelAnimationFrame(animId);
+
+  saveScore(score);
+
+  document.getElementById('goScore').textContent  = `Score: ${score.toLocaleString()}`;
+  document.getElementById('goChips').textContent  = `+${sessionChips.toLocaleString()} 🪙 earned this game`;
+  document.getElementById('overlayDead').classList.remove('hidden');
+}
+
+// ── Start / Restart ───────────────────────────────────────────────────
+function startGame() {
+  document.getElementById('overlayStart').classList.add('hidden');
+  document.getElementById('overlayDead').classList.add('hidden');
+  initGame();
+  running = true;
+  loop();
+}
+
+document.getElementById('btnStart').addEventListener('click', startGame);
+document.getElementById('btnRestart').addEventListener('click', startGame);
+</script>
+</body>
+</html>

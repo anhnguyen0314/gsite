@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Flappy Bird — PlayDen</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+      z-index: 10;
+    }
+    .back-btn {
+      background: none;
+      border: 1px solid #2a2a4a;
+      color: #a78bfa;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: #2a2a4a; }
+    .header-title { font-size: 17px; font-weight: 700; color: #a78bfa; }
+    .chip-display {
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 13px;
+    }
+    .chip-display .val { font-weight: 700; color: #a78bfa; }
+
+    /* ── Canvas area ── */
+    .canvas-wrap {
+      flex: 1;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      background: #0f0f1a;
+    }
+    canvas {
+      display: block;
+      touch-action: none;
+      cursor: pointer;
+    }
+
+    /* ── Overlays ── */
+    .overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      background: rgba(15,15,26,0.85);
+      z-index: 20;
+      padding: 24px;
+      text-align: center;
+    }
+    .overlay.hidden { display: none; }
+    .overlay h2 { font-size: 26px; color: #a78bfa; }
+    .overlay p  { color: #94a3b8; font-size: 14px; }
+    .overlay .score-big { font-size: 36px; font-weight: 700; }
+    .overlay .chips-line { color: #a78bfa; font-size: 17px; }
+
+    .btn-start {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      padding: 13px 36px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-start:hover { background: #6d28d9; }
+    .btn-sec {
+      background: #2a2a4a;
+      color: #a78bfa;
+      border: 1px solid #3a3a5a;
+      padding: 10px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    /* ── Auth gate ── */
+    .auth-gate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,15,26,0.97);
+      z-index: 300;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 24px;
+    }
+    .auth-gate.show { display: flex; }
+    .auth-gate h2 { color: #a78bfa; font-size: 26px; }
+    .auth-gate a {
+      background: #7c3aed;
+      color: #fff;
+      padding: 12px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .auth-gate a.sec { background: #2a2a4a; color: #a78bfa; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+<!-- Auth Gate -->
+<div class="auth-gate" id="authGate">
+  <h2>🐦 Flappy Bird</h2>
+  <p style="color:#94a3b8">Sign in to play and earn chips.</p>
+  <a href="../../login.html">Sign In</a>
+  <a href="../../signup.html" class="sec">Create Account</a>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <a href="../../index.html" class="back-btn">← Back</a>
+  <div class="header-title">🐦 Flappy Bird</div>
+  <div class="chip-display">🪙 <span class="val" id="chipCount">—</span></div>
+</div>
+
+<!-- Canvas -->
+<div class="canvas-wrap" id="canvasWrap">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- Start screen -->
+  <div class="overlay" id="overlayStart">
+    <div style="font-size:56px">🐦</div>
+    <h2>Flappy Bird</h2>
+    <p>Tap / press Space to flap.<br>
+       Avoid the pipes and survive as long as possible.<br>
+       <strong>+20 chips</strong> per pipe passed.</p>
+    <button class="btn-start" id="btnStart">Start</button>
+  </div>
+
+  <!-- Dead screen -->
+  <div class="overlay hidden" id="overlayDead">
+    <div style="font-size:40px">💥</div>
+    <h2>Game Over</h2>
+    <div class="score-big" id="deadScore"></div>
+    <div class="chips-line" id="deadChips"></div>
+    <button class="btn-start" id="btnRestart">Play Again</button>
+    <a href="../../index.html" class="btn-sec">Back to Hub</a>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp }        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, getDoc, updateDoc, setDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            'AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY',
+  authDomain:        'gamezone-6487a.firebaseapp.com',
+  projectId:         'gamezone-6487a',
+  storageBucket:     'gamezone-6487a.firebasestorage.app',
+  messagingSenderId: '266519256159',
+  appId:             '1:266519256159:web:34d6be085083cda5ff4fea'
+};
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+let user        = null;
+let chipBalance = 0;
+let sessionChips = 0;
+
+onAuthStateChanged(auth, async u => {
+  user = u;
+  if (!u) { document.getElementById('authGate').classList.add('show'); return; }
+  document.getElementById('authGate').classList.remove('show');
+  const snap = await getDoc(doc(db, 'users', u.uid));
+  chipBalance = snap.exists() ? (snap.data().chips || 0) : 0;
+  document.getElementById('chipCount').textContent = chipBalance.toLocaleString();
+});
+
+async function earnChips(n) {
+  if (!user || n <= 0) return;
+  chipBalance  += n;
+  sessionChips += n;
+  document.getElementById('chipCount').textContent = chipBalance.toLocaleString();
+  await updateDoc(doc(db, 'users', user.uid), { chips: chipBalance });
+}
+
+async function saveScore(score) {
+  if (!user) return;
+  const ref  = doc(db, 'games', 'flappybird', 'scores', user.uid);
+  const snap = await getDoc(ref);
+  const prev = snap.exists() ? (snap.data().score || 0) : 0;
+  if (score <= prev) return;
+  const usnap    = await getDoc(doc(db, 'users', user.uid));
+  const username = usnap.exists() ? (usnap.data().username || 'Player') : 'Player';
+  await setDoc(ref, { userId: user.uid, username, score, updatedAt: serverTimestamp() });
+}
+
+// ── Canvas & scaling ──────────────────────────────────────────────────
+const canvas = document.getElementById('gameCanvas');
+const ctx    = canvas.getContext('2d');
+const wrap   = document.getElementById('canvasWrap');
+
+const GAME_W = 400;
+const GAME_H = 600;
+let scale    = 1;
+
+function resizeCanvas() {
+  const ww = wrap.clientWidth;
+  const wh = wrap.clientHeight;
+  scale = Math.min(ww / GAME_W, wh / GAME_H, 1.6);
+  canvas.width  = GAME_W * scale;
+  canvas.height = GAME_H * scale;
+  ctx.scale(scale, scale);
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
+
+// ── Game constants ────────────────────────────────────────────────────
+const GRAVITY   = 0.45;
+const FLAP      = -8.5;
+const PIPE_W    = 60;
+const PIPE_GAP  = 160;
+const PIPE_SPEED = 2.8;
+const PIPE_INTERVAL = 90; // frames
+const CHIP_PER_PIPE  = 20;
+const GROUND_H = 60;
+
+// ── Game state ────────────────────────────────────────────────────────
+let bird     = {};
+let pipes    = [];
+let stars    = [];
+let score    = 0;
+let frame    = 0;
+let running  = false;
+let animId   = null;
+let birdAngle = 0;
+let flapAnim = 0;
+
+function initBird() {
+  bird = {
+    x: GAME_W * 0.25,
+    y: GAME_H / 2,
+    vy: 0,
+    r: 18
+  };
+  birdAngle = 0;
+}
+
+function initStars() {
+  stars = [];
+  for (let i = 0; i < 50; i++) {
+    stars.push({
+      x: Math.random() * GAME_W,
+      y: Math.random() * (GAME_H - GROUND_H),
+      r: Math.random() * 1.2 + 0.3,
+      spd: Math.random() * 0.4 + 0.1
+    });
+  }
+}
+
+function flap() {
+  if (!running) return;
+  bird.vy = FLAP;
+  flapAnim = 8;
+}
+
+// ── Input ─────────────────────────────────────────────────────────────
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space') { e.preventDefault(); flap(); }
+});
+canvas.addEventListener('pointerdown', e => { e.preventDefault(); flap(); });
+
+// ── Drawing helpers ───────────────────────────────────────────────────
+function drawBackground() {
+  // Sky gradient
+  const grad = ctx.createLinearGradient(0, 0, 0, GAME_H - GROUND_H);
+  grad.addColorStop(0, '#0a0a18');
+  grad.addColorStop(1, '#1a1a3e');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, GAME_W, GAME_H - GROUND_H);
+
+  // Stars
+  stars.forEach(s => {
+    s.x -= s.spd;
+    if (s.x < 0) { s.x = GAME_W; s.y = Math.random() * (GAME_H - GROUND_H); }
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(200,200,255,${0.4 + s.r * 0.3})`;
+    ctx.fill();
+  });
+
+  // Ground
+  ctx.fillStyle = '#16213e';
+  ctx.fillRect(0, GAME_H - GROUND_H, GAME_W, GROUND_H);
+  ctx.fillStyle = '#1f3a6e';
+  ctx.fillRect(0, GAME_H - GROUND_H, GAME_W, 8);
+  // Ground detail stripes
+  ctx.fillStyle = 'rgba(167,139,250,0.08)';
+  for (let x = (frame * 2) % 40 - 40; x < GAME_W; x += 40) {
+    ctx.fillRect(x, GAME_H - GROUND_H + 8, 20, GROUND_H - 8);
+  }
+}
+
+function drawPipes() {
+  pipes.forEach(p => {
+    // Top pipe
+    const tH = p.topH;
+    // Pipe body
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(p.x, 0, PIPE_W, tH - 12);
+    // Pipe cap
+    ctx.fillStyle = '#15803d';
+    ctx.fillRect(p.x - 5, tH - 24, PIPE_W + 10, 24);
+    // Highlight
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(p.x + 5, 0, 8, tH - 12);
+
+    // Bottom pipe
+    const bY = tH + PIPE_GAP;
+    const bH = GAME_H - GROUND_H - bY;
+    ctx.fillStyle = '#16a34a';
+    ctx.fillRect(p.x, bY + 12, PIPE_W, bH);
+    ctx.fillStyle = '#15803d';
+    ctx.fillRect(p.x - 5, bY, PIPE_W + 10, 24);
+    ctx.fillStyle = 'rgba(255,255,255,0.12)';
+    ctx.fillRect(p.x + 5, bY + 12, 8, bH);
+  });
+}
+
+function drawBird() {
+  ctx.save();
+  ctx.translate(bird.x, bird.y);
+  const targetAngle = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, bird.vy * 0.06));
+  birdAngle += (targetAngle - birdAngle) * 0.2;
+  ctx.rotate(birdAngle);
+
+  // Body
+  ctx.fillStyle = '#fbbf24';
+  ctx.beginPath();
+  ctx.ellipse(0, 0, bird.r, bird.r * 0.85, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Wing (flapping)
+  const wingY = flapAnim > 0 ? -6 : 4;
+  ctx.fillStyle = '#f59e0b';
+  ctx.beginPath();
+  ctx.ellipse(-4, wingY, 9, 5, -0.4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Eye
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(7, -5, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#1e293b';
+  ctx.beginPath();
+  ctx.arc(9, -5, 3, 0, Math.PI * 2);
+  ctx.fill();
+  // Pupil shine
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(10, -6, 1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Beak
+  ctx.fillStyle = '#f97316';
+  ctx.beginPath();
+  ctx.moveTo(bird.r - 2, -2);
+  ctx.lineTo(bird.r + 10, 1);
+  ctx.lineTo(bird.r - 2, 4);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.restore();
+
+  if (flapAnim > 0) flapAnim--;
+}
+
+function drawScore() {
+  ctx.fillStyle = 'rgba(0,0,0,0.4)';
+  ctx.fillRect(GAME_W/2 - 50, 12, 100, 40);
+  ctx.fillStyle = '#fff';
+  ctx.font      = 'bold 28px Segoe UI';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(score, GAME_W / 2, 32);
+}
+
+// ── Physics & logic ───────────────────────────────────────────────────
+function spawnPipe() {
+  const minH = 60;
+  const maxH = GAME_H - GROUND_H - PIPE_GAP - minH;
+  const topH = minH + Math.random() * (maxH - minH);
+  pipes.push({ x: GAME_W + 10, topH, scored: false });
+}
+
+function checkCollision() {
+  // Ground / ceiling
+  if (bird.y + bird.r >= GAME_H - GROUND_H) return true;
+  if (bird.y - bird.r <= 0) return true;
+
+  // Pipes
+  for (const p of pipes) {
+    const inX = bird.x + bird.r - 6 > p.x && bird.x - bird.r + 6 < p.x + PIPE_W;
+    if (!inX) continue;
+    const inTopPipe = bird.y - bird.r + 6 < p.topH;
+    const inBotPipe = bird.y + bird.r - 6 > p.topH + PIPE_GAP;
+    if (inTopPipe || inBotPipe) return true;
+  }
+  return false;
+}
+
+// ── Game loop ─────────────────────────────────────────────────────────
+function loop() {
+  if (!running) return;
+  animId = requestAnimationFrame(loop);
+  frame++;
+
+  // Save/restore so scale doesn't accumulate on resize
+  ctx.save();
+  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+
+  drawBackground();
+  drawPipes();
+  drawBird();
+  drawScore();
+
+  ctx.restore();
+
+  // Physics
+  bird.vy += GRAVITY;
+  bird.y  += bird.vy;
+
+  // Pipes
+  if (frame % PIPE_INTERVAL === 0) spawnPipe();
+  pipes.forEach(p => { p.x -= PIPE_SPEED; });
+  pipes = pipes.filter(p => p.x + PIPE_W > -20);
+
+  // Scoring
+  pipes.forEach(p => {
+    if (!p.scored && p.x + PIPE_W < bird.x) {
+      p.scored = true;
+      score++;
+      earnChips(CHIP_PER_PIPE);
+    }
+  });
+
+  if (checkCollision()) die();
+}
+
+function die() {
+  running = false;
+  cancelAnimationFrame(animId);
+
+  saveScore(score);
+
+  document.getElementById('deadScore').textContent = `Score: ${score}`;
+  document.getElementById('deadChips').textContent = `+${sessionChips.toLocaleString()} 🪙 earned`;
+  document.getElementById('overlayDead').classList.remove('hidden');
+}
+
+function startGame() {
+  document.getElementById('overlayStart').classList.add('hidden');
+  document.getElementById('overlayDead').classList.add('hidden');
+
+  score        = 0;
+  frame        = 0;
+  sessionChips = 0;
+  pipes        = [];
+
+  initBird();
+  initStars();
+
+  running = true;
+  loop();
+}
+
+document.getElementById('btnStart').addEventListener('click', startGame);
+document.getElementById('btnRestart').addEventListener('click', startGame);
+</script>
+</body>
+</html>

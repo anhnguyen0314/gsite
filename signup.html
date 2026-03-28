@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sign Up — GameZone</title>
+  <title>Sign Up — PlayDen</title>
   <link rel="stylesheet" href="style.css" />
   <style>
     .auth-page {
@@ -175,7 +175,7 @@
 
   <!-- Navigation -->
   <nav>
-    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 GameZone</a>
+    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 PlayDen</a>
     <div class="nav-auth">
       <a href="login.html" class="btn-secondary">Log in</a>
       <a href="signup.html" class="btn-primary">Sign up</a>
@@ -186,7 +186,7 @@
     <div class="auth-card">
       <div class="auth-logo">🎮</div>
       <h1>Create your account</h1>
-      <p class="subtitle">Join GameZone and track your scores</p>
+      <p class="subtitle">Join PlayDen and track your scores</p>
 
       <div class="error-msg" id="errorMsg"></div>
       <div class="success-msg" id="successMsg"></div>
@@ -294,7 +294,7 @@
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, { displayName: username });
 
-        showSuccess('Account created! Redirecting to GameZone…');
+        showSuccess('Account created! Redirecting to PlayDen…');
         setTimeout(() => { window.location.href = 'index.html'; }, 1500);
       } catch (err) {
         showError(friendlyError(err.code));
