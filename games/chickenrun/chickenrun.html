@@ -199,7 +199,8 @@ resize();
 window.addEventListener('resize', resize);
 
 // ── Palette ───────────────────────────────────────────────────
-const CAR_COLS = ['#e74c3c','#e67e22','#3498db','#2ecc71','#9b59b6','#1abc9c','#e91e8c'];
+const CAR_COLS  = ['#e74c3c','#e67e22','#3498db','#2ecc71','#9b59b6','#1abc9c','#e91e8c'];
+const IDLE_MAX  = 5.0;   // seconds idle on a dangerous lane before death
 const MILESTONES = [
   {row:10,chips:15},{row:25,chips:30},{row:50,chips:60},
   {row:100,chips:120},{row:200,chips:250},{row:500,chips:600}
@@ -213,17 +214,21 @@ function initGame() {
   lanes = [];
   genUpTo(40);
 
+  const startCol = Math.floor(COLS / 2);
+  const startPx  = startCol * CELL + CELL * 0.5;
   player = {
-    col: Math.floor(COLS / 2),
-    row: 0,
-    aCol: Math.floor(COLS / 2), // animated col (float)
-    aRow: 0,                    // animated row (float)
-    hopping: false,
-    hopT: 0,           // 0→1 progress
-    fCol: 0, tCol: 0,  // from/to col
-    fRow: 0, tRow: 0,  // from/to row
-    alive: true,
-    deadT: 0           // countdown after death
+    col:  startCol, row:  0,
+    aCol: startCol,          // animated col (float, for camera)
+    aRow: 0,                 // animated row (float, for camera)
+    px:   startPx,           // float pixel X within game world (for log riding)
+    fPx:  startPx, tPx: startPx, // hop from/to pixel X
+    hopping:   false,
+    hopT:      0,            // 0→1 progress
+    fCol: 0, tCol: 0,
+    fRow: 0, tRow: 0,
+    alive:     true,
+    deadT:     0,
+    idleTimer: IDLE_MAX      // seconds until idle death on dangerous lane
   };
   lives    = 3;
   score    = 0;
@@ -281,7 +286,7 @@ function makeMovingLane(type, r) {
   }
 
   if (type === 'rail') {
-    const spd = (220 + Math.random() * 130) * (1 + d * .5);
+    const spd = (380 + Math.random() * 120) * (1 + d * .5);
     return { type, row:r, dir, spd,
       trainX: null,
       nextTrain: 2.5 + Math.random() * 4,
@@ -315,17 +320,19 @@ function update(ts) {
   if (player.hopping) {
     player.hopT += dt * 8.5; // completes in ~0.12s
     if (player.hopT >= 1) {
-      player.hopT   = 1;
+      player.hopT    = 1;
       player.hopping = false;
-      player.row    = player.tRow;
-      player.col    = player.tCol;
-      player.aRow   = player.tRow;
-      player.aCol   = player.tCol;
+      player.row     = player.tRow;
+      player.col     = player.tCol;
+      player.aRow    = player.tRow;
+      player.aCol    = player.tCol;
+      player.px      = player.tPx;
       checkLanding();
     } else {
       const t = easeOut(player.hopT);
       player.aRow = player.fRow + (player.tRow - player.fRow) * t;
       player.aCol = player.fCol + (player.tCol - player.fCol) * t;
+      player.px   = player.fPx  + (player.tPx  - player.fPx)  * t;
     }
   }
 
@@ -361,10 +368,33 @@ function update(ts) {
     }
   }
 
-  // Continuous collision for standing player
+  // Log riding, off-edge death, idle timer — standing player only
   if (!player.hopping && player.alive) {
     const ln = lanes[player.row];
-    if (ln) checkStanding(ln);
+    if (ln) {
+      if (ln.type === 'water') {
+        const lg = getLog(ln, player.px);
+        if (lg) {
+          // Drift with the log. Clamp to game bounds — player never leaves
+          // the screen. When the log's rear edge drifts past the player's
+          // clamped position, getLog returns null and the player falls in.
+          player.px += ln.dir * ln.spd * dt;
+          player.px  = Math.max(CELL * 0.5, Math.min(COLS * CELL - CELL * 0.5, player.px));
+          player.col = Math.max(0, Math.min(COLS - 1, Math.floor(player.px / CELL)));
+        } else {
+          kill(); // no log under player = fell into water
+        }
+      } else if (ln.type === 'road' && hitsObstacle(ln)) {
+        kill();
+      } else if (ln.type === 'rail' && hitsRail(ln)) {
+        kill();
+      }
+      // Idle countdown — applies on every lane type (player must keep moving)
+      if (player.alive) {
+        player.idleTimer -= dt;
+        if (player.idleTimer <= 0) kill();
+      }
+    }
   }
 }
 
@@ -374,9 +404,22 @@ function checkLanding() {
   if (!player.alive) return;
   const ln = lanes[player.row];
   if (!ln) return;
-  if      (ln.type === 'road'  && hitsObstacle(ln))  kill();
-  else if (ln.type === 'rail'  && hitsRail(ln))      kill();
-  else if (ln.type === 'water' && !onALog(ln))        kill();
+
+  if (ln.type === 'road' && hitsObstacle(ln)) { kill(); return; }
+  if (ln.type === 'rail' && hitsRail(ln))     { kill(); return; }
+  if (ln.type === 'water') {
+    const lg = getLog(ln, player.px);
+    if (!lg) { kill(); return; }
+    // Nudge player away from log ends — avoids standing on the very edge,
+    // which looks unrealistic and makes drift feel glitchy at the boundary.
+    const margin = Math.min(CELL * 0.4, lg.w * 0.25);
+    player.px  = Math.max(lg.x + margin, Math.min(lg.x + lg.w - margin, player.px));
+    player.col = Math.max(0, Math.min(COLS - 1, Math.floor(player.px / CELL)));
+  } else {
+    // Snap to column centre — prevents fractional positions after jumping off a drifting log
+    player.col = Math.max(0, Math.min(COLS - 1, Math.round(player.px / CELL)));
+    player.px  = player.col * CELL + CELL * 0.5;
+  }
 
   if (player.row > score) {
     score = player.row;
@@ -386,26 +429,24 @@ function checkLanding() {
   }
 }
 
-function checkStanding(ln) {
-  if      (ln.type === 'road'  && hitsObstacle(ln)) kill();
-  else if (ln.type === 'rail'  && hitsRail(ln))     kill();
-  else if (ln.type === 'water' && !onALog(ln))       kill();
-}
 
 function hitsObstacle(ln) {
-  const p1 = player.col * CELL + 6, p2 = (player.col + 1) * CELL - 6;
+  const p1 = player.px - CELL * 0.5 + 6, p2 = player.px + CELL * 0.5 - 6;
   return ln.obs.some(o => o.x < p2 && o.x + o.w > p1);
 }
 
 function hitsRail(ln) {
   if (ln.trainX === null) return false;
-  const p1 = player.col * CELL + 6, p2 = (player.col + 1) * CELL - 6;
+  const p1 = player.px - CELL * 0.5 + 6, p2 = player.px + CELL * 0.5 - 6;
   return ln.trainX < p2 && ln.trainX + ln.trainLen > p1;
 }
 
+function getLog(ln, px) {
+  return ln.obs.find(log => log.x < px && log.x + log.w > px) || null;
+}
+
 function onALog(ln) {
-  const cx = player.col * CELL + CELL * 0.5;
-  return ln.obs.some(log => log.x < cx && log.x + log.w > cx);
+  return !!getLog(ln, player.px);
 }
 
 function kill() {
@@ -422,15 +463,20 @@ function kill() {
 }
 
 function respawn() {
-  // Find nearest grass lane at or below current score
   let r = Math.max(0, score - 1);
   while (r > 0 && lanes[r] && lanes[r].type !== 'grass') r--;
-  player.row    = r;
-  player.col    = Math.floor(COLS / 2);
-  player.aRow   = r;
-  player.aCol   = player.col;
-  player.hopping = false;
-  player.alive  = true;
+  const c  = Math.floor(COLS / 2);
+  const px = c * CELL + CELL * 0.5;
+  player.row       = r;
+  player.col       = c;
+  player.aRow      = r;
+  player.aCol      = c;
+  player.px        = px;
+  player.fPx       = px;
+  player.tPx       = px;
+  player.hopping   = false;
+  player.alive     = true;
+  player.idleTimer = IDLE_MAX;
 }
 
 function checkMilestones() {
@@ -458,7 +504,11 @@ function tryMove(dr, dc) {
   if (nc < 0 || nc >= COLS || nr < 0) return;
   player.fRow = player.row; player.fCol = player.col;
   player.tRow = nr;         player.tCol = nc;
-  player.hopping = true;    player.hopT = 0;
+  player.fPx  = player.px;
+  player.tPx  = player.px + dc * CELL;  // hop exactly 1 cell from current (drifted) position
+  player.hopping   = true;
+  player.hopT      = 0;
+  player.idleTimer = IDLE_MAX;
 }
 
 window.addEventListener('keydown', e => {
@@ -637,18 +687,62 @@ function drawTrain(tx, sy, len, dir) {
 }
 
 function drawLog(log, sy) {
-  const x = OX + log.x, y = sy + 9, h = CELL - 18;
+  const x = OX + log.x, y = sy + 8, w = log.w, h = CELL - 16;
+  const rx = 8;
+
+  // Main bark body
   ctx.fillStyle = '#7a4820';
-  rrect(x, y, log.w, h, 9); ctx.fill();
+  rrect(x, y, w, h, rx); ctx.fill();
+
+  // Clipped interior detail
+  ctx.save();
+  ctx.beginPath(); rrect(x, y, w, h, rx); ctx.clip();
+
+  // Bark grain lines (slight wobble)
   ctx.strokeStyle = '#5a3010';
-  ctx.lineWidth = 1.5;
-  for (let gx = 14; gx < log.w - 10; gx += 18) {
-    ctx.beginPath(); ctx.moveTo(x + gx, y + 4); ctx.lineTo(x + gx, y + h - 4); ctx.stroke();
+  ctx.lineWidth = 1.2;
+  for (let gx = 12; gx < w - 6; gx += 13) {
+    const wb = Math.sin(gx * 0.47 + log.x * 0.031) * 2.5;
+    ctx.beginPath();
+    ctx.moveTo(x + gx + wb, y + 2);
+    ctx.lineTo(x + gx - wb * 0.5, y + h - 2);
+    ctx.stroke();
   }
-  // End caps
-  ctx.fillStyle = '#4e2808';
-  ctx.beginPath(); ctx.ellipse(x + 5, y + h/2, 5, h/2 - 2, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(x + log.w - 5, y + h/2, 5, h/2 - 2, 0, 0, Math.PI*2); ctx.fill();
+
+  // Top sheen
+  ctx.fillStyle = 'rgba(255,255,255,0.09)';
+  ctx.fillRect(x, y, w, h * 0.38);
+
+  // Moss patches along top edge
+  ctx.fillStyle = 'rgba(55,140,35,0.38)';
+  for (let mx = w * 0.12; mx < w - 16; mx += w * 0.27) {
+    ctx.beginPath();
+    ctx.ellipse(x + mx, y + 3, 10, 4.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+
+  // End caps with tree rings
+  const capR = h / 2 - 1;
+  for (const cx of [x + capR + 3, x + w - capR - 3]) {
+    // Outer dark ring
+    ctx.fillStyle = '#3d1f08';
+    ctx.beginPath(); ctx.ellipse(cx, y + h/2, capR, capR, 0, 0, Math.PI*2); ctx.fill();
+    // Concentric growth rings
+    for (const [fr, col] of [[0.75,'#5a2e0e'],[0.52,'#7a4010'],[0.3,'#9a5418']]) {
+      ctx.fillStyle = col;
+      ctx.beginPath(); ctx.ellipse(cx, y + h/2, capR*fr, capR*fr, 0, 0, Math.PI*2); ctx.fill();
+    }
+    // Pith dot
+    ctx.fillStyle = '#c87840';
+    ctx.beginPath(); ctx.ellipse(cx, y + h/2, capR*0.1, capR*0.1, 0, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Subtle border
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = 1;
+  rrect(x, y, w, h, rx); ctx.stroke();
 }
 
 function drawChicken(sx, sy, hopT, alive) {
@@ -751,8 +845,35 @@ function render(ts) {
 
   // Player
   if (gameState === 'playing') {
-    const psx = OX + player.aCol * CELL + CELL * .5;
+    const psx = OX + player.px;
     drawChicken(psx, psy, player.hopT, player.alive);
+
+    // Idle warning arc — depletes around the chicken on ALL lanes
+    if (player.alive && !player.hopping) {
+      const ln = lanes[player.row];
+      if (ln) {
+        const frac = player.idleTimer / IDLE_MAX; // 1 = full, 0 = dead
+        if (frac < 1.0) {
+          const startAngle = -Math.PI / 2;
+          const endAngle   = startAngle + (1 - frac) * Math.PI * 2;
+          // Opacity ramps up from 0 as timer depletes; fully visible at 67% gone
+          const opacity = Math.min(0.92, (1 - frac) * 3);
+          const arcCol = frac > 0.5
+            ? `rgba(167,139,250,${opacity})`
+            : frac > 0.25
+              ? `rgba(251,191,36,${opacity})`
+              : `rgba(239,68,68,${opacity})`;
+          ctx.save();
+          ctx.strokeStyle = arcCol;
+          ctx.lineWidth   = 4;
+          ctx.lineCap     = 'round';
+          ctx.beginPath();
+          ctx.arc(psx, psy, CELL * 0.48, startAngle, endAngle);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+    }
   }
 
   // Side panels (fill outside game world on wide screens)

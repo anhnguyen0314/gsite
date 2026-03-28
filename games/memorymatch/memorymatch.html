@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Memory Match — PlayDen</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #e2e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .back-btn {
+      background: none;
+      border: 1px solid #2a2a4a;
+      color: #a78bfa;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: #2a2a4a; }
+    .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; }
+    .chip-display {
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+    }
+    .chip-display .val { font-weight: 700; color: #a78bfa; }
+
+    /* ── Game area ── */
+    .game-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+      gap: 14px;
+    }
+
+    /* ── HUD bar ── */
+    .hud-bar {
+      width: 100%;
+      max-width: 560px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #1a1a2e;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 12px 20px;
+      gap: 12px;
+    }
+    .hud-item { text-align: center; }
+    .hud-label { font-size: 11px; color: #475569; text-transform: uppercase; letter-spacing: 1px; }
+    .hud-value { font-size: 20px; font-weight: 700; color: #a78bfa; }
+
+    /* ── Difficulty selector ── */
+    .diff-row {
+      display: flex;
+      gap: 8px;
+    }
+    .diff-btn {
+      background: #2a2a4a;
+      border: 2px solid #3a3a5a;
+      color: #94a3b8;
+      padding: 7px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .diff-btn.active { background: #4c1d95; border-color: #a78bfa; color: #a78bfa; }
+    .diff-btn:hover:not(.active) { background: #3a3a5a; color: #e2e8f0; }
+
+    /* ── Card grid ── */
+    .grid {
+      display: grid;
+      gap: 10px;
+      max-width: 560px;
+      width: 100%;
+    }
+    .grid.easy   { grid-template-columns: repeat(4, 1fr); }
+    .grid.medium { grid-template-columns: repeat(5, 1fr); }
+    .grid.hard   { grid-template-columns: repeat(6, 1fr); }
+
+    /* ── Card ── */
+    .card-wrap {
+      aspect-ratio: 1;
+      perspective: 600px;
+      cursor: pointer;
+    }
+    .card-inner {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.35s ease;
+    }
+    .card-wrap.flipped .card-inner { transform: rotateY(180deg); }
+    .card-wrap.matched .card-inner { transform: rotateY(180deg); }
+    .card-wrap.matched .card-front { background: #14532d; border-color: #16a34a; }
+
+    .card-front, .card-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      backface-visibility: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card-back {
+      background: linear-gradient(135deg, #312e81, #4c1d95);
+      border: 2px solid #6d28d9;
+      font-size: 24px;
+    }
+    .card-front {
+      background: #1a1a2e;
+      border: 2px solid #2a2a4a;
+      transform: rotateY(180deg);
+      font-size: clamp(20px, 5vw, 36px);
+    }
+
+    /* ── Message / overlay ── */
+    .msg-box {
+      width: 100%;
+      max-width: 560px;
+      padding: 14px 20px;
+      border-radius: 12px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: 700;
+      display: none;
+    }
+    .msg-box.show { display: block; }
+    .msg-box.win { background: #14532d; color: #4ade80; border: 1px solid #16a34a; }
+    .msg-box.info { background: #1e293b; color: #94a3b8; border: 1px solid #475569; }
+
+    /* ── Action buttons ── */
+    .btn-row {
+      display: flex;
+      gap: 10px;
+    }
+    .btn-primary {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn-primary:hover { background: #6d28d9; }
+
+    /* ── Auth gate ── */
+    .auth-gate {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,15,26,0.96);
+      z-index: 300;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 24px;
+    }
+    .auth-gate.show { display: flex; }
+    .auth-gate h2 { color: #a78bfa; font-size: 26px; }
+    .auth-gate p  { color: #94a3b8; }
+    .auth-gate a {
+      background: #7c3aed;
+      color: #fff;
+      padding: 12px 32px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+    }
+    .auth-gate a.sec { background: #2a2a4a; margin-top: 4px; }
+
+    /* ── Pre-game overlay ── */
+    .overlay {
+      display: flex;
+      position: fixed;
+      inset: 0;
+      background: rgba(15,15,26,0.96);
+      z-index: 200;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      text-align: center;
+      padding: 24px;
+    }
+    .overlay.hidden { display: none; }
+    .overlay h2 { color: #a78bfa; font-size: 26px; }
+    .overlay p  { color: #94a3b8; max-width: 340px; line-height: 1.6; }
+    .overlay button {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      padding: 12px 40px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 4px;
+    }
+    .overlay button:hover { background: #6d28d9; }
+
+    @media (max-width: 600px) {
+      .grid { gap: 7px; }
+      .card-back { font-size: 20px; }
+    }
+    @media (max-width: 380px) {
+      .grid { gap: 5px; }
+      .hud-value { font-size: 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Auth Gate -->
+<div class="auth-gate" id="authGate">
+  <h2>🧠 Memory Match</h2>
+  <p>Sign in to play and earn chips.</p>
+  <a href="../../login.html">Sign In</a>
+  <a href="../../signup.html" class="sec">Create Account</a>
+</div>
+
+<!-- Pre-game overlay -->
+<div class="overlay hidden" id="overlayStart">
+  <div style="font-size:52px">🧠</div>
+  <h2>Memory Match</h2>
+  <p>Flip cards to find matching pairs.<br>
+     Chips earned depend on difficulty, moves, and speed.<br>
+     <strong>Easy ~400–600 🪙 · Medium ~800–1,200 🪙 · Hard ~1,500–2,500 🪙</strong><br>
+     Fewer moves and faster clears earn more!</p>
+  <button id="btnOverlayStart">Start Game</button>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <a href="../../index.html" class="back-btn">← Back</a>
+  <div class="header-title">🧠 Memory Match</div>
+  <div class="chip-display">🪙 <span class="val" id="chipCount">—</span></div>
+</div>
+
+<div class="game-area">
+
+  <!-- HUD -->
+  <div class="hud-bar">
+    <div class="hud-item">
+      <div class="hud-label">Pairs</div>
+      <div class="hud-value" id="hudPairs">0 / 0</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Moves</div>
+      <div class="hud-value" id="hudMoves">0</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Time</div>
+      <div class="hud-value" id="hudTime">0s</div>
+    </div>
+    <div class="hud-item">
+      <div class="hud-label">Chips</div>
+      <div class="hud-value" id="hudChips">+0 🪙</div>
+    </div>
+  </div>
+
+  <!-- Difficulty -->
+  <div class="diff-row">
+    <button class="diff-btn active" id="dEasy"   onclick="setDiff('easy')">Easy (4×4)</button>
+    <button class="diff-btn"        id="dMedium"  onclick="setDiff('medium')">Medium (5×4)</button>
+    <button class="diff-btn"        id="dHard"    onclick="setDiff('hard')">Hard (6×6)</button>
+  </div>
+
+  <!-- Message -->
+  <div class="msg-box" id="msgBox"></div>
+
+  <!-- Card grid -->
+  <div class="grid easy" id="cardGrid"></div>
+
+  <!-- Start / Restart -->
+  <div class="btn-row">
+    <button class="btn-primary" id="btnStart">New Game</button>
+  </div>
+
+</div>
+
+<script type="module">
+import { initializeApp }        from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getFirestore, doc, getDoc, updateDoc, setDoc, serverTimestamp }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+const firebaseConfig = {
+  apiKey:            'AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY',
+  authDomain:        'gamezone-6487a.firebaseapp.com',
+  projectId:         'gamezone-6487a',
+  storageBucket:     'gamezone-6487a.firebasestorage.app',
+  messagingSenderId: '266519256159',
+  appId:             '1:266519256159:web:34d6be085083cda5ff4fea'
+};
+const app  = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+
+let user        = null;
+let chipBalance = 0;
+
+onAuthStateChanged(auth, async u => {
+  user = u;
+  if (!u) { document.getElementById('authGate').classList.add('show'); return; }
+  document.getElementById('authGate').classList.remove('show');
+  const snap = await getDoc(doc(db, 'users', u.uid));
+  chipBalance = snap.exists() ? (snap.data().chips || 0) : 0;
+  document.getElementById('chipCount').textContent = chipBalance.toLocaleString();
+});
+
+async function addChips(amount) {
+  if (!user || amount <= 0) return;
+  chipBalance += amount;
+  document.getElementById('chipCount').textContent = chipBalance.toLocaleString();
+  await updateDoc(doc(db, 'users', user.uid), { chips: chipBalance });
+}
+
+async function saveScore(moves, seconds, diff) {
+  if (!user) return;
+  // Score = lower moves + time is better → store as negative so DESC sorts properly
+  // Actually we'll save score = pairs found per move ratio * difficulty multiplier
+  // Simpler: score = chips earned
+  const chipEarned = calcChips(moves, seconds, diff);
+  const ref  = doc(db, 'games', 'memorymatch', 'scores', user.uid);
+  const snap = await getDoc(ref);
+  const prev = snap.exists() ? (snap.data().score || 0) : 0;
+  if (chipEarned <= prev) return;
+  const usnap    = await getDoc(doc(db, 'users', user.uid));
+  const username = usnap.exists() ? (usnap.data().username || 'Player') : 'Player';
+  await setDoc(ref, { userId: user.uid, username, score: chipEarned, updatedAt: serverTimestamp() });
+}
+
+// ── Chip formula ──────────────────────────────────────────────────────
+function calcChips(moves, seconds, diff) {
+  const diffMult = { easy: 1, medium: 2, hard: 3 }[diff] || 1;
+  const pairs    = { easy: 8, medium: 10, hard: 18 }[diff] || 8;
+  // Base: 50 per pair
+  let base = pairs * 50 * diffMult;
+  // Move bonus: perfect would be pairs moves; penalise extra moves
+  const extraMoves = Math.max(0, moves - pairs);
+  base -= extraMoves * 10;
+  // Time bonus: under 60s = 200 chips, scaled
+  const timeBonus = Math.max(0, 200 - Math.floor(seconds / 3));
+  return Math.max(50, base + timeBonus * diffMult);
+}
+
+// ── Emojis ────────────────────────────────────────────────────────────
+const ALL_EMOJIS = [
+  '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼',
+  '🐨','🐯','🦁','🐮','🐸','🐵','🐔','🐧',
+  '🦆','🦉','🦋','🐝'
+];
+
+// ── Difficulty config ─────────────────────────────────────────────────
+const DIFF_CONFIG = {
+  easy:   { rows: 4, cols: 4, pairs: 8  },
+  medium: { rows: 4, cols: 5, pairs: 10 },
+  hard:   { rows: 6, cols: 6, pairs: 18 }
+};
+
+let diff     = 'easy';
+let cards    = [];
+let flipped  = [];
+let matched  = 0;
+let moves    = 0;
+let seconds  = 0;
+let timer    = null;
+let gameActive = false;
+let chipsThisGame = 0;
+
+function setDiff(d) {
+  if (gameActive) return;
+  diff = d;
+  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(`d${d.charAt(0).toUpperCase() + d.slice(1)}`).classList.add('active');
+  const grid = document.getElementById('cardGrid');
+  grid.className = 'grid ' + d;
+}
+window.setDiff = setDiff;
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function newGame() {
+  clearInterval(timer);
+  const cfg = DIFF_CONFIG[diff];
+  moves   = 0;
+  matched = 0;
+  seconds = 0;
+  flipped = [];
+  chipsThisGame = 0;
+  gameActive = false;
+
+  // Pick emojis
+  const pool   = shuffle([...ALL_EMOJIS]).slice(0, cfg.pairs);
+  const paired = shuffle([...pool, ...pool]);
+  cards = paired.map((emoji, i) => ({ id: i, emoji, isFlipped: false, isMatched: false }));
+
+  renderGrid();
+  updateHUD();
+  hideMsg();
+
+  // Brief preview
+  cards.forEach(c => c.isFlipped = true);
+  renderGrid(true);
+  setTimeout(() => {
+    cards.forEach(c => c.isFlipped = false);
+    renderGrid();
+    gameActive = true;
+    // Start timer
+    timer = setInterval(() => {
+      seconds++;
+      document.getElementById('hudTime').textContent = seconds + 's';
+    }, 1000);
+  }, 1000);
+}
+
+function renderGrid(suppressEvents = false) {
+  const grid = document.getElementById('cardGrid');
+  grid.innerHTML = '';
+  cards.forEach((card, i) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'card-wrap' + (card.isFlipped ? ' flipped' : '') + (card.isMatched ? ' matched' : '');
+    wrap.innerHTML = `
+      <div class="card-inner">
+        <div class="card-back">🎴</div>
+        <div class="card-front">${card.emoji}</div>
+      </div>`;
+    if (!suppressEvents && !card.isMatched) {
+      wrap.addEventListener('click', () => flipCard(i));
+    }
+    grid.appendChild(wrap);
+  });
+}
+
+function flipCard(i) {
+  if (!gameActive) return;
+  const card = cards[i];
+  if (card.isFlipped || card.isMatched) return;
+  if (flipped.length >= 2) return;
+
+  card.isFlipped = true;
+  flipped.push(i);
+  renderGrid();
+
+  if (flipped.length === 2) {
+    moves++;
+    updateHUD();
+    const [a, b] = flipped;
+    if (cards[a].emoji === cards[b].emoji) {
+      // Match!
+      cards[a].isMatched = true;
+      cards[b].isMatched = true;
+      matched++;
+      flipped = [];
+      renderGrid();
+      updateHUD();
+      if (matched === DIFF_CONFIG[diff].pairs) {
+        winGame();
+      }
+    } else {
+      // No match — flip back
+      setTimeout(() => {
+        cards[a].isFlipped = false;
+        cards[b].isFlipped = false;
+        flipped = [];
+        renderGrid();
+      }, 900);
+    }
+  }
+}
+
+function updateHUD() {
+  const cfg = DIFF_CONFIG[diff];
+  document.getElementById('hudPairs').textContent  = `${matched} / ${cfg.pairs}`;
+  document.getElementById('hudMoves').textContent  = moves;
+  document.getElementById('hudChips').textContent  = `+${chipsThisGame.toLocaleString()} 🪙`;
+}
+
+function winGame() {
+  clearInterval(timer);
+  gameActive = false;
+
+  const chips = calcChips(moves, seconds, diff);
+  chipsThisGame = chips;
+  updateHUD();
+
+  const stars = moves <= DIFF_CONFIG[diff].pairs ? '⭐⭐⭐' :
+                moves <= DIFF_CONFIG[diff].pairs * 1.5 ? '⭐⭐' : '⭐';
+  showMsg(`${stars} Cleared in ${moves} moves & ${seconds}s! +${chips.toLocaleString()} 🪙`, 'win');
+
+  addChips(chips);
+  saveScore(moves, seconds, diff);
+}
+
+function showMsg(text, type) {
+  const el = document.getElementById('msgBox');
+  el.textContent = text;
+  el.className   = 'msg-box show ' + type;
+}
+function hideMsg() {
+  document.getElementById('msgBox').className = 'msg-box';
+}
+
+document.getElementById('btnStart').addEventListener('click', newGame);
+
+document.getElementById('btnOverlayStart').addEventListener('click', () => {
+  document.getElementById('overlayStart').classList.add('hidden');
+  newGame();
+});
+
+// Show pre-game overlay once auth resolves
+setTimeout(() => {
+  if (document.getElementById('authGate').classList.contains('show')) return;
+  document.getElementById('overlayStart').classList.remove('hidden');
+}, 300);
+</script>
+</body>
+</html>
