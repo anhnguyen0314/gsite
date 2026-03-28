@@ -103,12 +103,158 @@ service cloud.firestore {
 - Font: Segoe UI. Border radius: 12px cards, 8px buttons
 - Mobile breakpoint: 600px (single column, d-pads on games). Extra-small: 380px
 
+## Standard header pattern
+Every game page must use this header structure:
+
+```html
+<div class="header">
+  <a href="../../index.html" class="back-btn">← Back</a>
+  <div class="header-title">🎮 Game Name</div>
+  <div class="chip-display">🪙 <span id="chipCount">—</span></div>
+</div>
+```
+
+Standard header CSS (copy into every new game):
+```css
+.header {
+  width: 100%;
+  background: #1a1a2e;
+  border-bottom: 1px solid #2a2a4a;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.back-btn {
+  background: none;
+  border: 1px solid #2a2a4a;
+  color: #a78bfa;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  text-decoration: none;
+}
+.back-btn:hover { background: #2a2a4a; }
+.header-title { font-size: 18px; font-weight: 700; color: #a78bfa; }
+.chip-display {
+  background: #0f0f1a;
+  border: 1px solid #2a2a4a;
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.chip-display span { font-weight: 700; color: #a78bfa; }
+```
+
+**Note for games with a centred body layout** (e.g. Snake, Tetris — `body { align-items: center; padding: 0 20px 20px; }`): make the header break out of the side padding so it spans full width:
+```css
+.header {
+  width: calc(100% + 40px);
+  margin-left: -20px;
+  margin-right: -20px;
+  /* rest of header CSS as above */
+}
+```
+
+**Chip count display**: in `onAuthStateChanged`, read `users/{userId}.chips` and populate `#chipCount`:
+```js
+onAuthStateChanged(auth, async (user) => {
+  currentUser = user;
+  if (user) {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const chips = snap.exists() ? (snap.data().chips || 0) : 0;
+    document.getElementById('chipCount').textContent = chips.toLocaleString();
+  }
+});
+```
+
+**Solitaire exception**: keeps stats (Moves, Time) and New Game button in the header alongside the back-btn and `h1` — same visual style, different content.
+
+## Pre-game overlay conventions
+Every game must show a pre-game overlay before the first play, explaining chip earning mechanics.
+
+**Standard fullscreen overlay pattern** (Blackjack, Memory Match, Space Blaster, Flappy Bird, Sudoku, Chicken Run, Snake.io):
+```html
+<div class="overlay hidden" id="overlayStart">
+  <div style="font-size:52px">🎮</div>
+  <h2>Game Name</h2>
+  <p>How to play and how chips are earned.<br>
+     <strong>Chip earning details here 🪙</strong></p>
+  <button id="btnOverlayStart">Start Game</button>
+  <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
+</div>
+```
+
+CSS for fullscreen overlay:
+```css
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,15,26,0.96);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 24px;
+}
+.overlay.hidden { display: none; }
+.overlay h2 { font-size: 26px; font-weight: 700; color: #a78bfa; }
+.overlay p  { color: #94a3b8; max-width: 360px; line-height: 1.6; }
+```
+
+**Show overlay after auth resolves** (not immediately on page load):
+```js
+onAuthStateChanged(auth, async u => {
+  // ... load chips ...
+  document.getElementById('overlayStart').classList.remove('hidden');
+});
+
+document.getElementById('btnOverlayStart').addEventListener('click', () => {
+  document.getElementById('overlayStart').classList.add('hidden');
+  newGame(); // or startGame()
+});
+```
+
+**Canvas-positioned overlay** (Snake, Tetris — `position: absolute` inside `.canvas-wrap`): same rule applies — add `← Back to Arcade` link below the start button.
+
+**Solitaire**: uses `#start-screen` (fixed fullscreen div) as its pre-game overlay — same `← Back to Arcade` link below Start Game button.
+
+**The `← Back to Arcade` link must always appear below the Start/Play button** in every overlay, on every game. Use:
+```html
+<a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
+```
+
+## Game-specific notes
+
+### Chicken Run (`games/chickenrun/chickenrun.html`)
+- **Position system**: chicken uses float pixel position `player.px`. All snapping must be log-relative, NOT screen-grid-relative (logs drift during hop animation).
+- **`checkLanding()` water branch**: snap to nearest log-square centre using `lg.x + (sqIdx + 0.5) * CELL`
+- **`checkLanding()` non-water branch**: snap to column centre using `player.col = Math.floor(player.px / CELL); player.px = player.col * CELL + CELL * 0.5`
+- **`tryMove()` lateral on water**: set `tPx = lg.x + (sqIdx + dc + 0.5) * CELL` (log-relative, not screen grid)
+- **Difficulty**: stepped via `diff(row)` → 0 / 0.5 / 1.0 / 1.5 / 2.0 at rows 0 / 30 / 60 / 90 / 120. "⚡ Harder!" toast shown on threshold cross.
+- **Bush obstacles**: stored in `ln.bushes[]` on grass lanes. Movement blocked in `tryMove()` before hop. `makeBushes()` always leaves ≥3 free columns and avoids tree columns.
+- **Lives**: 1 life only (no extra lives)
+
+### Snake & Tetris
+- Both use `window.firestoreSaveScore` and `window.firestoreEarnChips` exposed by a `<script type="module">` block at the bottom of the file
+- Chip balance is now read from Firestore in `onAuthStateChanged` and shown in the header `#chipCount`
+
+### Solitaire
+- No chip earning during play — earns chips only on win (via Firebase)
+- Header keeps Moves + Time counters and New Game button (unique layout)
+- `#start-screen` acts as the pre-game overlay
+
 ## Conventions
 - All code: plain HTML/CSS/JS, no frameworks. Every game = one self-contained `.html` file
 - New games: back button to `../../index.html`, mobile-friendly with touch controls
 - Firebase config lives in `signup.html`, `login.html`, and `script.js` — update all three if it changes
 - Never use backslashes in `href` paths
-- Every game must have a pre-game overlay (shown before first play) that explains how chips are earned. Pattern: `<div class="overlay hidden" id="overlayStart">` — show it after auth resolves, hide on "Start Game" / "Play" button click. Overlay CSS uses fixed fullscreen, `z-index: 200`, same design system colours.
+- Every game must have both a **standard header** (with chip display) and a **pre-game overlay** (with `← Back to Arcade` link) — see sections above
 
 ## Poker — architecture notes
 
@@ -168,7 +314,9 @@ git status
 
 **Never `git add .`** without checking `git status` first — avoid accidentally staging `.claude/` or other non-project files. Always stage specific files by name.
 
+**`.gitignore`** must include `.claude/` to prevent accidentally committing Claude's internal worktree/session files.
+
 ## Planned next
 - Chip spending (cost to play certain games)
 - Community: Discord, global leaderboards
-- Monetization: Google AdSense, Ko-fi 
+- Monetization: Google AdSense, Ko-fi
