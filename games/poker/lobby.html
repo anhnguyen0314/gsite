@@ -36,6 +36,7 @@
     .chip-icon { font-size: 24px; }
     .chip-label { color: #7070a0; font-size: 13px; }
     .chip-amount { font-size: 22px; font-weight: 700; color: #a78bfa; }
+    .chip-hint { color: #7070a0; font-size: 0.78rem; margin: 2px 0 0; }
 
     .btn-create {
       background: #7c3aed;
@@ -533,6 +534,7 @@
             <div>
               <div class="chip-label">Your chips</div>
               <div class="chip-amount" id="chipDisplay">${myChips.toLocaleString()}</div>
+              <div class="chip-hint">💰 Win hands to grow your stack — chips save to your account</div>
             </div>
           </div>
           <button class="btn-create" onclick="openModal()">+ Create Table</button>

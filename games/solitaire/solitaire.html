@@ -158,6 +158,22 @@
       transform: rotate(180deg);
     }
 
+    /* Start overlay */
+    #start-screen {
+      position: fixed;
+      inset: 0;
+      background: rgba(15,15,26,0.92);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 600;
+    }
+    #start-screen h2 { font-size: 36px; color: #fff; }
+    #start-screen p  { font-size: 15px; color: #9090b0; text-align: center; }
+    .chip-hint { color: #a78bfa !important; font-size: 0.85rem !important; opacity: 0.9; }
+
     /* Win overlay */
     #win-screen {
       display: none;
@@ -230,6 +246,14 @@
     <div id="t6" class="slot tableau-slot" onclick="clickTableauSlot(6)"></div>
   </div>
   <p class="hint">Tap a card to select · Tap a valid spot to move · Double-tap to auto-send to foundation</p>
+</div>
+
+<div id="start-screen">
+  <div style="font-size:64px">♠️</div>
+  <h2>Solitaire</h2>
+  <p>Click or drag cards to build the foundation piles</p>
+  <p class="chip-hint">💰 Complete the game to earn 1,000 chips!</p>
+  <button class="btn" onclick="startSolitaire()">Start Game</button>
 </div>
 
 <div id="win-screen">
@@ -476,6 +500,7 @@
       document.getElementById('win-screen').classList.add('show');
       // Save time (lower = better) via the module script
       if (window.firestoreSaveTime) window.firestoreSaveTime(secs);
+      if (window.firestoreEarnChips) window.firestoreEarnChips(1000);
     }
   }
 
@@ -583,15 +608,19 @@
     }
   }
 
-  // Start on load
-  newGame();
+  function startSolitaire() {
+    document.getElementById('start-screen').style.display = 'none';
+    newGame();
+  }
+
+  // Board renders when user clicks Start (start-screen overlay is shown until then)
 </script>
 
 <!-- Firebase: Firestore score saving -->
 <script type="module">
   import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
   import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-  import { getFirestore, doc, getDoc, setDoc, serverTimestamp }
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, serverTimestamp }
     from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
   const firebaseConfig = {
@@ -608,6 +637,14 @@
   const db   = getFirestore(app);
   let currentUser = null;
   onAuthStateChanged(auth, u => { currentUser = u; });
+
+  // Award chips on game completion
+  window.firestoreEarnChips = async function(amount) {
+    if (!currentUser) return;
+    try {
+      await updateDoc(doc(db, 'users', currentUser.uid), { chips: increment(amount) });
+    } catch(e) { console.warn('Chip award failed:', e); }
+  };
 
   // Solitaire saves completion TIME (lower = better)
   window.firestoreSaveTime = async function(timeSecs) {
