@@ -6,120 +6,110 @@
   <title>Leaderboard — PlayDen</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* ── Page layout ── */
-    .lb-page {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 32px 20px;
+    /* ── Leaderboard two-column layout (inside main-content) ── */
+    .lb-layout {
       display: grid;
-      grid-template-columns: 260px 1fr;
-      gap: 24px;
+      grid-template-columns: 240px 1fr;
+      gap: 20px;
       align-items: start;
     }
 
-    /* ── Sidebar ── */
-    .lb-sidebar {
-      background: #1a1a2e;
+    .lb-picker {
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
-      border-radius: 16px;
+      border-radius: 14px;
       overflow: hidden;
       position: sticky;
-      top: 80px;
+      top: 76px;
     }
 
-    .lb-sidebar-header {
-      padding: 16px 18px 12px;
+    .lb-picker-header {
+      padding: 14px 16px 12px;
       border-bottom: 1px solid #2a2a4a;
     }
 
-    .lb-sidebar-header h2 {
-      font-size: 18px;
+    .lb-picker-header h2 {
+      font-size: 15px;
       font-weight: 700;
-      color: #fff;
+      color: #f0f0ff;
       margin-bottom: 10px;
     }
 
     .lb-search {
       width: 100%;
-      background: #0f0f1a;
+      background: #0c0d14;
       border: 1px solid #2a2a4a;
       border-radius: 8px;
-      color: #e2e8f0;
-      padding: 8px 12px;
-      font-size: 14px;
+      color: #e0e0f0;
+      padding: 7px 12px;
+      font-size: 13px;
       font-family: inherit;
       outline: none;
     }
     .lb-search:focus { border-color: #7c3aed; }
-    .lb-search::placeholder { color: #475569; }
+    .lb-search::placeholder { color: #40406a; }
 
     .lb-game-list {
-      padding: 8px 0;
-      max-height: 500px;
+      padding: 6px 0;
+      max-height: 480px;
       overflow-y: auto;
     }
     .lb-game-list::-webkit-scrollbar { width: 4px; }
     .lb-game-list::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 2px; }
 
     .lb-category-label {
-      padding: 10px 18px 4px;
+      padding: 10px 16px 4px;
       font-size: 10px;
       font-weight: 700;
-      color: #475569;
+      color: #40406a;
       text-transform: uppercase;
-      letter-spacing: 1.5px;
+      letter-spacing: 1.2px;
     }
 
     .lb-game-item {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 10px 18px;
+      gap: 10px;
+      padding: 9px 16px;
       cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.12s;
       border-left: 3px solid transparent;
     }
-    .lb-game-item:hover { background: #1f1f38; }
+    .lb-game-item:hover { background: #20213a; }
     .lb-game-item.active {
       background: #1e1430;
       border-left-color: #7c3aed;
     }
-    .lb-game-icon { font-size: 22px; line-height: 1; width: 28px; text-align: center; }
-    .lb-game-name {
-      font-size: 14px;
-      font-weight: 500;
-      color: #c0c0d0;
-    }
+    .lb-game-icon { font-size: 20px; line-height: 1; width: 24px; text-align: center; }
+    .lb-game-name { font-size: 13px; font-weight: 500; color: #a0a0c0; }
     .lb-game-item.active .lb-game-name { color: #a78bfa; }
     .lb-game-item.hidden-item { display: none; }
 
-    /* ── Main board ── */
-    .lb-main {}
-
+    /* ── Board ── */
     .lb-header {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-bottom: 20px;
+      gap: 12px;
+      margin-bottom: 18px;
     }
-    .lb-header-icon { font-size: 36px; }
-    .lb-header-text h1 { font-size: 26px; font-weight: 700; color: #fff; }
-    .lb-header-text p  { font-size: 13px; color: #475569; margin-top: 2px; }
+    .lb-header-icon { font-size: 32px; }
+    .lb-header-text h1 { font-size: 22px; font-weight: 700; color: #f0f0ff; }
+    .lb-header-text p  { font-size: 13px; color: #50507a; margin-top: 2px; }
 
     .board {
-      background: #1a1a2e;
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
-      border-radius: 16px;
+      border-radius: 14px;
       overflow: hidden;
     }
 
     .board-header {
       display: grid;
       grid-template-columns: 52px 1fr 130px;
-      padding: 12px 20px;
+      padding: 11px 18px;
       border-bottom: 1px solid #2a2a4a;
       font-size: 11px;
-      color: #5050a0;
+      color: #40406a;
       text-transform: uppercase;
       letter-spacing: 0.08em;
       font-weight: 600;
@@ -128,29 +118,25 @@
     .board-row {
       display: grid;
       grid-template-columns: 52px 1fr 130px;
-      padding: 14px 20px;
-      border-bottom: 1px solid #1e1e38;
+      padding: 13px 18px;
+      border-bottom: 1px solid #1a1b28;
       align-items: center;
-      transition: background 0.15s;
+      transition: background 0.12s;
     }
     .board-row:last-child { border-bottom: none; }
-    .board-row:hover { background: #1f1f38; }
+    .board-row:hover { background: #20213a; }
     .board-row.you {
       background: #1e1430;
       border-left: 3px solid #7c3aed;
     }
 
-    .rank {
-      font-size: 18px;
-      font-weight: 700;
-      color: #5050a0;
-    }
+    .rank { font-size: 17px; font-weight: 700; color: #40406a; }
     .rank.gold   { color: #facc15; }
     .rank.silver { color: #94a3b8; }
     .rank.bronze { color: #fb923c; }
 
-    .player { display: flex; align-items: center; gap: 10px; }
-    .player-name { font-size: 15px; font-weight: 500; color: #e0e0e0; }
+    .player { display: flex; align-items: center; gap: 8px; }
+    .player-name { font-size: 14px; font-weight: 500; color: #d0d0e0; }
     .you-badge {
       font-size: 10px;
       background: #7c3aed;
@@ -161,402 +147,376 @@
     }
 
     .score-val {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       color: #a78bfa;
       text-align: right;
     }
 
-    /* States */
     .state-box {
-      padding: 60px 20px;
+      padding: 56px 20px;
       text-align: center;
-      color: #5050a0;
+      color: #40406a;
     }
-    .state-box .state-icon { font-size: 48px; margin-bottom: 16px; }
-    .state-box p { font-size: 15px; }
+    .state-box .state-icon { font-size: 44px; margin-bottom: 14px; }
+    .state-box p { font-size: 14px; }
 
     .spinner {
-      width: 36px; height: 36px;
+      width: 32px; height: 32px;
       border: 3px solid #2a2a4a;
       border-top-color: #7c3aed;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
-      margin: 0 auto 16px;
+      margin: 0 auto 14px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     .your-rank-bar {
-      margin-top: 16px;
-      background: #1a1a2e;
+      margin-top: 14px;
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
-      border-radius: 12px;
-      padding: 14px 20px;
+      border-radius: 10px;
+      padding: 12px 18px;
       display: none;
       align-items: center;
       justify-content: space-between;
-      font-size: 14px;
-      color: #9090b0;
+      font-size: 13px;
+      color: #8080a0;
     }
     .your-rank-bar.visible { display: flex; }
     .your-rank-bar strong  { color: #a78bfa; }
 
-    /* ── Mobile: game picker becomes a dropdown ── */
+    /* Mobile picker */
     .lb-mobile-select {
       display: none;
       width: 100%;
-      background: #1a1a2e;
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
-      border-radius: 12px;
-      color: #e2e8f0;
-      padding: 12px 16px;
-      font-size: 15px;
+      border-radius: 10px;
+      color: #e0e0f0;
+      padding: 11px 14px;
+      font-size: 14px;
       font-family: inherit;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       outline: none;
     }
     .lb-mobile-select:focus { border-color: #7c3aed; }
 
-    @media (max-width: 740px) {
-      .lb-page {
-        grid-template-columns: 1fr;
-        padding: 16px;
-        gap: 16px;
-      }
-      .lb-sidebar { display: none; }
+    @media (max-width: 820px) {
+      .lb-layout { grid-template-columns: 1fr; }
+      .lb-picker  { display: none; }
       .lb-mobile-select { display: block; }
-      .lb-header-icon { font-size: 28px; }
-      .lb-header-text h1 { font-size: 20px; }
     }
 
     @media (max-width: 420px) {
       .board-header, .board-row {
         grid-template-columns: 42px 1fr 100px;
-        padding: 12px 14px;
+        padding: 11px 12px;
       }
-      .score-val { font-size: 15px; }
+      .score-val { font-size: 14px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav>
-    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 PlayDen</a>
-    <ul class="nav-links">
-      <li><a href="index.html#arcade">Arcade</a></li>
-      <li><a href="index.html#puzzle">Puzzle</a></li>
-      <li><a href="index.html#card">Card</a></li>
-    </ul>
-    <div class="nav-right">
-      <div class="nav-chips hidden" id="navChips">🪙 <span id="navChipCount">0</span></div>
-      <div class="nav-auth" id="navAuth">
-        <a href="login.html" class="btn-secondary">Log in</a>
-        <a href="signup.html" class="btn-primary">Sign up</a>
+<div class="page-layout">
+
+  <!-- Global sidebar -->
+  <div id="sidebar"></div>
+
+  <!-- Main area -->
+  <div id="main-wrap">
+
+    <div class="top-bar">
+      <div class="page-header" style="margin-bottom:0;">
+        <h1 style="font-size:20px;">🏆 Leaderboard</h1>
       </div>
-    </div>
-  </nav>
-
-  <!-- Mobile game picker -->
-  <div style="padding:16px 16px 0; display:block;" id="mobilePickerWrap">
-    <select class="lb-mobile-select" id="mobileSelect" onchange="switchGame(this.value)">
-      <option value="snake">🐍 Snake</option>
-      <option value="chickenrun">🐔 Chicken Run</option>
-      <option value="snakeio">🐍 Snake.io</option>
-      <option value="tetris">🟦 Tetris</option>
-      <option value="solitaire">♠️ Solitaire</option>
-      <option value="blackjack">🃏 Blackjack</option>
-      <option value="spaceblaster">🚀 Space Blaster</option>
-      <option value="memorymatch">🧠 Memory Match</option>
-      <option value="sudoku">🔢 Sudoku</option>
-      <option value="flappybird">🐦 Flappy Bird</option>
-    </select>
-  </div>
-
-  <div class="lb-page">
-
-    <!-- Sidebar -->
-    <aside class="lb-sidebar">
-      <div class="lb-sidebar-header">
-        <h2>🏆 Leaderboards</h2>
-        <input class="lb-search" type="text" placeholder="Search games…" id="gameSearch" oninput="filterGames(this.value)">
-      </div>
-      <div class="lb-game-list" id="gameList">
-
-        <div class="lb-category-label">Arcade</div>
-        <div class="lb-game-item active" data-game="snake" data-name="snake" onclick="switchGame('snake')">
-          <span class="lb-game-icon">🐍</span>
-          <span class="lb-game-name">Snake</span>
-        </div>
-        <div class="lb-game-item" data-game="chickenrun" data-name="chicken run chickenrun frogger" onclick="switchGame('chickenrun')">
-          <span class="lb-game-icon">🐔</span>
-          <span class="lb-game-name">Chicken Run</span>
-        </div>
-        <div class="lb-game-item" data-game="snakeio" data-name="snake io snakeio multiplayer" onclick="switchGame('snakeio')">
-          <span class="lb-game-icon">🐍</span>
-          <span class="lb-game-name">Snake.io</span>
-        </div>
-        <div class="lb-game-item" data-game="spaceblaster" data-name="space blaster spaceblaster" onclick="switchGame('spaceblaster')">
-          <span class="lb-game-icon">🚀</span>
-          <span class="lb-game-name">Space Blaster</span>
-        </div>
-        <div class="lb-game-item" data-game="flappybird" data-name="flappy bird flappybird" onclick="switchGame('flappybird')">
-          <span class="lb-game-icon">🐦</span>
-          <span class="lb-game-name">Flappy Bird</span>
-        </div>
-
-        <div class="lb-category-label">Puzzle</div>
-        <div class="lb-game-item" data-game="tetris" data-name="tetris" onclick="switchGame('tetris')">
-          <span class="lb-game-icon">🟦</span>
-          <span class="lb-game-name">Tetris</span>
-        </div>
-        <div class="lb-game-item" data-game="memorymatch" data-name="memory match memorymatch" onclick="switchGame('memorymatch')">
-          <span class="lb-game-icon">🧠</span>
-          <span class="lb-game-name">Memory Match</span>
-        </div>
-
-        <div class="lb-game-item" data-game="sudoku" data-name="sudoku" onclick="switchGame('sudoku')">
-          <span class="lb-game-icon">🔢</span>
-          <span class="lb-game-name">Sudoku</span>
-        </div>
-
-        <div class="lb-category-label">Card</div>
-        <div class="lb-game-item" data-game="solitaire" data-name="solitaire" onclick="switchGame('solitaire')">
-          <span class="lb-game-icon">♠️</span>
-          <span class="lb-game-name">Solitaire</span>
-        </div>
-        <div class="lb-game-item" data-game="blackjack" data-name="blackjack" onclick="switchGame('blackjack')">
-          <span class="lb-game-icon">🃏</span>
-          <span class="lb-game-name">Blackjack</span>
-        </div>
-
-      </div>
-    </aside>
-
-    <!-- Main content -->
-    <div class="lb-main">
-      <div class="lb-header">
-        <div class="lb-header-icon" id="lbIcon">🐍</div>
-        <div class="lb-header-text">
-          <h1 id="lbTitle">Snake</h1>
-          <p id="lbSubtitle">Top 10 players · Score</p>
-        </div>
-      </div>
-
-      <div class="board" id="board">
-        <div class="state-box">
-          <div class="spinner"></div>
-          <p>Loading scores…</p>
-        </div>
-      </div>
-
-      <div class="your-rank-bar" id="yourRankBar">
-        Your best: <strong id="yourScore">—</strong> &nbsp;·&nbsp; Rank: <strong id="yourRank">—</strong>
+      <div class="top-bar-chips" id="topBarChips">
+        🪙 <span id="topBarChipCount">0</span>
       </div>
     </div>
 
-  </div>
+    <div class="main-content">
 
-  <script type="module">
-    import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc }
-      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+      <!-- Mobile game picker -->
+      <select class="lb-mobile-select" id="mobileSelect" onchange="switchGame(this.value)">
+        <option value="snake">🐍 Snake</option>
+        <option value="chickenrun">🐔 Chicken Run</option>
+        <option value="snakeio">🐍 Snake.io</option>
+        <option value="spaceblaster">🚀 Space Blaster</option>
+        <option value="flappybird">🐦 Flappy Bird</option>
+        <option value="tetris">🟦 Tetris</option>
+        <option value="memorymatch">🧠 Memory Match</option>
+        <option value="sudoku">🔢 Sudoku</option>
+        <option value="solitaire">♠️ Solitaire</option>
+        <option value="blackjack">🃏 Blackjack</option>
+      </select>
 
-    const firebaseConfig = {
-      apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
-      authDomain:        "gamezone-6487a.firebaseapp.com",
-      projectId:         "gamezone-6487a",
-      storageBucket:     "gamezone-6487a.firebasestorage.app",
-      messagingSenderId: "266519256159",
-      appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
-    };
+      <div class="lb-layout">
 
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
+        <!-- Game picker sidebar -->
+        <aside class="lb-picker">
+          <div class="lb-picker-header">
+            <h2>Games</h2>
+            <input class="lb-search" type="text" placeholder="Search…" id="gameSearch" oninput="filterGames(this.value)">
+          </div>
+          <div class="lb-game-list" id="gameList">
 
-    let currentUser = null;
-    let currentGame = 'snake';
+            <div class="lb-category-label">Arcade</div>
+            <div class="lb-game-item active" data-game="snake" data-name="snake" onclick="switchGame('snake')">
+              <span class="lb-game-icon">🐍</span>
+              <span class="lb-game-name">Snake</span>
+            </div>
+            <div class="lb-game-item" data-game="chickenrun" data-name="chicken run chickenrun" onclick="switchGame('chickenrun')">
+              <span class="lb-game-icon">🐔</span>
+              <span class="lb-game-name">Chicken Run</span>
+            </div>
+            <div class="lb-game-item" data-game="snakeio" data-name="snake io snakeio" onclick="switchGame('snakeio')">
+              <span class="lb-game-icon">🐍</span>
+              <span class="lb-game-name">Snake.io</span>
+            </div>
+            <div class="lb-game-item" data-game="spaceblaster" data-name="space blaster spaceblaster" onclick="switchGame('spaceblaster')">
+              <span class="lb-game-icon">🚀</span>
+              <span class="lb-game-name">Space Blaster</span>
+            </div>
+            <div class="lb-game-item" data-game="flappybird" data-name="flappy bird flappybird" onclick="switchGame('flappybird')">
+              <span class="lb-game-icon">🐦</span>
+              <span class="lb-game-name">Flappy Bird</span>
+            </div>
 
-    // ── Game config ────────────────────────────────────────────────
-    const GAME_META = {
-      snake:        { icon: '🐍', name: 'Snake',        ascending: false, label: 'Score',       fmt: v => v.toLocaleString() },
-      chickenrun:   { icon: '🐔', name: 'Chicken Run',  ascending: false, label: 'Distance',    fmt: v => v.toLocaleString() + ' rows' },
-      snakeio:      { icon: '🐍', name: 'Snake.io',     ascending: false, label: 'Best Score',  fmt: v => v.toLocaleString() },
-      tetris:       { icon: '🟦', name: 'Tetris',       ascending: false, label: 'Score',       fmt: v => v.toLocaleString() },
-      solitaire:    { icon: '♠️',  name: 'Solitaire',   ascending: true,  label: 'Best Time',   fmt: v => {
-        const m = Math.floor(v/60), s = String(v%60).padStart(2,'0');
-        return `${m}:${s}`;
-      }},
-      blackjack:    { icon: '🃏', name: 'Blackjack',    ascending: false, label: 'Net Won',     fmt: v => '+' + v.toLocaleString() + ' 🪙' },
-      spaceblaster: { icon: '🚀', name: 'Space Blaster',ascending: false, label: 'Score',       fmt: v => v.toLocaleString() },
-      memorymatch:  { icon: '🧠', name: 'Memory Match', ascending: false, label: 'Chips Earned',fmt: v => '+' + v.toLocaleString() + ' 🪙' },
-      sudoku:       { icon: '🔢', name: 'Sudoku',       ascending: false, label: 'Chips Earned',fmt: v => '+' + v.toLocaleString() + ' 🪙' },
-      flappybird:   { icon: '🐦', name: 'Flappy Bird',  ascending: false, label: 'Pipes Passed',fmt: v => v.toLocaleString() }
-    };
+            <div class="lb-category-label">Puzzle</div>
+            <div class="lb-game-item" data-game="tetris" data-name="tetris" onclick="switchGame('tetris')">
+              <span class="lb-game-icon">🟦</span>
+              <span class="lb-game-name">Tetris</span>
+            </div>
+            <div class="lb-game-item" data-game="memorymatch" data-name="memory match memorymatch" onclick="switchGame('memorymatch')">
+              <span class="lb-game-icon">🧠</span>
+              <span class="lb-game-name">Memory Match</span>
+            </div>
+            <div class="lb-game-item" data-game="sudoku" data-name="sudoku" onclick="switchGame('sudoku')">
+              <span class="lb-game-icon">🔢</span>
+              <span class="lb-game-name">Sudoku</span>
+            </div>
 
-    // ── Auth ───────────────────────────────────────────────────────
-    const navAuth  = document.getElementById('navAuth');
-    const navChips = document.getElementById('navChips');
+            <div class="lb-category-label">Card</div>
+            <div class="lb-game-item" data-game="solitaire" data-name="solitaire" onclick="switchGame('solitaire')">
+              <span class="lb-game-icon">♠️</span>
+              <span class="lb-game-name">Solitaire</span>
+            </div>
+            <div class="lb-game-item" data-game="blackjack" data-name="blackjack" onclick="switchGame('blackjack')">
+              <span class="lb-game-icon">🃏</span>
+              <span class="lb-game-name">Blackjack</span>
+            </div>
+          </div>
+        </aside>
 
-    onAuthStateChanged(auth, async user => {
-      currentUser = user;
-      if (user) {
-        const name = user.displayName || user.email.split('@')[0];
-        navAuth.innerHTML = `
-          <a href="account.html" class="nav-username" style="text-decoration:none;">👾 ${escapeHtml(name)}</a>
-          <button class="btn-secondary" id="logoutBtn">Log out</button>
-        `;
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-          await signOut(auth);
-          window.location.reload();
-        });
-        // Load chip balance for nav
-        try {
-          const snap = await getDoc(doc(db, 'users', user.uid));
-          if (snap.exists()) {
-            const chips = snap.data().chips || 0;
-            document.getElementById('navChipCount').textContent = chips.toLocaleString();
-            navChips.classList.remove('hidden');
-          }
-        } catch (_) {}
-      } else {
-        navAuth.innerHTML = `
-          <a href="login.html" class="btn-secondary">Log in</a>
-          <a href="signup.html" class="btn-primary">Sign up</a>
-        `;
-        navChips.classList.add('hidden');
+        <!-- Main board -->
+        <div class="lb-main">
+          <div class="lb-header">
+            <div class="lb-header-icon" id="lbIcon">🐍</div>
+            <div class="lb-header-text">
+              <h1 id="lbTitle">Snake</h1>
+              <p id="lbSubtitle">Top 10 players · Score</p>
+            </div>
+          </div>
+
+          <div class="board" id="board">
+            <div class="state-box">
+              <div class="spinner"></div>
+              <p>Loading scores…</p>
+            </div>
+          </div>
+
+          <div class="your-rank-bar" id="yourRankBar">
+            Your best: <strong id="yourScore">—</strong> &nbsp;·&nbsp; Rank: <strong id="yourRank">—</strong>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /.main-content -->
+
+    <footer>
+      <p>© 2026 PlayDen · <a href="about.html">About</a> · <a href="privacy.html">Privacy</a> · Built with ❤️ by one person</p>
+    </footer>
+
+  </div><!-- /#main-wrap -->
+
+</div><!-- /.page-layout -->
+
+<!-- Bottom nav (mobile) -->
+<nav class="bottom-nav" id="bottomNav"></nav>
+
+<!-- Sidebar init -->
+<script src="nav.js"></script>
+
+<script type="module">
+  import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+  import { getFirestore, collection, query, orderBy, limit, getDocs, doc, getDoc }
+    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+    authDomain:        "gamezone-6487a.firebaseapp.com",
+    projectId:         "gamezone-6487a",
+    storageBucket:     "gamezone-6487a.firebasestorage.app",
+    messagingSenderId: "266519256159",
+    appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  let currentUser = null;
+  let currentGame = 'snake';
+
+  const GAME_META = {
+    snake:        { icon: '🐍', name: 'Snake',        ascending: false, label: 'Score',       fmt: v => v.toLocaleString() },
+    chickenrun:   { icon: '🐔', name: 'Chicken Run',  ascending: false, label: 'Distance',    fmt: v => v.toLocaleString() + ' rows' },
+    snakeio:      { icon: '🐍', name: 'Snake.io',     ascending: false, label: 'Best Score',  fmt: v => v.toLocaleString() },
+    tetris:       { icon: '🟦', name: 'Tetris',       ascending: false, label: 'Score',       fmt: v => v.toLocaleString() },
+    solitaire:    { icon: '♠️',  name: 'Solitaire',   ascending: true,  label: 'Best Time',   fmt: v => {
+      const m = Math.floor(v/60), s = String(v%60).padStart(2,'0');
+      return `${m}:${s}`;
+    }},
+    blackjack:    { icon: '🃏', name: 'Blackjack',    ascending: false, label: 'Net Won',     fmt: v => '+' + v.toLocaleString() + ' 🪙' },
+    spaceblaster: { icon: '🚀', name: 'Space Blaster',ascending: false, label: 'Score',       fmt: v => v.toLocaleString() },
+    memorymatch:  { icon: '🧠', name: 'Memory Match', ascending: false, label: 'Chips Earned',fmt: v => '+' + v.toLocaleString() + ' 🪙' },
+    sudoku:       { icon: '🔢', name: 'Sudoku',       ascending: false, label: 'Chips Earned',fmt: v => '+' + v.toLocaleString() + ' 🪙' },
+    flappybird:   { icon: '🐦', name: 'Flappy Bird',  ascending: false, label: 'Pipes Passed',fmt: v => v.toLocaleString() }
+  };
+
+  onAuthStateChanged(auth, async user => {
+    currentUser = user;
+    if (user) {
+      const doLogout = async () => { await signOut(auth); window.location.reload(); };
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        const data = snap.exists() ? snap.data() : null;
+        if (window.updateSidebarAuth) window.updateSidebarAuth(user, data, doLogout);
+      } catch (_) {
+        if (window.updateSidebarAuth) window.updateSidebarAuth(user, null, doLogout);
       }
-      loadLeaderboard(currentGame);
+    } else {
+      if (window.updateSidebarAuth) window.updateSidebarAuth(null, null);
+    }
+    loadLeaderboard(currentGame);
+  });
+
+  window.switchGame = function(game) {
+    currentGame = game;
+    document.querySelectorAll('.lb-game-item').forEach(el => {
+      el.classList.toggle('active', el.dataset.game === game);
     });
+    const sel = document.getElementById('mobileSelect');
+    if (sel) sel.value = game;
+    const meta = GAME_META[game];
+    if (meta) {
+      document.getElementById('lbIcon').textContent     = meta.icon;
+      document.getElementById('lbTitle').textContent    = meta.name;
+      document.getElementById('lbSubtitle').textContent = `Top 10 players · ${meta.label}`;
+    }
+    loadLeaderboard(game);
+  };
 
-    // ── Game switching ─────────────────────────────────────────────
-    window.switchGame = function(game) {
-      currentGame = game;
-      // Sidebar active state
-      document.querySelectorAll('.lb-game-item').forEach(el => {
-        el.classList.toggle('active', el.dataset.game === game);
-      });
-      // Mobile select sync
-      const sel = document.getElementById('mobileSelect');
-      if (sel) sel.value = game;
-      // Update header
-      const meta = GAME_META[game];
-      if (meta) {
-        document.getElementById('lbIcon').textContent    = meta.icon;
-        document.getElementById('lbTitle').textContent   = meta.name;
-        document.getElementById('lbSubtitle').textContent = `Top 10 players · ${meta.label}`;
+  window.filterGames = function(queryStr) {
+    const q = queryStr.toLowerCase().trim();
+    document.querySelectorAll('.lb-game-item').forEach(el => {
+      const name = (el.dataset.name || '').toLowerCase();
+      el.classList.toggle('hidden-item', q.length > 0 && !name.includes(q));
+    });
+    document.querySelectorAll('.lb-category-label').forEach(label => {
+      let next = label.nextElementSibling;
+      let anyVisible = false;
+      while (next && !next.classList.contains('lb-category-label')) {
+        if (!next.classList.contains('hidden-item')) anyVisible = true;
+        next = next.nextElementSibling;
       }
-      loadLeaderboard(game);
-    };
+      label.style.display = anyVisible ? '' : 'none';
+    });
+  };
 
-    // ── Search filter ──────────────────────────────────────────────
-    window.filterGames = function(query) {
-      const q = query.toLowerCase().trim();
-      document.querySelectorAll('.lb-game-item').forEach(el => {
-        const name = (el.dataset.name || '').toLowerCase();
-        el.classList.toggle('hidden-item', q.length > 0 && !name.includes(q));
-      });
-      // Hide category labels if all items below are hidden
-      document.querySelectorAll('.lb-category-label').forEach(label => {
-        // Find all sibling game items until next label
-        let next = label.nextElementSibling;
-        let anyVisible = false;
-        while (next && !next.classList.contains('lb-category-label')) {
-          if (!next.classList.contains('hidden-item')) anyVisible = true;
-          next = next.nextElementSibling;
-        }
-        label.style.display = anyVisible ? '' : 'none';
-      });
-    };
+  async function loadLeaderboard(game) {
+    const board = document.getElementById('board');
+    board.innerHTML = `<div class="state-box"><div class="spinner"></div><p>Loading scores…</p></div>`;
+    document.getElementById('yourRankBar').classList.remove('visible');
 
-    // ── Load leaderboard ───────────────────────────────────────────
-    async function loadLeaderboard(game) {
-      const board = document.getElementById('board');
-      board.innerHTML = `<div class="state-box"><div class="spinner"></div><p>Loading scores…</p></div>`;
-      document.getElementById('yourRankBar').classList.remove('visible');
+    const meta = GAME_META[game];
+    if (!meta) {
+      board.innerHTML = `<div class="state-box"><div class="state-icon">⚠️</div><p>Unknown game.</p></div>`;
+      return;
+    }
 
-      const meta = GAME_META[game];
-      if (!meta) {
-        board.innerHTML = `<div class="state-box"><div class="state-icon">⚠️</div><p>Unknown game.</p></div>`;
+    try {
+      const q = query(
+        collection(db, 'games', game, 'scores'),
+        orderBy('score', meta.ascending ? 'asc' : 'desc'),
+        limit(10)
+      );
+      const snap = await getDocs(q);
+      const rows = [];
+      snap.forEach(d => rows.push(d.data()));
+
+      if (rows.length === 0) {
+        board.innerHTML = `
+          <div class="state-box">
+            <div class="state-icon">🎮</div>
+            <p>No scores yet — be the first to play!</p>
+          </div>`;
         return;
       }
 
-      try {
-        const q = query(
-          collection(db, 'games', game, 'scores'),
-          orderBy('score', meta.ascending ? 'asc' : 'desc'),
-          limit(10)
-        );
-        const snap = await getDocs(q);
-        const rows = [];
-        snap.forEach(d => rows.push(d.data()));
+      const medals      = ['🥇', '🥈', '🥉'];
+      const rankClasses = ['gold', 'silver', 'bronze'];
 
-        if (rows.length === 0) {
-          board.innerHTML = `
-            <div class="state-box">
-              <div class="state-icon">🎮</div>
-              <p>No scores yet — be the first to play!</p>
+      board.innerHTML = `
+        <div class="board-header">
+          <div>Rank</div><div>Player</div><div style="text-align:right">${meta.label}</div>
+        </div>
+        ${rows.map((row, i) => {
+          const isYou = currentUser && row.userId === currentUser.uid;
+          const rankDisplay = i < 3
+            ? `<span class="rank ${rankClasses[i]}">${medals[i]}</span>`
+            : `<span class="rank">#${i + 1}</span>`;
+          return `
+            <div class="board-row ${isYou ? 'you' : ''}">
+              <div>${rankDisplay}</div>
+              <div class="player">
+                <span class="player-name">${escapeHtml(row.username)}</span>
+                ${isYou ? '<span class="you-badge">YOU</span>' : ''}
+              </div>
+              <div class="score-val">${meta.fmt(row.score)}</div>
             </div>`;
-          return;
-        }
+        }).join('')}
+      `;
 
-        const medals      = ['🥇', '🥈', '🥉'];
-        const rankClasses = ['gold', 'silver', 'bronze'];
-
-        board.innerHTML = `
-          <div class="board-header">
-            <div>Rank</div><div>Player</div><div style="text-align:right">${meta.label}</div>
-          </div>
-          ${rows.map((row, i) => {
-            const isYou = currentUser && row.userId === currentUser.uid;
-            const rankDisplay = i < 3
-              ? `<span class="rank ${rankClasses[i]}">${medals[i]}</span>`
-              : `<span class="rank">#${i + 1}</span>`;
-            return `
-              <div class="board-row ${isYou ? 'you' : ''}">
-                <div>${rankDisplay}</div>
-                <div class="player">
-                  <span class="player-name">${escapeHtml(row.username)}</span>
-                  ${isYou ? '<span class="you-badge">YOU</span>' : ''}
-                </div>
-                <div class="score-val">${meta.fmt(row.score)}</div>
-              </div>`;
-          }).join('')}
-        `;
-
-        // Show user's own rank if outside top 10
-        if (currentUser) {
-          const userSnap = await getDoc(doc(db, 'games', game, 'scores', currentUser.uid));
-          if (userSnap.exists()) {
-            const inTop10 = rows.some(r => r.userId === currentUser.uid);
-            if (!inTop10) {
-              document.getElementById('yourScore').textContent = meta.fmt(userSnap.data().score);
-              document.getElementById('yourRank').textContent  = 'Outside top 10';
-              document.getElementById('yourRankBar').classList.add('visible');
-            }
+      if (currentUser) {
+        const userSnap = await getDoc(doc(db, 'games', game, 'scores', currentUser.uid));
+        if (userSnap.exists()) {
+          const inTop10 = rows.some(r => r.userId === currentUser.uid);
+          if (!inTop10) {
+            document.getElementById('yourScore').textContent = meta.fmt(userSnap.data().score);
+            document.getElementById('yourRank').textContent  = 'Outside top 10';
+            document.getElementById('yourRankBar').classList.add('visible');
           }
         }
-
-      } catch (err) {
-        board.innerHTML = `
-          <div class="state-box">
-            <div class="state-icon">⚠️</div>
-            <p>Couldn't load scores. Check your connection.</p>
-          </div>`;
-        console.error(err);
       }
-    }
 
-    function escapeHtml(str) {
-      return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    } catch (err) {
+      board.innerHTML = `
+        <div class="state-box">
+          <div class="state-icon">⚠️</div>
+          <p>Couldn't load scores. Check your connection.</p>
+        </div>`;
+      console.error(err);
     }
-  </script>
+  }
 
-  <footer style="text-align:center;padding:30px;color:#505070;font-size:14px;">
-    <p>© 2026 PlayDen · <a href="about.html" style="color:#5050a0;">About</a> · <a href="privacy.html" style="color:#5050a0;">Privacy</a> · Built with ❤️ by one person</p>
-  </footer>
+  function escapeHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+</script>
 
 </body>
 </html>

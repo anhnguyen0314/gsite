@@ -8,7 +8,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background: #0f0f1a;
+      background: #0c0d14;
       color: #e0e0e0;
       font-family: 'Segoe UI', sans-serif;
       display: flex;
@@ -22,7 +22,7 @@
       width: calc(100% + 40px);
       margin-left: -20px;
       margin-right: -20px;
-      background: #1a1a2e;
+      background: #1a1b28;
       border-bottom: 1px solid #2a2a4a;
       padding: 12px 20px;
       display: flex;
@@ -47,7 +47,7 @@
     .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; }
 
     .chip-display {
-      background: #0f0f1a;
+      background: #0c0d14;
       border: 1px solid #2a2a4a;
       border-radius: 20px;
       padding: 5px 14px;
@@ -67,7 +67,7 @@
     }
 
     canvas {
-      background: #1a1a2e;
+      background: #1a1b28;
       border: 2px solid #2a2a4a;
       border-radius: 12px;
       display: block;
@@ -128,7 +128,7 @@
     }
 
     .stat-box {
-      background: #1a1a2e;
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
       border-radius: 10px;
       padding: 12px 16px;
@@ -150,7 +150,7 @@
     }
 
     .next-box {
-      background: #1a1a2e;
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
       border-radius: 10px;
       padding: 12px;
@@ -184,7 +184,7 @@
     .ctrl-btn {
       width: 60px;
       height: 60px;
-      background: #1a1a2e;
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
       border-radius: 10px;
       color: #a78bfa;
@@ -464,7 +464,7 @@
     }
 
     function draw() {
-      ctx.fillStyle = '#1a1a2e';
+      ctx.fillStyle = '#1a1b28';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Grid lines
@@ -527,7 +527,7 @@
     }
 
     function drawNext() {
-      nctx.fillStyle = '#1a1a2e';
+      nctx.fillStyle = '#1a1b28';
       nctx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
       const nb = 18;
       const offsetX = Math.floor((nextCanvas.width - next.shape[0].length * nb) / 2);

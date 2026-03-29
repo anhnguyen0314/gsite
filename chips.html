@@ -6,131 +6,85 @@
   <title>Chips — PlayDen</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
-    .chips-wrap {
-      max-width: 680px;
-      margin: 0 auto;
-      padding: 32px 16px 80px;
-    }
-
-    .page-header {
-      text-align: center;
-      margin-bottom: 36px;
-    }
-    .page-header .icon { font-size: 52px; margin-bottom: 10px; }
-    .page-header h1   { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; }
-    .page-header p    { font-size: 15px; color: #7070a0; max-width: 440px; margin: 0 auto; }
-
     /* Chip balance card */
     .balance-card {
-      background: linear-gradient(135deg, #1e0c45 0%, #1a1a2e 100%);
+      background: linear-gradient(135deg, #1e0c45 0%, #1a1b28 100%);
       border: 1px solid #4c2a8a;
-      border-radius: 16px;
-      padding: 24px 28px;
+      border-radius: 14px;
+      padding: 22px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 32px;
+      margin-bottom: 28px;
       flex-wrap: wrap;
       gap: 12px;
     }
-    .balance-left { }
-    .balance-label { font-size: 13px; color: #7070a0; margin-bottom: 4px; }
-    .balance-amount { font-size: 38px; font-weight: 700; color: #a78bfa; line-height: 1; }
-    .balance-login { font-size: 12px; color: #5050a0; margin-top: 6px; }
+    .balance-label  { font-size: 12px; color: #60607a; margin-bottom: 3px; }
+    .balance-amount { font-size: 36px; font-weight: 700; color: #a78bfa; line-height: 1; }
+    .balance-login  { font-size: 12px; color: #40406a; margin-top: 5px; }
     .balance-login.ready { color: #4ade80; }
-    .btn-account {
-      background: #7c3aed; color: #fff; border: none; border-radius: 10px;
-      padding: 10px 20px; font-size: 14px; font-weight: 600;
-      font-family: 'Segoe UI', sans-serif; cursor: pointer;
-      text-decoration: none; display: inline-block;
-    }
-    .btn-account:hover { background: #6d28d9; }
 
-    /* Section */
     .section-title {
-      font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em;
-      color: #5050a0; font-weight: 600; margin: 0 0 14px;
+      font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em;
+      color: #40406a; font-weight: 700; margin: 0 0 12px;
     }
 
-    /* Earn / spend cards */
     .ways-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 14px;
-      margin-bottom: 32px;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin-bottom: 28px;
     }
-
     .way-card {
-      background: #1a1a2e;
-      border: 1px solid #2a2a4a;
-      border-radius: 14px;
-      padding: 20px;
+      background: #1a1b28; border: 1px solid #2a2a4a; border-radius: 12px; padding: 18px;
     }
     .way-card.earn  { border-color: #14532d; }
     .way-card.spend { border-color: #4c1d1d; }
 
-    .way-header {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 14px;
-    }
-    .way-icon { font-size: 26px; }
-    .way-title { font-size: 16px; font-weight: 700; color: #fff; }
-    .way-subtitle { font-size: 12px; color: #5050a0; }
+    .way-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+    .way-icon   { font-size: 24px; }
+    .way-title  { font-size: 15px; font-weight: 700; color: #f0f0ff; }
+    .way-subtitle { font-size: 11px; color: #40406a; }
 
     .way-row {
       display: flex; align-items: center; justify-content: space-between;
-      padding: 9px 0;
-      border-bottom: 1px solid #1e1e3a;
-      gap: 12px;
+      padding: 8px 0; border-bottom: 1px solid #1a1b28; gap: 10px;
     }
     .way-row:last-child { border-bottom: none; }
-    .way-name {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 14px; color: #c0c0d8;
-    }
-    .way-name span { font-size: 18px; }
-    .way-amount {
-      font-size: 14px; font-weight: 700; white-space: nowrap;
-    }
+    .way-name { display: flex; align-items: center; gap: 7px; font-size: 13px; color: #b0b0cc; }
+    .way-name span { font-size: 17px; }
+    .way-amount { font-size: 13px; font-weight: 700; white-space: nowrap; }
     .way-amount.earn  { color: #4ade80; }
     .way-amount.spend { color: #f87171; }
-    .way-detail {
-      font-size: 11px; color: #5050a0; margin-top: 2px;
-    }
+    .way-detail { font-size: 11px; color: #40406a; margin-top: 1px; }
 
-    /* FAQ / notes */
     .notes-card {
-      background: #1a1a2e;
-      border: 1px solid #2a2a4a;
-      border-radius: 14px;
-      padding: 20px 24px;
-      margin-bottom: 24px;
+      background: #1a1b28; border: 1px solid #2a2a4a; border-radius: 12px;
+      padding: 18px 20px; margin-bottom: 22px;
     }
     .note-item {
-      display: flex; gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid #1e1e3a;
-      font-size: 14px; color: #c0c0d8; line-height: 1.5;
+      display: flex; gap: 10px; padding: 9px 0;
+      border-bottom: 1px solid #1a1b28; font-size: 13px; color: #b0b0cc; line-height: 1.5;
     }
     .note-item:last-child { border-bottom: none; }
-    .note-item .note-icon { font-size: 18px; flex-shrink: 0; }
+    .note-item .note-icon { font-size: 17px; flex-shrink: 0; }
 
-    /* Actions */
-    .actions-row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .btn-outline {
-      background: transparent; border: 1px solid #2a2a4a; border-radius: 10px;
-      color: #9090b0; padding: 10px 20px; font-size: 14px;
+    .actions-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .btn-action {
+      background: transparent; border: 1px solid #2a2a4a; border-radius: 9px;
+      color: #9090b0; padding: 10px 18px; font-size: 13px;
       font-family: 'Segoe UI', sans-serif; cursor: pointer;
-      text-decoration: none; display: inline-block;
+      text-decoration: none; display: inline-block; transition: background 0.15s, color 0.15s;
     }
-    .btn-outline:hover { background: #1a1a2e; color: #e0e0e0; }
+    .btn-action:hover { background: #1a1b28; color: #e0e0f0; }
+    .btn-action.primary { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    .btn-action.primary:hover { background: #6d28d9; }
 
-    /* Login state */
     .login-notice {
-      background: #1a1a2e; border: 1px solid #2a2a4a; border-radius: 14px;
-      padding: 24px; text-align: center; margin-bottom: 28px;
+      background: #1a1b28; border: 1px solid #2a2a4a; border-radius: 12px;
+      padding: 22px; text-align: center; margin-bottom: 24px;
     }
-    .login-notice p { color: #7070a0; font-size: 15px; margin-bottom: 14px; }
+    .login-notice p { color: #60607a; font-size: 14px; margin-bottom: 12px; }
 
     @media (max-width: 600px) {
       .balance-card { flex-direction: column; align-items: flex-start; }
@@ -140,216 +94,231 @@
 </head>
 <body>
 
-  <nav>
-    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 PlayDen</a>
-    <ul class="nav-links">
-      <li><a href="index.html#arcade">Arcade</a></li>
-      <li><a href="index.html#puzzle">Puzzle</a></li>
-      <li><a href="index.html#card">Card</a></li>
-    </ul>
-    <div class="nav-auth" id="navAuth">
-      <a href="login.html" class="btn-secondary">Log in</a>
-      <a href="signup.html" class="btn-primary">Sign up</a>
-    </div>
-  </nav>
+<div class="page-layout">
 
-  <div class="chips-wrap">
-    <div class="page-header">
-      <div class="icon">🪙</div>
-      <h1>PlayDen Chips</h1>
-      <p>Chips are the currency of PlayDen — earn them by playing, spend them to enter games.</p>
-    </div>
+  <!-- Global sidebar -->
+  <div id="sidebar"></div>
 
-    <div id="balanceArea"></div>
+  <!-- Main area -->
+  <div id="main-wrap">
 
-    <!-- How to earn -->
-    <div class="section-title">How to Earn Chips</div>
-    <div class="ways-grid">
-      <div class="way-card earn">
-        <div class="way-header">
-          <div class="way-icon">🎁</div>
-          <div>
-            <div class="way-title">Daily Bonuses</div>
-            <div class="way-subtitle">Free chips just for showing up</div>
-          </div>
-        </div>
-        <div class="way-row">
-          <div class="way-name"><span>📅</span> Daily login</div>
-          <div>
-            <div class="way-amount earn">+500 chips</div>
-            <div class="way-detail">Once per day, every day</div>
-          </div>
-        </div>
-        <div class="way-row">
-          <div class="way-name"><span>🆕</span> New account</div>
-          <div>
-            <div class="way-amount earn">+1,000 chips</div>
-            <div class="way-detail">One-time welcome bonus</div>
-          </div>
-        </div>
+    <div class="top-bar">
+      <div class="page-header" style="margin-bottom:0;">
+        <h1 style="font-size:20px;">🪙 PlayDen Chips</h1>
       </div>
-
-      <div class="way-card earn">
-        <div class="way-header">
-          <div class="way-icon">🎮</div>
-          <div>
-            <div class="way-title">Play Games</div>
-            <div class="way-subtitle">Earn while you play</div>
-          </div>
-        </div>
-        <div class="way-row">
-          <div class="way-name"><span>🐍</span> Snake</div>
-          <div>
-            <div class="way-amount earn">+100 chips</div>
-            <div class="way-detail">Per full minute survived</div>
-          </div>
-        </div>
-        <div class="way-row">
-          <div class="way-name"><span>🟦</span> Tetris</div>
-          <div>
-            <div class="way-amount earn">+100 chips</div>
-            <div class="way-detail">Per 1,000 points scored</div>
-          </div>
-        </div>
+      <div class="top-bar-chips" id="topBarChips">
+        🪙 <span id="topBarChipCount">0</span>
       </div>
     </div>
 
-    <!-- How to spend -->
-    <div class="section-title">How to Spend Chips</div>
-    <div class="way-card spend" style="margin-bottom:32px;">
-      <div class="way-header">
-        <div class="way-icon">♠️</div>
-        <div>
-          <div class="way-title">Poker</div>
-          <div class="way-subtitle">Chips are your buy-in at the table</div>
-        </div>
-      </div>
-      <div class="way-row">
-        <div class="way-name"><span>🟢</span> Low stakes table</div>
-        <div>
-          <div class="way-amount spend">Blinds 25 / 50</div>
-          <div class="way-detail">Bring whatever chips you have</div>
-        </div>
-      </div>
-      <div class="way-row">
-        <div class="way-name"><span>🔵</span> Mid stakes table</div>
-        <div>
-          <div class="way-amount spend">Blinds 100 / 200</div>
-          <div class="way-detail">Recommended: 2,000+ chips</div>
-        </div>
-      </div>
-      <div class="way-row">
-        <div class="way-name"><span>🔴</span> High stakes table</div>
-        <div>
-          <div class="way-amount spend">Blinds 500 / 1,000</div>
-          <div class="way-detail">Recommended: 10,000+ chips</div>
-        </div>
-      </div>
-    </div>
+    <div class="main-content" style="max-width:760px;">
 
-    <!-- Notes -->
-    <div class="section-title">Good to Know</div>
-    <div class="notes-card" style="margin-bottom:28px;">
-      <div class="note-item">
-        <span class="note-icon">🔄</span>
-        <span>Chips are shared across all games on PlayDen. Earn in Snake, spend in Poker.</span>
-      </div>
-      <div class="note-item">
-        <span class="note-icon">💾</span>
-        <span>Your chip balance is saved to your account in real-time and persists across sessions and devices.</span>
-      </div>
-      <div class="note-item">
-        <span class="note-icon">⏰</span>
-        <span>The daily login bonus resets at midnight. Log in each day to keep building your balance.</span>
-      </div>
-      <div class="note-item">
-        <span class="note-icon">🚫</span>
-        <span>Chips have no real-money value and cannot be transferred between accounts.</span>
-      </div>
-    </div>
+      <div id="balanceArea"></div>
 
-    <div class="actions-row">
-      <a href="account.html"      class="btn-account">👾 My Account</a>
-      <a href="games/poker/lobby.html" class="btn-outline">♠️ Play Poker</a>
-      <a href="index.html"        class="btn-outline">← All Games</a>
-    </div>
-  </div>
-
-  <script type="module">
-    import { initializeApp }  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getAuth, onAuthStateChanged, signOut }
-      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { getFirestore, doc, getDoc }
-      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-
-    const firebaseConfig = {
-      apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
-      authDomain:        "gamezone-6487a.firebaseapp.com",
-      projectId:         "gamezone-6487a",
-      storageBucket:     "gamezone-6487a.firebasestorage.app",
-      messagingSenderId: "266519256159",
-      appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
-    };
-
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
-
-    const navAuth     = document.getElementById('navAuth');
-    const balanceArea = document.getElementById('balanceArea');
-
-    onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const name = user.displayName || user.email.split('@')[0];
-        navAuth.innerHTML = `
-          <a href="account.html" class="nav-username" style="text-decoration:none;">👾 ${escHtml(name)}</a>
-          <button class="btn-secondary" id="logoutBtn">Log out</button>
-        `;
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-          await signOut(auth);
-          window.location.reload();
-        });
-
-        // Load chip balance
-        try {
-          const snap = await getDoc(doc(db, 'users', user.uid));
-          const chips = snap.exists() ? (snap.data().chips ?? 0) : 0;
-          const lastBonus = snap.exists() ? (snap.data().lastDailyBonus || '') : '';
-          const bonusReady = lastBonus !== new Date().toDateString();
-
-          balanceArea.innerHTML = `
-            <div class="balance-card">
-              <div class="balance-left">
-                <div class="balance-label">Your chip balance</div>
-                <div class="balance-amount">${chips.toLocaleString()}</div>
-                <div class="balance-login ${bonusReady ? 'ready' : ''}">
-                  ${bonusReady ? '✅ Daily bonus available — log in to claim!' : '⏳ Daily bonus claimed for today'}
-                </div>
-              </div>
-              <a href="account.html" class="btn-account">View Account</a>
+      <!-- How to earn -->
+      <div class="section-title">How to Earn Chips</div>
+      <div class="ways-grid">
+        <div class="way-card earn">
+          <div class="way-header">
+            <div class="way-icon">🎁</div>
+            <div>
+              <div class="way-title">Daily Bonuses</div>
+              <div class="way-subtitle">Free chips just for showing up</div>
             </div>
-          `;
-        } catch {
-          balanceArea.innerHTML = '';
-        }
-      } else {
-        navAuth.innerHTML = `
-          <a href="login.html" class="btn-secondary">Log in</a>
-          <a href="signup.html" class="btn-primary">Sign up</a>
-        `;
+          </div>
+          <div class="way-row">
+            <div class="way-name"><span>📅</span> Daily login</div>
+            <div>
+              <div class="way-amount earn">+500 chips</div>
+              <div class="way-detail">Once per day, every day</div>
+            </div>
+          </div>
+          <div class="way-row">
+            <div class="way-name"><span>🆕</span> New account</div>
+            <div>
+              <div class="way-amount earn">+1,000 chips</div>
+              <div class="way-detail">One-time welcome bonus</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="way-card earn">
+          <div class="way-header">
+            <div class="way-icon">🎮</div>
+            <div>
+              <div class="way-title">Play Games</div>
+              <div class="way-subtitle">Earn while you play</div>
+            </div>
+          </div>
+          <div class="way-row">
+            <div class="way-name"><span>🐍</span> Snake</div>
+            <div>
+              <div class="way-amount earn">+100 chips</div>
+              <div class="way-detail">Per full minute survived</div>
+            </div>
+          </div>
+          <div class="way-row">
+            <div class="way-name"><span>🟦</span> Tetris</div>
+            <div>
+              <div class="way-amount earn">+100 chips</div>
+              <div class="way-detail">Per 1,000 points scored</div>
+            </div>
+          </div>
+          <div class="way-row">
+            <div class="way-name"><span>🐦</span> Flappy Bird</div>
+            <div>
+              <div class="way-amount earn">+20 chips</div>
+              <div class="way-detail">Per pipe passed</div>
+            </div>
+          </div>
+          <div class="way-row">
+            <div class="way-name"><span>🚀</span> Space Blaster</div>
+            <div>
+              <div class="way-amount earn">+50 / +200</div>
+              <div class="way-detail">Per kill / per wave cleared</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- How to spend -->
+      <div class="section-title">How to Spend Chips</div>
+      <div class="way-card spend" style="margin-bottom:28px;">
+        <div class="way-header">
+          <div class="way-icon">♠️</div>
+          <div>
+            <div class="way-title">Poker</div>
+            <div class="way-subtitle">Chips are your buy-in at the table</div>
+          </div>
+        </div>
+        <div class="way-row">
+          <div class="way-name"><span>🟢</span> Low stakes</div>
+          <div>
+            <div class="way-amount spend">Blinds 25 / 50</div>
+            <div class="way-detail">Bring whatever chips you have</div>
+          </div>
+        </div>
+        <div class="way-row">
+          <div class="way-name"><span>🔵</span> Mid stakes</div>
+          <div>
+            <div class="way-amount spend">Blinds 100 / 200</div>
+            <div class="way-detail">Recommended: 2,000+ chips</div>
+          </div>
+        </div>
+        <div class="way-row">
+          <div class="way-name"><span>🔴</span> High stakes</div>
+          <div>
+            <div class="way-amount spend">Blinds 500 / 1,000</div>
+            <div class="way-detail">Recommended: 10,000+ chips</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="section-title">Good to Know</div>
+      <div class="notes-card" style="margin-bottom:24px;">
+        <div class="note-item">
+          <span class="note-icon">🔄</span>
+          <span>Chips are shared across all games on PlayDen. Earn in Snake, spend in Poker.</span>
+        </div>
+        <div class="note-item">
+          <span class="note-icon">💾</span>
+          <span>Your chip balance is saved to your account in real-time and persists across sessions and devices.</span>
+        </div>
+        <div class="note-item">
+          <span class="note-icon">⏰</span>
+          <span>The daily login bonus resets at midnight. Log in each day to keep building your balance.</span>
+        </div>
+        <div class="note-item">
+          <span class="note-icon">🚫</span>
+          <span>Chips have no real-money value and cannot be transferred between accounts.</span>
+        </div>
+      </div>
+
+      <div class="actions-row">
+        <a href="account.html"           class="btn-action primary">👾 My Account</a>
+        <a href="games/poker/lobby.html" class="btn-action">♠️ Play Poker</a>
+        <a href="index.html"             class="btn-action">← All Games</a>
+      </div>
+
+    </div><!-- /.main-content -->
+
+    <footer>
+      <p>© 2026 PlayDen · <a href="about.html">About</a> · <a href="privacy.html">Privacy</a></p>
+    </footer>
+
+  </div><!-- /#main-wrap -->
+
+</div><!-- /.page-layout -->
+
+<!-- Bottom nav (mobile) -->
+<nav class="bottom-nav" id="bottomNav"></nav>
+
+<!-- Sidebar init -->
+<script src="nav.js"></script>
+
+<script type="module">
+  import { initializeApp }  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signOut }
+    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+  import { getFirestore, doc, getDoc }
+    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+    authDomain:        "gamezone-6487a.firebaseapp.com",
+    projectId:         "gamezone-6487a",
+    storageBucket:     "gamezone-6487a.firebasestorage.app",
+    messagingSenderId: "266519256159",
+    appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  const balanceArea = document.getElementById('balanceArea');
+
+  onAuthStateChanged(auth, async (user) => {
+    const doLogout = async () => { await signOut(auth); window.location.reload(); };
+
+    if (user) {
+      try {
+        const snap = await getDoc(doc(db, 'users', user.uid));
+        const data = snap.exists() ? snap.data() : null;
+        const chips = data ? (data.chips ?? 0) : 0;
+        const lastBonus = data ? (data.lastDailyBonus || '') : '';
+        const bonusReady = lastBonus !== new Date().toDateString();
+
+        if (window.updateSidebarAuth) window.updateSidebarAuth(user, data, doLogout);
+
         balanceArea.innerHTML = `
-          <div class="login-notice">
-            <p>Log in to see your chip balance and start earning.</p>
-            <a href="login.html" class="btn-account">Log in</a>
+          <div class="balance-card">
+            <div>
+              <div class="balance-label">Your chip balance</div>
+              <div class="balance-amount">${chips.toLocaleString()}</div>
+              <div class="balance-login ${bonusReady ? 'ready' : ''}">
+                ${bonusReady ? '✅ Daily bonus available — log in to claim!' : '⏳ Daily bonus claimed for today'}
+              </div>
+            </div>
+            <a href="account.html" class="btn-action primary">View Account</a>
           </div>
         `;
+      } catch {
+        if (window.updateSidebarAuth) window.updateSidebarAuth(user, null, doLogout);
+        balanceArea.innerHTML = '';
       }
-    });
-
-    function escHtml(s) {
-      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    } else {
+      if (window.updateSidebarAuth) window.updateSidebarAuth(null, null);
+      balanceArea.innerHTML = `
+        <div class="login-notice">
+          <p>Log in to see your chip balance and start earning.</p>
+          <a href="login.html" class="btn-action primary">Log in</a>
+        </div>
+      `;
     }
-  </script>
+  });
+</script>
 
 </body>
 </html>

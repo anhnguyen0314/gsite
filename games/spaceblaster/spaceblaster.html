@@ -8,7 +8,7 @@
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Segoe UI', sans-serif;
-      background: #0f0f1a;
+      background: #0c0d14;
       color: #e2e8f0;
       min-height: 100vh;
       display: flex;
@@ -18,7 +18,7 @@
 
     /* ── Header ── */
     .header {
-      background: #1a1a2e;
+      background: #1a1b28;
       border-bottom: 1px solid #2a2a4a;
       padding: 10px 16px;
       display: flex;
@@ -51,7 +51,7 @@
       display: flex;
       align-items: center;
       gap: 5px;
-      background: #0f0f1a;
+      background: #0c0d14;
       border: 1px solid #2a2a4a;
       border-radius: 20px;
       padding: 4px 12px;
@@ -568,7 +568,7 @@ function loop() {
   if (!running) return;
   animId = requestAnimationFrame(loop);
 
-  ctx.fillStyle = '#0f0f1a';
+  ctx.fillStyle = '#0c0d14';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   drawStars();

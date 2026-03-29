@@ -3,179 +3,278 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>PlayDen</title>
+  <title>PlayDen — Browser Games</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav>
-    <div class="nav-logo">🎮 PlayDen</div>
-    <ul class="nav-links">
-      <li><a href="#arcade">Arcade</a></li>
-      <li><a href="#puzzle">Puzzle</a></li>
-      <li><a href="#card">Card</a></li>
-      <li><a href="#multiplayer">Multiplayer</a></li>
-      <li><a href="leaderboard.html">🏆 Leaderboard</a></li>
-      <li><a href="account.html">👾 Account</a></li>
-      <li><a href="about.html">About</a></li>
-    </ul>
-    <div class="nav-right">
-      <div class="nav-chips hidden" id="navChips">🪙 <span id="navChipCount">0</span></div>
-      <div class="nav-auth" id="navAuth">
-        <a href="login.html" class="btn-secondary">Log in</a>
-        <a href="signup.html" class="btn-primary">Sign up</a>
+<div class="page-layout">
+
+  <!-- Sidebar (populated by nav.js) -->
+  <div id="sidebar"></div>
+
+  <!-- Main Area -->
+  <div id="main-wrap">
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" class="search-input" id="searchInput" placeholder="Search games…" autocomplete="off" />
+      </div>
+      <div class="top-bar-chips" id="topBarChips">
+        🪙 <span id="topBarChipCount">0</span>
       </div>
     </div>
-  </nav>
 
-  <!-- Hero -->
-  <section class="hero">
-    <h1>Play. Compete. Earn Chips.</h1>
-    <p>Browser games, no download required. Create a free account to save your scores, climb the leaderboards, and collect chips as you play.</p>
-    <div class="hero-actions">
-      <a href="signup.html" class="btn-primary btn-large">Create Free Account</a>
-      <a href="#arcade" class="btn-secondary btn-large">Browse Games</a>
-    </div>
-    <p class="hero-note">Already have an account? <a href="login.html">Sign in →</a></p>
-  </section>
+    <!-- Content -->
+    <div class="main-content">
 
-  <!-- Arcade -->
-  <section class="category" id="arcade">
-    <h2>🕹️ Arcade</h2>
-    <div class="game-grid">
-      <div class="game-card">
-        <div class="game-thumb">🐍</div>
-        <div class="game-info">
-          <h3>Snake</h3>
-          <span class="tag">Arcade</span>
+      <!-- Featured -->
+      <div class="game-section featured-section">
+        <div class="section-header">
+          <h2>⭐ Featured</h2>
         </div>
-        <a href="games/snake/snake.html" class="btn-play">Play</a>
-      </div>
-      <div class="game-card">
-        <div class="game-thumb">🐔</div>
-        <div class="game-info">
-          <h3>Chicken Run</h3>
-          <span class="tag">Arcade</span>
+        <div class="featured-grid" id="featuredGrid">
+          <a href="games/poker/lobby.html" class="game-card game-card-featured">
+            <div class="game-thumb gt-poker">♠️</div>
+            <div class="game-card-body">
+              <h3>Texas Hold'em</h3>
+              <div class="game-card-footer">
+                <span class="tag">Multiplayer</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/snake/snake.html" class="game-card game-card-featured">
+            <div class="game-thumb gt-snake">🐍</div>
+            <div class="game-card-body">
+              <h3>Snake</h3>
+              <div class="game-card-footer">
+                <span class="tag">Arcade</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/tetris/tetris.html" class="game-card game-card-featured">
+            <div class="game-thumb gt-tetris">🟦</div>
+            <div class="game-card-body">
+              <h3>Tetris</h3>
+              <div class="game-card-footer">
+                <span class="tag">Puzzle</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/spaceblaster/spaceblaster.html" class="game-card game-card-featured">
+            <div class="game-thumb gt-spaceblaster">🚀</div>
+            <div class="game-card-body">
+              <h3>Space Blaster</h3>
+              <div class="game-card-footer">
+                <span class="tag">Arcade</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
         </div>
-        <a href="games/chickenrun/chickenrun.html" class="btn-play">Play</a>
       </div>
-      <div class="game-card">
-        <div class="game-thumb">🚀</div>
-        <div class="game-info">
-          <h3>Space Blaster</h3>
-          <span class="tag">Arcade</span>
-        </div>
-        <a href="games/spaceblaster/spaceblaster.html" class="btn-play">Play</a>
-      </div>
-      <div class="game-card">
-        <div class="game-thumb">🐦</div>
-        <div class="game-info">
-          <h3>Flappy Bird</h3>
-          <span class="tag">Arcade</span>
-        </div>
-        <a href="games/flappybird/flappybird.html" class="btn-play">Play</a>
-      </div>
-    </div>
-  </section>
 
-  <!-- Puzzle -->
-  <section class="category" id="puzzle">
-    <h2>🧩 Puzzle</h2>
-    <div class="game-grid">
-      <div class="game-card">
-        <div class="game-thumb">🟦</div>
-        <div class="game-info">
-          <h3>Tetris</h3>
-          <span class="tag">Puzzle</span>
+      <!-- Arcade -->
+      <div class="game-section" id="arcade">
+        <div class="section-header">
+          <h2>🕹️ Arcade</h2>
         </div>
-        <a href="games/tetris/tetris.html" class="btn-play">Play</a>
-      </div>
-      <div class="game-card">
-        <div class="game-thumb">🧠</div>
-        <div class="game-info">
-          <h3>Memory Match</h3>
-          <span class="tag">Puzzle</span>
+        <div class="carousel-row">
+          <a href="games/snake/snake.html" class="game-card" data-name="snake">
+            <div class="game-thumb gt-snake">🐍</div>
+            <div class="game-card-body">
+              <h3>Snake</h3>
+              <div class="game-card-footer">
+                <span class="tag">Arcade</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/chickenrun/chickenrun.html" class="game-card" data-name="chicken run">
+            <div class="game-thumb gt-chicken">🐔</div>
+            <div class="game-card-body">
+              <h3>Chicken Run</h3>
+              <div class="game-card-footer">
+                <span class="tag">Arcade</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/spaceblaster/spaceblaster.html" class="game-card" data-name="space blaster">
+            <div class="game-thumb gt-spaceblaster">🚀</div>
+            <div class="game-card-body">
+              <h3>Space Blaster</h3>
+              <div class="game-card-footer">
+                <span class="tag">Arcade</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/flappybird/flappybird.html" class="game-card" data-name="flappy bird">
+            <div class="game-thumb gt-flappy">🐦</div>
+            <div class="game-card-body">
+              <h3>Flappy Bird</h3>
+              <div class="game-card-footer">
+                <span class="tag">Arcade</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
         </div>
-        <a href="games/memorymatch/memorymatch.html" class="btn-play">Play</a>
       </div>
-      <div class="game-card">
-        <div class="game-thumb">🔢</div>
-        <div class="game-info">
-          <h3>Sudoku</h3>
-          <span class="tag">Puzzle</span>
-        </div>
-        <a href="games/sudoku/sudoku.html" class="btn-play">Play</a>
-      </div>
-    </div>
-  </section>
 
-  <!-- Card -->
-  <section class="category" id="card">
-    <h2>🃏 Card</h2>
-    <div class="game-grid">
-      <div class="game-card">
-        <div class="game-thumb">🃏</div>
-        <div class="game-info">
-          <h3>Card Legends</h3>
-          <span class="tag">Card</span>
+      <!-- Puzzle -->
+      <div class="game-section" id="puzzle">
+        <div class="section-header">
+          <h2>🧩 Puzzle</h2>
         </div>
-        <a href="#" class="btn-play">Play</a>
-      </div>
-      <div class="game-card">
-        <div class="game-thumb">♠️</div>
-        <div class="game-info">
-          <h3>Solitaire</h3>
-          <span class="tag">Card</span>
+        <div class="carousel-row">
+          <a href="games/tetris/tetris.html" class="game-card" data-name="tetris">
+            <div class="game-thumb gt-tetris">🟦</div>
+            <div class="game-card-body">
+              <h3>Tetris</h3>
+              <div class="game-card-footer">
+                <span class="tag">Puzzle</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/memorymatch/memorymatch.html" class="game-card" data-name="memory match">
+            <div class="game-thumb gt-memory">🧠</div>
+            <div class="game-card-body">
+              <h3>Memory Match</h3>
+              <div class="game-card-footer">
+                <span class="tag">Puzzle</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/sudoku/sudoku.html" class="game-card" data-name="sudoku">
+            <div class="game-thumb gt-sudoku">🔢</div>
+            <div class="game-card-body">
+              <h3>Sudoku</h3>
+              <div class="game-card-footer">
+                <span class="tag">Puzzle</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
         </div>
-        <a href="games/solitaire/solitaire.html" class="btn-play">Play</a>
       </div>
-      <div class="game-card">
-        <div class="game-thumb">🎴</div>
-        <div class="game-info">
-          <h3>Blackjack</h3>
-          <span class="tag">Card</span>
-        </div>
-        <a href="games/blackjack/blackjack.html" class="btn-play">Play</a>
-      </div>
-    </div>
-  </section>
 
-  <!-- Multiplayer -->
-  <section class="category" id="multiplayer">
-    <h2>🌐 Multiplayer</h2>
-    <div class="game-grid">
-      <div class="game-card">
-        <div class="game-thumb">⚔️</div>
-        <div class="game-info">
-          <h3>Texas Hold'em</h3>
-          <span class="tag">Multiplayer</span>
+      <!-- Card -->
+      <div class="game-section" id="card">
+        <div class="section-header">
+          <h2>🃏 Card</h2>
         </div>
-        <a href="games/poker/lobby.html" class="btn-play">Play</a>
-      </div>
-      <div class="game-card">
-        <div class="game-thumb">🐍</div>
-        <div class="game-info">
-          <h3>Snake.io</h3>
-          <span class="tag">Multiplayer</span>
+        <div class="carousel-row">
+          <a href="games/solitaire/solitaire.html" class="game-card" data-name="solitaire">
+            <div class="game-thumb gt-solitaire">♠️</div>
+            <div class="game-card-body">
+              <h3>Solitaire</h3>
+              <div class="game-card-footer">
+                <span class="tag">Card</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/blackjack/blackjack.html" class="game-card" data-name="blackjack">
+            <div class="game-thumb gt-blackjack">🎴</div>
+            <div class="game-card-body">
+              <h3>Blackjack</h3>
+              <div class="game-card-footer">
+                <span class="tag">Card</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <div class="game-card disabled" data-name="card legends">
+            <div class="game-thumb gt-dice">🃏</div>
+            <div class="game-card-body">
+              <h3>Card Legends</h3>
+              <div class="game-card-footer">
+                <span class="tag">Card</span>
+                <span class="btn-play">Coming Soon</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <a href="games/snakeio/snakeio.html" class="btn-play">Play</a>
       </div>
-      <div class="game-card">
-        <div class="game-thumb">🎲</div>
-        <div class="game-info">
-          <h3>Dice Duel</h3>
-          <span class="tag">Multiplayer</span>
-        </div>
-        <a href="signup.html" class="btn-play">Play</a>
-      </div>
-    </div>
-  </section>
 
-  <footer>
-    <p>© 2026 PlayDen · <a href="about.html" style="color:#5050a0;">About</a> · <a href="privacy.html" style="color:#5050a0;">Privacy</a> · Built with ❤️ by one person</p>
-  </footer>
+      <!-- Multiplayer -->
+      <div class="game-section" id="multiplayer">
+        <div class="section-header">
+          <h2>🌐 Multiplayer</h2>
+        </div>
+        <div class="carousel-row">
+          <a href="games/poker/lobby.html" class="game-card" data-name="texas holdem poker">
+            <div class="game-thumb gt-poker">♠️</div>
+            <div class="game-card-body">
+              <h3>Texas Hold'em</h3>
+              <div class="game-card-footer">
+                <span class="tag">Multiplayer</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <a href="games/snakeio/snakeio.html" class="game-card" data-name="snake io snakeio">
+            <div class="game-thumb gt-snakeio">🐍</div>
+            <div class="game-card-body">
+              <h3>Snake.io</h3>
+              <div class="game-card-footer">
+                <span class="tag">Multiplayer</span>
+                <span class="btn-play">▶ Play</span>
+              </div>
+            </div>
+          </a>
+          <div class="game-card disabled" data-name="dice duel">
+            <div class="game-thumb gt-dice">🎲</div>
+            <div class="game-card-body">
+              <h3>Dice Duel</h3>
+              <div class="game-card-footer">
+                <span class="tag">Multiplayer</span>
+                <span class="btn-play">Coming Soon</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  <script type="module" src="script.js"></script>
+    </div><!-- /.main-content -->
+
+    <footer>
+      <p>© 2026 PlayDen · <a href="about.html">About</a> · <a href="privacy.html">Privacy</a> · Built with ❤️ by one person</p>
+    </footer>
+
+  </div><!-- /#main-wrap -->
+
+</div><!-- /.page-layout -->
+
+<!-- Bottom nav (mobile) -->
+<nav class="bottom-nav" id="bottomNav"></nav>
+
+<!-- Sidebar + nav init -->
+<script src="nav.js"></script>
+
+<!-- Firebase auth + daily bonus -->
+<script type="module" src="script.js"></script>
+
+<!-- Search filter -->
+<script>
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('input', () => {
+    const q = searchInput.value.toLowerCase().trim();
+    document.querySelectorAll('.game-section:not(.featured-section) .game-card').forEach(card => {
+      const name = (card.dataset.name || '').toLowerCase();
+      card.style.display = (!q || name.includes(q)) ? '' : 'none';
+    });
+  });
+</script>
+
 </body>
 </html>

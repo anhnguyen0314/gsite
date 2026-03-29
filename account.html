@@ -6,605 +6,461 @@
   <title>My Account — PlayDen</title>
   <link rel="stylesheet" href="style.css"/>
   <style>
-    .account-wrap {
-      max-width: 720px;
-      margin: 0 auto;
-      padding: 32px 16px 80px;
-    }
-
-    /* ── Avatar + header ── */
+    /* ── Profile header ── */
     .profile-header {
       display: flex;
       align-items: center;
       gap: 20px;
-      background: #1a1a2e;
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 24px;
+      border-radius: 14px;
+      padding: 22px 24px;
+      margin-bottom: 20px;
       flex-wrap: wrap;
     }
     .avatar {
-      width: 72px;
-      height: 72px;
+      width: 68px; height: 68px;
       border-radius: 50%;
       background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 32px;
+      font-size: 30px;
       flex-shrink: 0;
     }
-    .profile-info h1 {
-      font-size: 24px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 4px;
-    }
-    .profile-info p {
-      font-size: 14px;
-      color: #7070a0;
-    }
+    .profile-info h1 { font-size: 22px; font-weight: 700; color: #f0f0ff; margin-bottom: 3px; }
+    .profile-info p  { font-size: 13px; color: #60607a; }
     .member-badge {
       margin-left: auto;
-      background: rgba(124,58,237,0.2);
+      background: rgba(124,58,237,0.18);
       border: 1px solid #4c2a8a;
       border-radius: 20px;
-      padding: 6px 14px;
+      padding: 5px 13px;
       font-size: 12px;
       font-weight: 600;
       color: #a78bfa;
     }
 
-    /* ── Stat cards grid ── */
+    /* ── Stats grid ── */
     .stats-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 14px;
-      margin-bottom: 28px;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
     }
     .stat-card {
-      background: #1a1a2e;
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
-      border-radius: 14px;
-      padding: 20px 18px;
+      border-radius: 12px;
+      padding: 18px 16px;
       text-align: center;
     }
-    .stat-icon { font-size: 28px; margin-bottom: 8px; }
-    .stat-value {
-      font-size: 26px;
-      font-weight: 700;
-      color: #fff;
-      margin-bottom: 4px;
-      line-height: 1;
-    }
-    .stat-label { font-size: 12px; color: #5050a0; text-transform: uppercase; letter-spacing: 0.07em; }
-
-    .stat-card.highlight {
-      border-color: #4c2a8a;
-      background: linear-gradient(135deg, #1a1535 0%, #1a1a2e 100%);
-    }
+    .stat-icon  { font-size: 26px; margin-bottom: 7px; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #f0f0ff; margin-bottom: 3px; line-height: 1; }
+    .stat-label { font-size: 11px; color: #40406a; text-transform: uppercase; letter-spacing: 0.07em; }
+    .stat-card.highlight { border-color: #4c2a8a; background: linear-gradient(135deg, #1a1535 0%, #1a1b28 100%); }
     .stat-card.highlight .stat-value { color: #a78bfa; }
 
-    /* ── Section titles ── */
+    /* ── Section title ── */
     .section-title {
-      font-size: 13px;
+      font-size: 12px;
       text-transform: uppercase;
       letter-spacing: 0.08em;
-      color: #5050a0;
-      font-weight: 600;
-      margin: 0 0 14px;
-    }
-
-    /* ── Score rows ── */
-    .scores-card {
-      background: #1a1a2e;
-      border: 1px solid #2a2a4a;
-      border-radius: 14px;
-      padding: 20px;
-      margin-bottom: 24px;
-    }
-    .score-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px 0;
-      border-bottom: 1px solid #1e1e3a;
-      gap: 12px;
-    }
-    .score-row:last-child { border-bottom: none; }
-    .score-game {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 15px;
-      color: #d0d0e0;
-      font-weight: 500;
-    }
-    .score-game span { font-size: 20px; }
-    .score-value {
-      font-size: 16px;
+      color: #40406a;
       font-weight: 700;
-      color: #a78bfa;
-    }
-    .score-none { font-size: 14px; color: #3a3a6a; font-style: italic; }
-
-    /* ── Poker rank banner ── */
-    .rank-banner {
-      background: linear-gradient(135deg, #1e0845 0%, #1a1a2e 100%);
-      border: 1px solid #4c2a8a;
-      border-radius: 14px;
-      padding: 20px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .rank-left h3 { font-size: 17px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-    .rank-left p  { font-size: 13px; color: #7070a0; }
-    .rank-number {
-      font-size: 42px;
-      font-weight: 700;
-      color: #a78bfa;
-      line-height: 1;
-    }
-    .rank-number small { font-size: 16px; color: #5050a0; }
-
-    /* ── Chip refill notice ── */
-    .refill-notice {
-      background: #14532d22;
-      border: 1px solid #14532d;
-      border-radius: 10px;
-      padding: 12px 16px;
-      font-size: 13px;
-      color: #4ade80;
-      margin-bottom: 20px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      margin: 0 0 12px;
     }
 
-    /* ── Action buttons ── */
-    .actions-row {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .btn-poker {
-      background: #7c3aed;
-      color: #fff;
-      border: none;
-      border-radius: 10px;
-      padding: 12px 22px;
-      font-size: 15px;
-      font-weight: 600;
-      font-family: 'Segoe UI', sans-serif;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .btn-poker:hover { background: #6d28d9; }
-    .btn-outline {
-      background: transparent;
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
-      color: #9090b0;
-      padding: 12px 22px;
-      font-size: 15px;
-      font-family: 'Segoe UI', sans-serif;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
-    }
-    .btn-outline:hover { background: #1a1a2e; color: #e0e0e0; }
-
-    /* ── Loading / login states ── */
-    .loading-state {
-      text-align: center;
-      padding: 80px 20px;
-      color: #5050a0;
-      font-size: 16px;
-    }
-    .login-prompt {
-      text-align: center;
-      padding: 80px 20px;
-    }
-    .login-prompt p { color: #7070a0; font-size: 16px; margin-bottom: 20px; }
-
-    /* ── Skeleton loader ── */
-    .skeleton {
-      background: linear-gradient(90deg, #1a1a2e 25%, #22223a 50%, #1a1a2e 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.5s infinite;
-      border-radius: 8px;
-    }
-    @keyframes shimmer {
-      0%   { background-position: 200% 0; }
-      100% { background-position: -200% 0; }
-    }
-
-    /* ── Stats table (Best Scores) ── */
+    /* ── Stats table ── */
     .stats-table {
-      background: #1a1a2e;
+      background: #1a1b28;
       border: 1px solid #2a2a4a;
-      border-radius: 14px;
+      border-radius: 12px;
       overflow: hidden;
-      margin-bottom: 24px;
+      margin-bottom: 22px;
     }
     .stats-table-header,
     .stats-table-row {
       display: grid;
       grid-template-columns: 1fr 60px 72px 72px 96px;
       align-items: center;
-      padding: 11px 18px;
+      padding: 10px 16px;
       gap: 8px;
     }
     .stats-table-header {
       font-size: 11px;
       text-transform: uppercase;
       letter-spacing: 0.07em;
-      color: #5050a0;
+      color: #40406a;
       font-weight: 600;
       border-bottom: 1px solid #2a2a4a;
     }
-    .stats-table-row {
-      border-bottom: 1px solid #1e1e3a;
-    }
+    .stats-table-row { border-bottom: 1px solid #1a1b28; }
     .stats-table-row:last-child { border-bottom: none; }
-    .stats-table-row:hover { background: #1f1f38; }
-    .tbl-game {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 14px; font-weight: 500; color: #d0d0e0;
-    }
-    .tbl-game span { font-size: 18px; }
-    .tbl-val {
-      font-size: 14px; font-weight: 700;
-      color: #a78bfa; text-align: right;
-    }
+    .stats-table-row:hover { background: #20213a; }
+    .tbl-game { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; color: #c0c0e0; }
+    .tbl-game span { font-size: 17px; }
+    .tbl-val { font-size: 13px; font-weight: 700; color: #a78bfa; text-align: right; }
     .tbl-val.dim { color: #2e2e5a; font-weight: 400; }
-    .tbl-none { font-size: 13px; color: #3a3a6a; font-style: italic; text-align: right; }
+    .tbl-none { font-size: 12px; color: #2e2e5a; font-style: italic; text-align: right; }
+
+    /* ── Action buttons ── */
+    .actions-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 22px; }
+    .btn-action {
+      background: transparent;
+      border: 1px solid #2a2a4a;
+      border-radius: 9px;
+      color: #9090b0;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-family: 'Segoe UI', sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+      transition: background 0.15s, color 0.15s;
+    }
+    .btn-action:hover { background: #1a1b28; color: #e0e0f0; }
+    .btn-action.primary { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    .btn-action.primary:hover { background: #6d28d9; }
+
+    /* ── Poker rank ── */
+    .rank-banner {
+      background: linear-gradient(135deg, #1e0845 0%, #1a1b28 100%);
+      border: 1px solid #4c2a8a;
+      border-radius: 12px;
+      padding: 18px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .rank-left h3 { font-size: 16px; font-weight: 700; color: #f0f0ff; margin-bottom: 3px; }
+    .rank-left p  { font-size: 12px; color: #60607a; }
+    .rank-number  { font-size: 38px; font-weight: 700; color: #a78bfa; line-height: 1; }
+    .rank-number small { font-size: 15px; color: #40406a; }
+
+    /* ── Loading / login states ── */
+    .loading-state {
+      text-align: center;
+      padding: 80px 20px;
+      color: #40406a;
+      font-size: 16px;
+    }
+    .login-prompt {
+      text-align: center;
+      padding: 80px 20px;
+    }
+    .login-prompt p { color: #60607a; font-size: 16px; margin-bottom: 20px; }
+
+    /* ── Skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, #1a1b28 25%, #22223a 50%, #1a1b28 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 8px;
+    }
+    @keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
     @media (max-width: 600px) {
-      .profile-header { flex-direction: column; text-align: center; }
-      .member-badge   { margin-left: 0; }
-      .rank-banner    { flex-direction: column; text-align: center; }
-      .actions-row    { flex-direction: column; }
-      .btn-poker, .btn-outline { text-align: center; }
+      .profile-header  { flex-direction: column; text-align: center; }
+      .member-badge    { margin-left: 0; }
+      .rank-banner     { flex-direction: column; text-align: center; }
+      .actions-row     { flex-direction: column; }
       .stats-table-header,
       .stats-table-row { grid-template-columns: 1fr 56px 66px 80px; }
       .col-played { display: none; }
-      .stats-table-header .col-played { display: none; }
     }
   </style>
 </head>
 <body>
 
-  <nav>
-    <a href="index.html" class="nav-logo" style="text-decoration:none;">🎮 PlayDen</a>
-    <ul class="nav-links">
-      <li><a href="index.html#arcade">Arcade</a></li>
-      <li><a href="index.html#puzzle">Puzzle</a></li>
-      <li><a href="index.html#card">Card</a></li>
-    </ul>
-    <div class="nav-right">
-      <div class="nav-chips hidden" id="navChips">🪙 <span id="navChipCount">0</span></div>
-      <div class="nav-auth" id="navAuth">
-        <a href="login.html" class="btn-secondary">Log in</a>
-        <a href="signup.html" class="btn-primary">Sign up</a>
+<div class="page-layout">
+
+  <!-- Global sidebar -->
+  <div id="sidebar"></div>
+
+  <!-- Main area -->
+  <div id="main-wrap">
+
+    <div class="top-bar">
+      <div class="page-header" style="margin-bottom:0;">
+        <h1 style="font-size:20px;">👾 My Account</h1>
+      </div>
+      <div class="top-bar-chips" id="topBarChips">
+        🪙 <span id="topBarChipCount">0</span>
       </div>
     </div>
-  </nav>
 
-  <div class="account-wrap">
-    <div id="pageContent">
-      <div class="loading-state">Loading your profile…</div>
+    <div class="main-content" style="max-width:800px;">
+      <div id="pageContent">
+        <div class="loading-state">Loading your profile…</div>
+      </div>
     </div>
-  </div>
 
-  <script type="module">
-    import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-    import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail }
-      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-    import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, query, orderBy, limit, getDocs, serverTimestamp }
-      from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+    <footer>
+      <p>© 2026 PlayDen · <a href="about.html">About</a> · <a href="privacy.html">Privacy</a></p>
+    </footer>
 
-    const firebaseConfig = {
-      apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
-      authDomain:        "gamezone-6487a.firebaseapp.com",
-      projectId:         "gamezone-6487a",
-      storageBucket:     "gamezone-6487a.firebasestorage.app",
-      messagingSenderId: "266519256159",
-      appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+  </div><!-- /#main-wrap -->
+
+</div><!-- /.page-layout -->
+
+<!-- Bottom nav (mobile) -->
+<nav class="bottom-nav" id="bottomNav"></nav>
+
+<!-- Sidebar init -->
+<script src="nav.js"></script>
+
+<script type="module">
+  import { initializeApp }    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getAuth, onAuthStateChanged, signOut, sendPasswordResetEmail }
+    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+  import { getFirestore, doc, getDoc, setDoc, updateDoc, increment, collection, query, orderBy, getDocs, serverTimestamp }
+    from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyDT810ckpGIr0ExRp3S_bAO_NBnSGr5ALY",
+    authDomain:        "gamezone-6487a.firebaseapp.com",
+    projectId:         "gamezone-6487a",
+    storageBucket:     "gamezone-6487a.firebasestorage.app",
+    messagingSenderId: "266519256159",
+    appId:             "1:266519256159:web:34d6be085083cda5ff4fea"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  const pageContent = document.getElementById('pageContent');
+
+  onAuthStateChanged(auth, async (user) => {
+    if (!user) {
+      showLoginPrompt();
+      if (window.updateSidebarAuth) window.updateSidebarAuth(null, null);
+      return;
+    }
+
+    const displayName = user.displayName || user.email.split('@')[0];
+    const doLogout = async () => {
+      await signOut(auth);
+      window.location.href = 'index.html';
     };
 
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
+    pageContent.innerHTML = `<div class="loading-state">Loading your stats…</div>`;
+    try {
+      const [snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank] = await Promise.all([
+        getGameScore('snake',     user.uid),
+        getGameScore('tetris',    user.uid),
+        getGameScore('solitaire', user.uid),
+        getUserData(user.uid, displayName),
+        getPokerData(user.uid),
+        getPokerRank(user.uid)
+      ]);
 
-    // ── IMPORTANT: Replace with your Render.com URL after deploying poker server ──
-    const SERVER_URL = 'https://gamezone-poker.onrender.com';
+      if (window.updateSidebarAuth) window.updateSidebarAuth(user, userData, doLogout);
+      renderPage(user, displayName, { snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank });
 
-    const navAuth    = document.getElementById('navAuth');
-    const pageContent = document.getElementById('pageContent');
+    } catch (err) {
+      console.error('Failed to load profile:', err);
+      pageContent.innerHTML = `<div class="loading-state" style="color:#f87171;">Failed to load profile. Please refresh.</div>`;
+    }
+  });
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        showLoginPrompt();
-        return;
+  async function getGameScore(game, userId) {
+    try {
+      const snap = await getDoc(doc(db, 'games', game, 'scores', userId));
+      return snap.exists() ? snap.data().score : null;
+    } catch { return null; }
+  }
+
+  async function getUserData(userId, username) {
+    try {
+      const ref   = doc(db, 'users', userId);
+      const snap  = await getDoc(ref);
+      const today = new Date().toDateString();
+
+      if (!snap.exists()) {
+        const newData = { userId, username, chips: 1000, lastDailyBonus: today, createdAt: serverTimestamp() };
+        await setDoc(ref, newData);
+        return newData;
       }
 
-      // Update nav
-      const displayName = user.displayName || user.email.split('@')[0];
-      navAuth.innerHTML = `
-        <span class="nav-username">👾 ${escHtml(displayName)}</span>
-        <button class="btn-secondary" id="logoutBtn">Log out</button>
-      `;
-      document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await signOut(auth);
-        window.location.href = 'index.html';
-      });
-
-      // Load all data in parallel
-      pageContent.innerHTML = `<div class="loading-state">Loading your stats…</div>`;
-      try {
-        const [snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank] = await Promise.all([
-          getGameScore('snake',     user.uid),
-          getGameScore('tetris',    user.uid),
-          getGameScore('solitaire', user.uid),
-          getUserData(user.uid, displayName),
-          getPokerData(user.uid),
-          getPokerRank(user.uid)
-        ]);
-        renderPage(user, displayName, { snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank });
-        // Show chip balance in nav
-        const navPill  = document.getElementById('navChips');
-        const navCount = document.getElementById('navChipCount');
-        if (navPill && navCount && userData?.chips != null) {
-          navCount.textContent = userData.chips.toLocaleString();
-          navPill.classList.remove('hidden');
-        }
-      } catch (err) {
-        console.error('Failed to load profile:', err);
-        pageContent.innerHTML = `<div class="loading-state" style="color:#f87171;">Failed to load profile. Please refresh.</div>`;
+      const data = snap.data();
+      if (data.lastDailyBonus !== today) {
+        await updateDoc(ref, { chips: increment(500), lastDailyBonus: today });
+        return { ...data, chips: (data.chips || 0) + 500, lastDailyBonus: today };
       }
-    });
-
-    // ── Data fetchers ──────────────────────────────────────────
-    async function getGameScore(game, userId) {
-      try {
-        const snap = await getDoc(doc(db, 'games', game, 'scores', userId));
-        return snap.exists() ? snap.data().score : null;
-      } catch { return null; }
+      return data;
+    } catch (err) {
+      console.warn('getUserData failed:', err);
+      return null;
     }
+  }
 
-    async function getUserData(userId, username) {
-      try {
-        const ref   = doc(db, 'users', userId);
-        const snap  = await getDoc(ref);
-        const today = new Date().toDateString();
+  async function getPokerData(userId) {
+    try {
+      const snap = await getDoc(doc(db, 'poker_players', userId));
+      return snap.exists() ? snap.data() : null;
+    } catch { return null; }
+  }
 
-        if (!snap.exists()) {
-          // Account predates the chip system — create it now
-          const newData = {
-            userId, username,
-            chips:          1000,
-            lastDailyBonus: today,
-            createdAt:      serverTimestamp()
-          };
-          await setDoc(ref, newData);
-          return newData;
-        }
-
-        const data = snap.data();
-        // Award daily bonus if not yet given today
-        if (data.lastDailyBonus !== today) {
-          await updateDoc(ref, { chips: increment(500), lastDailyBonus: today });
-          return { ...data, chips: (data.chips || 0) + 500, lastDailyBonus: today };
-        }
-        return data;
-      } catch (err) {
-        console.warn('getUserData failed:', err);
-        return null;
+  async function getPokerRank(userId) {
+    try {
+      const snap = await getDocs(query(collection(db, 'poker_players'), orderBy('wins', 'desc')));
+      let rank = 1;
+      for (const d of snap.docs) {
+        if (d.id === userId) return rank;
+        rank++;
       }
-    }
+      return rank;
+    } catch { return null; }
+  }
 
-    async function getPokerData(userId) {
-      try {
-        const snap = await getDoc(doc(db, 'poker_players', userId));
-        return snap.exists() ? snap.data() : null;
-      } catch { return null; }
-    }
+  function renderPage(user, displayName, data) {
+    const { snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank } = data;
+    const chips       = userData?.chips       ?? 0;
+    const wins        = pokerData?.wins        ?? 0;
+    const gamesPlayed = pokerData?.gamesPlayed ?? 0;
+    const initials    = displayName.slice(0, 1).toUpperCase();
 
-    async function getPokerRank(userId) {
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'poker_players'), orderBy('wins', 'desc'))
-        );
-        let rank = 1;
-        for (const d of snap.docs) {
-          if (d.id === userId) return rank;
-          rank++;
-        }
-        return rank;
-      } catch { return null; }
-    }
-
-    // ── Render ─────────────────────────────────────────────────
-    function renderPage(user, displayName, data) {
-      const { snakeScore, tetrisScore, solitaireScore, userData, pokerData, pokerRank } = data;
-
-      // Chips come from central users/ collection
-      const chips       = userData?.chips        ?? 0;
-      const wins        = pokerData?.wins         ?? 0;
-      const gamesPlayed = pokerData?.gamesPlayed  ?? 0;
-
-      // Initials for avatar
-      const initials = displayName.slice(0, 1).toUpperCase();
-
-      pageContent.innerHTML = `
-        <!-- Profile header -->
-        <div class="profile-header">
-          <div class="avatar">${escHtml(initials)}</div>
-          <div class="profile-info">
-            <h1>${escHtml(displayName)}</h1>
-            <p>${escHtml(user.email)}</p>
-          </div>
-          <div class="member-badge">⭐ PlayDen Member</div>
+    pageContent.innerHTML = `
+      <div class="profile-header">
+        <div class="avatar">${escHtml(initials)}</div>
+        <div class="profile-info">
+          <h1>${escHtml(displayName)}</h1>
+          <p>${escHtml(user.email)}</p>
         </div>
+        <div class="member-badge">⭐ PlayDen Member</div>
+      </div>
 
-        <!-- Quick actions (top) -->
-        <div class="actions-row" style="margin-bottom:24px;">
-          <button id="resetPwBtn" class="btn-outline" onclick="resetPassword()">🔑 Reset Password</button>
-          <a href="chips.html"       class="btn-outline">🪙 Chips</a>
-          <a href="leaderboard.html" class="btn-outline">🏆 Leaderboard</a>
-          <a href="index.html"       class="btn-outline">← All Games</a>
+      <div class="actions-row">
+        <button id="resetPwBtn" class="btn-action" onclick="resetPassword()">🔑 Reset Password</button>
+        <a href="chips.html"       class="btn-action">🪙 Chips</a>
+        <a href="leaderboard.html" class="btn-action">🏆 Leaderboard</a>
+        <a href="index.html"       class="btn-action">← All Games</a>
+      </div>
+
+      <div class="section-title">My Chips</div>
+      <div class="stats-grid" style="margin-bottom:16px;">
+        <div class="stat-card highlight" style="grid-column:span 2;">
+          <div class="stat-icon">🪙</div>
+          <div class="stat-value">${chips.toLocaleString()}</div>
+          <div class="stat-label">Total Chips</div>
         </div>
+      </div>
+      <a href="chips.html" style="display:inline-block;margin-bottom:24px;font-size:13px;color:#a78bfa;text-decoration:none;">
+        How to earn &amp; spend chips →
+      </a>
 
-        <!-- Chip balance (site-wide) -->
-        <div class="section-title">My Chips</div>
-        <div class="stats-grid" style="margin-bottom:16px;">
-          <div class="stat-card highlight" style="grid-column:span 2;">
-            <div class="stat-icon">🪙</div>
-            <div class="stat-value">${chips.toLocaleString()}</div>
-            <div class="stat-label">Total Chips</div>
+      <div class="section-title">My Game Stats</div>
+      <div class="stats-table">
+        <div class="stats-table-header">
+          <div>Game</div>
+          <div class="tbl-val">Wins</div>
+          <div class="tbl-val col-played">Played</div>
+          <div class="tbl-val">Win Rate</div>
+          <div class="tbl-val">Best Score</div>
+        </div>
+        <div class="stats-table-row">
+          <div class="tbl-game"><span>🐍</span> Snake</div>
+          <div class="tbl-val dim">—</div>
+          <div class="tbl-val dim col-played">—</div>
+          <div class="tbl-val dim">—</div>
+          <div class="${snakeScore !== null ? 'tbl-val' : 'tbl-none'}">
+            ${snakeScore !== null ? Number(snakeScore).toLocaleString() + ' pts' : 'No score yet'}
           </div>
         </div>
-        <a href="chips.html" style="display:inline-block;margin-bottom:28px;font-size:14px;color:#a78bfa;text-decoration:none;">
-          How to earn &amp; spend chips →
-        </a>
-
-        <!-- Unified game stats table -->
-        <div class="section-title">My Game Stats</div>
-        <div class="stats-table">
-          <!-- Header -->
-          <div class="stats-table-header">
-            <div>Game</div>
-            <div class="tbl-val">Wins</div>
-            <div class="tbl-val col-played">Played</div>
-            <div class="tbl-val">Win Rate</div>
-            <div class="tbl-val">Best Score</div>
-          </div>
-
-          <!-- Snake -->
-          <div class="stats-table-row">
-            <div class="tbl-game"><span>🐍</span> Snake</div>
-            <div class="tbl-val dim">—</div>
-            <div class="tbl-val dim col-played">—</div>
-            <div class="tbl-val dim">—</div>
-            <div class="${snakeScore !== null ? 'tbl-val' : 'tbl-none'}">
-              ${snakeScore !== null ? Number(snakeScore).toLocaleString() + ' pts' : 'No score yet'}
-            </div>
-          </div>
-
-          <!-- Tetris -->
-          <div class="stats-table-row">
-            <div class="tbl-game"><span>🟦</span> Tetris</div>
-            <div class="tbl-val dim">—</div>
-            <div class="tbl-val dim col-played">—</div>
-            <div class="tbl-val dim">—</div>
-            <div class="${tetrisScore !== null ? 'tbl-val' : 'tbl-none'}">
-              ${tetrisScore !== null ? Number(tetrisScore).toLocaleString() + ' pts' : 'No score yet'}
-            </div>
-          </div>
-
-          <!-- Solitaire -->
-          <div class="stats-table-row">
-            <div class="tbl-game"><span>🃏</span> Solitaire</div>
-            <div class="tbl-val dim">—</div>
-            <div class="tbl-val dim col-played">—</div>
-            <div class="tbl-val dim">—</div>
-            <div class="${solitaireScore !== null ? 'tbl-val' : 'tbl-none'}">
-              ${solitaireScore !== null ? formatTime(solitaireScore) : 'No score yet'}
-            </div>
-          </div>
-
-          <!-- Poker -->
-          <div class="stats-table-row">
-            <div class="tbl-game"><span>♠️</span> Poker
-              ${pokerRank ? `<span style="font-size:11px;color:#5050a0;font-weight:400;"> · Rank #${pokerRank}</span>` : ''}
-            </div>
-            <div class="tbl-val">${wins.toLocaleString()}</div>
-            <div class="tbl-val col-played">${gamesPlayed.toLocaleString()}</div>
-            <div class="tbl-val">${gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) + '%' : '—'}</div>
-            <div class="tbl-val dim">—</div>
+        <div class="stats-table-row">
+          <div class="tbl-game"><span>🟦</span> Tetris</div>
+          <div class="tbl-val dim">—</div>
+          <div class="tbl-val dim col-played">—</div>
+          <div class="tbl-val dim">—</div>
+          <div class="${tetrisScore !== null ? 'tbl-val' : 'tbl-none'}">
+            ${tetrisScore !== null ? Number(tetrisScore).toLocaleString() + ' pts' : 'No score yet'}
           </div>
         </div>
-
-      `;
-    }
-
-    function showLoginPrompt() {
-      navAuth.innerHTML = `
-        <a href="login.html" class="btn-secondary">Log in</a>
-        <a href="signup.html" class="btn-primary">Sign up</a>
-      `;
-      pageContent.innerHTML = `
-        <div class="login-prompt">
-          <p>Log in to view your PlayDen profile and stats.</p>
-          <a href="login.html" class="btn-poker">Log in</a>
+        <div class="stats-table-row">
+          <div class="tbl-game"><span>🃏</span> Solitaire</div>
+          <div class="tbl-val dim">—</div>
+          <div class="tbl-val dim col-played">—</div>
+          <div class="tbl-val dim">—</div>
+          <div class="${solitaireScore !== null ? 'tbl-val' : 'tbl-none'}">
+            ${solitaireScore !== null ? formatTime(solitaireScore) : 'No score yet'}
+          </div>
         </div>
-      `;
-    }
+        <div class="stats-table-row">
+          <div class="tbl-game"><span>♠️</span> Poker
+            ${pokerRank ? `<span style="font-size:11px;color:#40406a;font-weight:400;"> · Rank #${pokerRank}</span>` : ''}
+          </div>
+          <div class="tbl-val">${wins.toLocaleString()}</div>
+          <div class="tbl-val col-played">${gamesPlayed.toLocaleString()}</div>
+          <div class="tbl-val">${gamesPlayed > 0 ? Math.round((wins / gamesPlayed) * 100) + '%' : '—'}</div>
+          <div class="tbl-val dim">—</div>
+        </div>
+      </div>
+    `;
+  }
 
-    // ── Helpers ────────────────────────────────────────────────
-    function formatTime(secs) {
-      const m = Math.floor(secs / 60);
-      const s = String(secs % 60).padStart(2, '0');
-      return `${m}:${s}`;
-    }
+  function showLoginPrompt() {
+    pageContent.innerHTML = `
+      <div class="login-prompt">
+        <p>Log in to view your PlayDen profile and stats.</p>
+        <a href="login.html" class="btn-action primary">Log in</a>
+      </div>
+    `;
+  }
 
-    function escHtml(s) {
-      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-    }
+  function formatTime(secs) {
+    const m = Math.floor(secs / 60);
+    const s = String(secs % 60).padStart(2, '0');
+    return `${m}:${s}`;
+  }
 
-    function showToast(message, isError = false) {
-      let toast = document.getElementById('gz-toast');
-      if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'gz-toast';
-        toast.style.cssText = `
-          position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
-          background:#1a1a2e; border-radius:12px;
-          color:#e0e0e0; font-family:'Segoe UI',sans-serif; font-size:15px;
-          padding:12px 24px; z-index:9999; box-shadow:0 4px 24px rgba(0,0,0,0.5);
-          opacity:0; transition:opacity 0.3s; white-space:nowrap; pointer-events:none;
-        `;
-        document.body.appendChild(toast);
-      }
-      toast.style.border = isError ? '1px solid #6b2020' : '1px solid #7c3aed';
-      toast.textContent = message;
-      toast.style.opacity = '1';
-      clearTimeout(toast._timeout);
-      toast._timeout = setTimeout(() => { toast.style.opacity = '0'; }, 4000);
-    }
+  function escHtml(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
 
-    window.resetPassword = async function() {
-      const user = auth.currentUser;
-      if (!user) return;
-      const btn = document.getElementById('resetPwBtn');
-      if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
-      try {
-        await sendPasswordResetEmail(auth, user.email);
-        showToast('✅ Reset email sent to ' + user.email + ' — check your spam folder too.');
-      } catch (err) {
-        console.error('Password reset error:', err.code, err.message);
-        const friendly = {
-          'auth/too-many-requests': 'Too many attempts. Wait a few minutes and try again.',
-          'auth/user-not-found':    'No account found for this email.',
-          'auth/network-request-failed': 'Network error. Check your connection.',
-        };
-        showToast('❌ ' + (friendly[err.code] || err.message || 'Could not send reset email.'), true);
-      }
-      if (btn) {
-        setTimeout(() => {
-          btn.disabled = false;
-          btn.textContent = '🔑 Reset Password';
-        }, 6000);
-      }
-    };
-  </script>
+  function showToast(message, isError = false) {
+    let toast = document.getElementById('gz-toast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'gz-toast';
+      toast.className = 'toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.style.opacity = '1';
+    toast.style.display = 'block';
+    clearTimeout(toast._timeout);
+    toast._timeout = setTimeout(() => { toast.style.opacity = '0'; }, 4000);
+  }
+
+  window.resetPassword = async function() {
+    const user = auth.currentUser;
+    if (!user) return;
+    const btn = document.getElementById('resetPwBtn');
+    if (btn) { btn.disabled = true; btn.textContent = 'Sending…'; }
+    try {
+      await sendPasswordResetEmail(auth, user.email);
+      showToast('✅ Reset email sent to ' + user.email + ' — check your spam folder too.');
+    } catch (err) {
+      const friendly = {
+        'auth/too-many-requests': 'Too many attempts. Wait a few minutes.',
+        'auth/user-not-found':    'No account found for this email.',
+        'auth/network-request-failed': 'Network error. Check your connection.',
+      };
+      showToast('❌ ' + (friendly[err.code] || err.message || 'Could not send reset email.'), true);
+    }
+    if (btn) {
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = '🔑 Reset Password';
+      }, 6000);
+    }
+  };
+</script>
 
 </body>
 </html>

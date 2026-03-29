@@ -6,7 +6,7 @@
   <title>Chicken Run — PlayDen</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{background:#0f0f1a;overflow:hidden;font-family:'Segoe UI',sans-serif;touch-action:none;}
+    body{background:#0c0d14;overflow:hidden;font-family:'Segoe UI',sans-serif;touch-action:none;}
     #c{display:block;position:fixed;inset:0;}
 
     /* ── HUD ── */
@@ -952,7 +952,7 @@ function render(ts) {
 
   // Side panels (fill outside game world on wide screens)
   if (OX > 0) {
-    ctx.fillStyle = '#0f0f1a';
+    ctx.fillStyle = '#0c0d14';
     ctx.fillRect(0, 0, OX, H);
     ctx.fillRect(OX + COLS * CELL, 0, W, H);
   }
