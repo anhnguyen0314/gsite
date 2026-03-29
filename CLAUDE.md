@@ -98,10 +98,85 @@ service cloud.firestore {
 - Sudoku: base 500 (easy) / 800 (medium) / 1,000 (hard), minus 5% per mistake and 10% per hint used
 - Poker: player picks buy-in amount (min 1,000, step 500) in lobby modal before joining; chips deducted from Firestore immediately on join; `pdata.walletChips` = off-table balance; `savePlayerChips(userId, tableChips)` saves `walletChips + tableChips` back to Firestore after each hand or on leave/disconnect
 
+## Site layout & navigation
+
+The site uses a **CrazyGames-style layout**: fixed left sidebar + scrollable main area. This is implemented via `style.css` + `nav.js`.
+
+### Page structure (all non-game pages)
+```html
+<div class="page-layout">
+  <div id="sidebar"></div>   <!-- populated by nav.js -->
+  <div id="main-wrap">
+    <div class="top-bar">...</div>
+    <div class="main-content">...</div>
+    <footer>...</footer>
+  </div>
+</div>
+<nav class="bottom-nav" id="bottomNav"></nav>  <!-- mobile only, populated by nav.js -->
+<script src="nav.js"></script>
+<script type="module" src="script.js"></script>
+```
+
+### nav.js responsibilities
+- Loaded as a **plain `<script>` (not module)** — runs synchronously before Firebase
+- Injects sidebar HTML into `#sidebar` (logo, nav links, categories, auth area)
+- Injects bottom nav HTML into `#bottomNav` plus a `games-sheet` slide-up panel + backdrop into `document.body`
+- Exposes `window.updateSidebarAuth(user, data, logoutFn)` — call this from each page's `onAuthStateChanged` to update chip count, show/hide login buttons, bind logout handler
+- Active link detection via `window.location.pathname`
+
+### Mobile nav (≤768px)
+Uses a **flex-body pattern** — NOT `position: fixed`:
+```css
+html, body { height: 100%; }
+body { display: flex; flex-direction: column; }
+.page-layout { flex: 1; min-height: 0; overflow-y: auto; }
+.bottom-nav { position: relative; flex-shrink: 0; }
+```
+Bottom nav is a static flex child — always visible at the bottom of the viewport without needing `position: fixed`. This avoids the bug where `position: fixed` breaks when a parent has `overflow-x`.
+
+**Critical**: `#main-wrap` must have `min-width: 0` on mobile. Without it, flex children default to `min-width: auto`, causing `#main-wrap` to expand to fit carousel content width, which overflows the viewport and breaks the search bar width and carousel scrolling.
+
+### Games sheet (mobile categories panel)
+- Slide-up panel injected by `nav.js` with `position: fixed; bottom: 0; transform: translateY(100%)` (hidden)
+- Opens by translating `translateY(-58px)` (bottom nav height) — slides up above the nav bar
+- Do NOT set `bottom: 58px` — that leaves 58px visible on desktop. Always use `bottom: 0` + translate.
+
+### Carousel touch isolation
+```css
+.carousel-row {
+  display: flex; overflow-x: auto; overflow-y: hidden;
+  touch-action: pan-x;
+  overscroll-behavior-x: contain;
+}
+```
+`touch-action: pan-x` tells the browser this element handles horizontal swipes — prevents the whole page from scrolling when the user swipes a carousel.
+
+### Per-game gradient CSS classes
+Each game has a `.game-thumb` CSS class with a unique gradient background used on the home page cards:
+| Class | Gradient |
+|---|---|
+| `.gt-snake` | `#11998e → #38ef7d` |
+| `.gt-chicken` | `#f46b45 → #eea849` |
+| `.gt-spaceblaster` | `#0f0c29 → #302b63` |
+| `.gt-flappy` | `#56ccf2 → #2f80ed` |
+| `.gt-tetris` | `#e96c50 → #e83e8c` |
+| `.gt-memory` | `#834d9b → #d04ed6` |
+| `.gt-sudoku` | `#1d976c → #93f9b9` |
+| `.gt-poker` | `#b79891 → #614385` |
+| `.gt-solitaire` | `#134e5e → #71b280` |
+| `.gt-blackjack` | `#232526 → #414345` |
+| `.gt-snakeio` | `#355c7d → #c06c84` |
+| `.gt-dice` | `#f7971e → #ffd200` |
+
+### Utility classes
+- `.mobile-only` — `display: none` by default; `display: inline-block` at ≤768px
+- `.top-bar-logo` — PlayDen logo shown left of search bar on mobile only
+
 ## Design system
-- Background `#0f0f1a` · Surface `#1a1a2e` · Border `#2a2a4a` · Accent `#a78bfa` · Button `#7c3aed`
+- Background `#0c0d14` (page bg) · Surface `#1a1b28` · Border `#2a2a4a` · Accent `#a78bfa` · Button `#7c3aed`
 - Font: Segoe UI. Border radius: 12px cards, 8px buttons
-- Mobile breakpoint: 600px (single column, d-pads on games). Extra-small: 380px
+- Layout breakpoints: **768px** = mobile layout (sidebar → bottom nav). **600px** = game d-pad shown. **380px** = extra-small cards.
+- Top bar: sticky, `background: #0c0d14`, `z-index: 50`
 
 ## Standard header pattern
 Every game page must use this header structure:
@@ -244,6 +319,12 @@ document.getElementById('btnOverlayStart').addEventListener('click', () => {
 - Both use `window.firestoreSaveScore` and `window.firestoreEarnChips` exposed by a `<script type="module">` block at the bottom of the file
 - Chip balance is now read from Firestore in `onAuthStateChanged` and shown in the header `#chipCount`
 
+### Snake (`games/snake/snake.html`)
+- **Color phases**: 5 phases triggered by score — purple (0), cyan (50), green (100), orange (150), red (200). Defined in `PHASES` array with `head`, `body`, `glow` colors. Score element pulses on phase change.
+- **Food**: random fruit emoji (`FRUITS` array: 🍎🍐🍓🍇🍊🫐🍉🍋🍑🍒) drawn via `ctx.fillText()` with golden glow, changes on each eat.
+- **Snake head**: direction-aware eyes drawn with canvas arcs (white + dark pupil). Eye offset computed from `dir.x/dir.y`.
+- **Snake body**: tail shrinks slightly, alternates shade for scale texture, fades in opacity toward tail.
+
 ### Solitaire
 - No chip earning during play — earns chips only on win (via Firebase)
 - Header keeps Moves + Time counters and New Game button (unique layout)
@@ -280,6 +361,9 @@ Three lightweight hooks let server.js react to engine-internal events without mo
 - `wins` incremented only for actual pot winners (`table.lastHandWinnerIds`)
 - `gamesPlayed` incremented for all real non-winning players at showdown
 - Both stored in `poker_players/{userId}` in Firestore
+
+### lobby.html header
+`lobby.html` uses the **standard game header** (`.header`, `.back-btn`, `.header-title`, `.chip-display` with `#chipCount`). It does NOT use the old `<nav>` / `navAuth` pattern — those CSS classes were removed in the redesign. The `syncChipsFromFirestore` function updates both `#chipDisplay` (inside rendered content) and `#chipCount` (in the header).
 
 ### game.html UI layout (redesigned)
 Vertical stack — no oval table:
