@@ -23,7 +23,6 @@
         <a href="index.html" class="sidebar-link${active('index')}">🏠 Home</a>
         <a href="leaderboard.html" class="sidebar-link${active('leaderboard')}">🏆 Leaderboard</a>
         <a href="account.html" class="sidebar-link${active('account')}">👾 Account</a>
-        <a href="chips.html" class="sidebar-link${active('chips')}">🪙 Chips</a>
         <a href="about.html" class="sidebar-link${active('about')}">ℹ️ About</a>
       </nav>
       <div class="sidebar-divider"></div>
@@ -50,6 +49,38 @@
   }
 
   if (bottomNav) {
+    // Inject backdrop + sheet + nav into the body
+    const backdrop = document.createElement('div');
+    backdrop.className = 'games-sheet-backdrop';
+    backdrop.id = 'gamesSheetBackdrop';
+
+    const sheet = document.createElement('div');
+    sheet.className = 'games-sheet';
+    sheet.id = 'gamesSheet';
+    sheet.innerHTML = `
+      <div class="games-sheet-title">Game Categories</div>
+      <div class="games-sheet-grid">
+        <a href="index.html#arcade"      class="games-sheet-item"><span class="gs-icon">🕹️</span> Arcade</a>
+        <a href="index.html#puzzle"      class="games-sheet-item"><span class="gs-icon">🧩</span> Puzzle</a>
+        <a href="index.html#card"        class="games-sheet-item"><span class="gs-icon">🃏</span> Card</a>
+        <a href="index.html#multiplayer" class="games-sheet-item"><span class="gs-icon">🌐</span> Multi</a>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(sheet);
+
+    function openSheet() {
+      backdrop.classList.add('open');
+      sheet.classList.add('open');
+    }
+    function closeSheet() {
+      backdrop.classList.remove('open');
+      sheet.classList.remove('open');
+    }
+    backdrop.addEventListener('click', closeSheet);
+    sheet.querySelectorAll('a').forEach(a => a.addEventListener('click', closeSheet));
+
     bottomNav.innerHTML = `
       <div class="bottom-nav-inner">
         <a href="index.html" class="bottom-nav-item${active('index')}">
@@ -58,14 +89,22 @@
         <a href="leaderboard.html" class="bottom-nav-item${active('leaderboard')}">
           <span class="bn-icon">🏆</span><span>Ranks</span>
         </a>
+        <button class="bottom-nav-item" id="gamesNavBtn">
+          <span class="bn-icon">🎮</span><span>Games</span>
+        </button>
         <a href="account.html" class="bottom-nav-item${active('account')}">
           <span class="bn-icon">👾</span><span>Account</span>
         </a>
-        <a href="chips.html" class="bottom-nav-item${active('chips')}">
-          <span class="bn-icon">🪙</span><span>Chips</span>
-        </a>
       </div>
     `;
+
+    document.getElementById('gamesNavBtn').addEventListener('click', function () {
+      if (sheet.classList.contains('open')) {
+        closeSheet();
+      } else {
+        openSheet();
+      }
+    });
   }
 
   /**
