@@ -304,6 +304,22 @@ document.getElementById('btnOverlayStart').addEventListener('click', () => {
 <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
 ```
 
+### Game thumbnail in overlay (required when PNG exists)
+Every game that has a PNG thumbnail (`games/{game}/{game}.png`) **must display it inside its own pre-game overlay**, directly above the game title. Use:
+```html
+<img src="{game}.png" alt="{Game Name}" style="width:140px;height:79px;object-fit:cover;border-radius:10px;margin-bottom:2px;">
+```
+- Path is relative — the PNG sits in the same folder as the game HTML file.
+- Dimensions 140×79px (16:9) at display size; source files should be created at 2× resolution (**392×220px** or **400×225px**).
+- This rule applies to new games and retroactively to existing games when their thumbnail PNG is added.
+
+### Thumbnail in index.html game cards
+When a game has a PNG thumbnail, replace the emoji + gradient div with an `<img>` tag inside `.game-thumb`:
+```html
+<div class="game-thumb gt-{game}"><img src="games/{game}/{game}.png" alt="{Game Name}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;"></div>
+```
+Games without a PNG keep the plain emoji inside `.game-thumb` (e.g. `<div class="game-thumb gt-tetris">🟦</div>`).
+
 ## Game-specific notes
 
 ### Chicken Run (`games/chickenrun/chickenrun.html`)
@@ -319,11 +335,23 @@ document.getElementById('btnOverlayStart').addEventListener('click', () => {
 - Both use `window.firestoreSaveScore` and `window.firestoreEarnChips` exposed by a `<script type="module">` block at the bottom of the file
 - Chip balance is now read from Firestore in `onAuthStateChanged` and shown in the header `#chipCount`
 
+### Tetris (`games/tetris/tetris.html`)
+- **Grid**: `BLOCK=28`, `COLS=12`, `ROWS=22`, canvas `336×616`
+- **Layout**: No side panel — compact `.top-panel` horizontal bar above canvas shows Score/Best/Level/Lines/Time/Next piece
+- **Rendering**: `setInterval` drives logic ticks; `requestAnimationFrame renderLoop` drives rendering. `current.prevY` saved before gravity tick; draw interpolates `renderY = current.prevY + (current.y - current.prevY) * t`
+- **Hard drop (Space)**: `animateHardDrop(targetY)` — steps piece down 1 row every 18ms via `setTimeout` chain (visual animation), then calls `placePiece()`. Sets `paused=true` during animation to block logic tick.
+- **Line clear flash**: `clearingRows[]` array, `paused=true` for 220ms, draws white overlay on cleared rows fading by ratio `(flashEnd - Date.now()) / 220`, then `board.splice` + `board.unshift` new empty rows
+- **Sounds**: `playPlaceSound()` (soft thud), `playClearSound(numLines)` (ascending arpeggio, scales 1–4 lines), `playHardDropSound()` (square crack + sine sub), `playGameOverSound()` (descending sawtooth 330→220Hz)
+
 ### Snake (`games/snake/snake.html`)
-- **Color phases**: 5 phases triggered by score — purple (0), cyan (50), green (100), orange (150), red (200). Defined in `PHASES` array with `head`, `body`, `glow` colors. Score element pulses on phase change.
-- **Food**: random fruit emoji (`FRUITS` array: 🍎🍐🍓🍇🍊🫐🍉🍋🍑🍒) drawn via `ctx.fillText()` with golden glow, changes on each eat.
+- **Color phases**: 5 phases cycling every 50pts — purple (0), cyan (50), green (100), orange (150), red (200). `getPhase(score) = Math.floor(score/50) % PHASES.length`. Defined in `PHASES` array with `head`, `body`, `glow` colors. Score element pulses on phase change.
+- **Food**: Two fruits active simultaneously (`foods[]` array of 2). Each is an absolutely-positioned `<span class="food-emoji">` HTML element (NOT canvas `fillText`) — avoids emoji rendering inconsistency across browsers/mobile. Random fruit from `FRUITS` array (🍎🍐🍓🍇🍊🫐🍉🍋🍑🍒). `positionFoodDOM()` computes CSS `left`/`top` using `canvas.clientWidth / canvas.width` scale factor.
+- **Food expiry**: Each food has `placedAt: Date.now()` timestamp. After 5s the food is replaced. Visual warning (shrink/pulse) starts at 2.5s remaining. `placedAt` is reset in `beginGame()` (AFTER countdown ends) — not at `initFoods()` — so the timer starts when gameplay actually begins.
+- **Smooth movement / head interpolation**: `requestAnimationFrame` loop stores `prevHeadX/prevHeadY` before each logic tick. Rendering interpolates head position. Critical: set `t = 0` (not `elapsed/TICK_MS`) immediately after a tick fires, to prevent the head from snapping backward on the next frame.
+- **Explosion on death**: `spawnExplosion(gx, gy, color)` fires 28 canvas particles; `endGame()` runs the particle animation via rAF before showing the game-over overlay.
 - **Snake head**: direction-aware eyes drawn with canvas arcs (white + dark pupil). Eye offset computed from `dir.x/dir.y`.
 - **Snake body**: tail shrinks slightly, alternates shade for scale texture, fades in opacity toward tail.
+- **Sounds**: countdown beeps (`playCountdownBeep`), eat sound (`playEatSound`), phase change (`playPhaseSound`), explosion (`playExplosionSound`) — all via Web Audio API, created lazily on first user gesture.
 
 ### Solitaire
 - No chip earning during play — earns chips only on win (via Firebase)
