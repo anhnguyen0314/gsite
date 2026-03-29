@@ -150,7 +150,7 @@
 <!-- Header -->
 <div class="header">
   <a href="../../index.html" class="back-btn">← Back</a>
-  <div class="header-title">🐦 Flappy Bird</div>
+  <div class="header-title">Flappy Bird</div>
   <div class="chip-display">🪙 <span class="val" id="chipCount">—</span></div>
 </div>
 
@@ -293,10 +293,68 @@ function initStars() {
   }
 }
 
+// ── Audio ──────────────────────────────────────────────────────────────
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playFlapSound() {
+  try {
+    const ac = getAudio(), o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = 'sine';
+    o.frequency.setValueAtTime(420, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(180, ac.currentTime + 0.09);
+    g.gain.setValueAtTime(0.22, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.09);
+    o.start(); o.stop(ac.currentTime + 0.09);
+  } catch(e) {}
+}
+function playScoreSound() {
+  try {
+    const ac = getAudio();
+    [600, 900].forEach((freq, i) => {
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.connect(g); g.connect(ac.destination);
+      o.type = 'sine';
+      const t = ac.currentTime + i * 0.07;
+      o.frequency.setValueAtTime(freq, t);
+      g.gain.setValueAtTime(0.25, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      o.start(t); o.stop(t + 0.12);
+    });
+  } catch(e) {}
+}
+function playDeathSound() {
+  try {
+    const ac = getAudio(), o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = 'sawtooth';
+    o.frequency.setValueAtTime(380, ac.currentTime);
+    o.frequency.exponentialRampToValueAtTime(80, ac.currentTime + 0.35);
+    g.gain.setValueAtTime(0.45, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.35);
+    o.start(); o.stop(ac.currentTime + 0.35);
+  } catch(e) {}
+}
+function playCountdownBeep(n) {
+  try {
+    const ac = getAudio(), o = ac.createOscillator(), g = ac.createGain();
+    o.connect(g); g.connect(ac.destination);
+    o.type = 'sine';
+    o.frequency.value = n === 1 ? 880 : 660;
+    g.gain.setValueAtTime(0.3, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.15);
+    o.start(); o.stop(ac.currentTime + 0.15);
+  } catch(e) {}
+}
+
 function flap() {
   if (!running) return;
   bird.vy = FLAP;
   flapAnim = 8;
+  playFlapSound();
 }
 
 // ── Input ─────────────────────────────────────────────────────────────
@@ -477,6 +535,7 @@ function loop() {
       p.scored = true;
       score++;
       earnChips(CHIP_PER_PIPE);
+      playScoreSound();
     }
   });
 
@@ -486,6 +545,7 @@ function loop() {
 function die() {
   running = false;
   cancelAnimationFrame(animId);
+  playDeathSound();
 
   saveScore(score);
 
@@ -502,12 +562,48 @@ function startGame() {
   frame        = 0;
   sessionChips = 0;
   pipes        = [];
+  flapAnim     = 0;
+  birdAngle    = 0;
 
   initBird();
   initStars();
 
-  running = true;
-  loop();
+  running = false;
+  if (animId) cancelAnimationFrame(animId);
+
+  let count = 3;
+
+  function drawCountdown() {
+    ctx.save();
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    drawBackground();
+    drawBird();
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(0, 0, GAME_W, GAME_H);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const fs = Math.round(GAME_W * 0.28);
+    ctx.font = `bold ${fs}px Segoe UI`;
+    ctx.shadowColor = '#a78bfa';
+    ctx.shadowBlur  = 32;
+    ctx.fillStyle   = '#ffffff';
+    ctx.fillText(count, GAME_W / 2, GAME_H / 2);
+    ctx.restore();
+    playCountdownBeep(count);
+  }
+
+  drawCountdown();
+
+  const cdInterval = setInterval(() => {
+    count--;
+    if (count <= 0) {
+      clearInterval(cdInterval);
+      running = true;
+      loop();
+    } else {
+      drawCountdown();
+    }
+  }, 1000);
 }
 
 document.getElementById('btnStart').addEventListener('click', startGame);

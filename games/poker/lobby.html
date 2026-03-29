@@ -320,9 +320,39 @@
       .table-card { flex-direction: column; align-items: flex-start; }
       .btn-join { width: 100%; }
     }
+
+    /* Pre-game overlay */
+    .overlay-start {
+      position: fixed; inset: 0;
+      background: rgba(12,13,20,0.97);
+      z-index: 200;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px; text-align: center; padding: 24px;
+    }
+    .overlay-start.hidden { display: none; }
+    .overlay-start h2 { font-size: 26px; font-weight: 700; color: #a78bfa; }
+    .overlay-start p { color: #94a3b8; max-width: 380px; line-height: 1.6; }
+    .btn-enter-lobby {
+      background: #7c3aed; color: #fff; border: none;
+      border-radius: 8px; padding: 12px 32px;
+      font-size: 16px; font-weight: 600; cursor: pointer;
+      font-family: 'Segoe UI', sans-serif; transition: background 0.2s;
+    }
+    .btn-enter-lobby:hover { background: #6d28d9; }
   </style>
 </head>
 <body>
+
+  <!-- Pre-game overlay -->
+  <div class="overlay-start hidden" id="overlayStart">
+    <img src="poker.png" alt="Texas Hold'em" style="width:140px;height:79px;object-fit:cover;border-radius:10px;margin-bottom:2px;">
+    <h2>Texas Hold'em Poker</h2>
+    <p>Real-time multiplayer · Up to 5 players per table.<br>
+       <strong>Pick your buy-in and compete for chips! 🪙</strong></p>
+    <button class="btn-enter-lobby" id="btnEnterLobby">Enter Lobby</button>
+    <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
+  </div>
 
   <div class="header">
     <a href="../../index.html" class="back-btn">← Back</a>
@@ -459,9 +489,12 @@
       currentUser = user;
       if (user) {
         const name = user.displayName || user.email.split('@')[0];
-        // Connect socket AND sync chips from Firestore in parallel
-        connectSocket(user);
         syncChipsFromFirestore(user.uid, name);
+        document.getElementById('overlayStart').classList.remove('hidden');
+        document.getElementById('btnEnterLobby').onclick = () => {
+          document.getElementById('overlayStart').classList.add('hidden');
+          connectSocket(user);
+        };
       } else {
         showLoginPrompt();
       }

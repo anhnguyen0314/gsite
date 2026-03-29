@@ -9,6 +9,23 @@
     * { box-sizing: border-box; }
     body { background: #0a0a14; overflow-x: hidden; }
 
+    /* Standard game header */
+    .header {
+      width: 100%; background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+      padding: 12px 20px;
+      display: flex; align-items: center;
+      justify-content: space-between; gap: 12px;
+    }
+    .back-btn {
+      background: none; border: 1px solid #2a2a4a;
+      color: #a78bfa; padding: 6px 14px;
+      border-radius: 8px; font-size: 13px;
+      text-decoration: none; white-space: nowrap;
+    }
+    .back-btn:hover { background: #2a2a4a; }
+    .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; }
+
     /* ── Layout ── */
     .game-wrap {
       max-width: 700px;
@@ -564,15 +581,15 @@
 </head>
 <body>
 
-  <nav>
-    <a href="../../index.html" class="nav-logo" style="text-decoration:none;">🎮 PlayDen</a>
-    <ul class="nav-links"></ul>
-    <div class="nav-auth" id="navAuth"></div>
-  </nav>
+  <div class="header">
+    <a href="lobby.html" class="back-btn">← Lobby</a>
+    <div class="header-title">Texas Hold'em</div>
+    <div id="navAuth" style="display:flex;align-items:center;gap:8px;font-size:13px;"></div>
+  </div>
 
   <div class="game-wrap">
     <div class="top-bar">
-      <h2 id="tableTitle">♠️ Poker</h2>
+      <h2 id="tableTitle">Poker</h2>
       <div class="top-bar-right">
         <div class="chips-badge" id="chipsBadge" style="display:none;">🪙 <strong id="chipsDisplay">0</strong></div>
         <button class="btn-leave" onclick="leaveTable()">Leave Table</button>

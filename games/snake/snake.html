@@ -141,7 +141,7 @@
 
   <div class="header">
     <a href="../../index.html" class="back-btn">← Back</a>
-    <div class="header-title">🐍 Snake</div>
+    <div class="header-title">Snake</div>
     <div class="chip-display">🪙 <span id="chipCount">—</span></div>
   </div>
 
@@ -616,17 +616,34 @@
         }
       }
 
-      // Snake body (body segments at grid positions — tail→neck)
+      // Snake body — circle segments + rectangular connectors for smooth rounded turns
       for (let i = snake.length - 1; i >= 1; i--) {
-        const seg    = snake[i];
+        const seg  = snake[i];
+        const next = snake[i - 1];
         const ratio  = 0.35 + 0.65 * (1 - i / snake.length);
-        const shade  = i % 2 === 0 ? 1 : 0.78;
-        const shrink = 1 + (i / snake.length) * 2;
+        const shade  = i % 2 === 0 ? 1 : 0.88;
+        const shrink = 1 + (i / snake.length) * 1.5;
+        const r  = GRID / 2 - shrink;
+        const cx = seg.x * GRID + GRID / 2;
+        const cy = seg.y * GRID + GRID / 2;
+        const ncx = next.x * GRID + GRID / 2;
+        const ncy = next.y * GRID + GRID / 2;
+
         ctx.globalAlpha = ratio * shade;
         ctx.fillStyle   = phase.body;
+
+        // Connector rectangle to next segment (fills the gap at turns)
         ctx.beginPath();
-        ctx.roundRect(seg.x * GRID + shrink, seg.y * GRID + shrink,
-                      GRID - shrink * 2, GRID - shrink * 2, 3);
+        if (seg.x === next.x) {
+          ctx.rect(cx - r, Math.min(cy, ncy), r * 2, Math.abs(cy - ncy));
+        } else {
+          ctx.rect(Math.min(cx, ncx), cy - r, Math.abs(cx - ncx), r * 2);
+        }
+        ctx.fill();
+
+        // Circle at segment position
+        ctx.beginPath();
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
