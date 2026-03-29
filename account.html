@@ -247,6 +247,7 @@
       await signOut(auth);
       window.location.href = 'index.html';
     };
+    window.doSignOut = doLogout;
 
     pageContent.innerHTML = `<div class="loading-state">Loading your stats…</div>`;
     try {
@@ -340,6 +341,7 @@
         <a href="chips.html"       class="btn-action">🪙 Chips</a>
         <a href="leaderboard.html" class="btn-action">🏆 Leaderboard</a>
         <a href="index.html"       class="btn-action">← All Games</a>
+        <button class="btn-action mobile-only" onclick="window.doSignOut()" style="color:#f87171;border-color:#6b2020;">🚪 Sign Out</button>
       </div>
 
       <div class="section-title">My Chips</div>
