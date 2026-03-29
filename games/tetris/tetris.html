@@ -29,9 +29,8 @@
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
-
     .back-btn {
       background: none;
       border: 1px solid #2a2a4a;
@@ -41,11 +40,8 @@
       font-size: 13px;
       text-decoration: none;
     }
-
     .back-btn:hover { background: #2a2a4a; }
-
     .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; }
-
     .chip-display {
       background: #0c0d14;
       border: 1px solid #2a2a4a;
@@ -56,21 +52,70 @@
     }
     .chip-display span { font-weight: 700; color: #a78bfa; }
 
-    .game-wrap {
+    /* ── Top stats bar ────────────────────────────────────── */
+    .top-panel {
       display: flex;
-      gap: 20px;
-      align-items: flex-start;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      max-width: 360px;
+      background: #1a1b28;
+      border: 1px solid #2a2a4a;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
     }
 
+    .stat-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+      min-width: 44px;
+    }
+
+    .sl {
+      font-size: 9px;
+      color: #7070a0;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 2px;
+    }
+
+    .sv {
+      font-size: 18px;
+      font-weight: 700;
+      color: #a78bfa;
+      line-height: 1;
+    }
+
+    .next-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #nextCanvas {
+      display: block;
+      border-radius: 4px;
+      margin-top: 2px;
+    }
+
+    /* ── Canvas ───────────────────────────────────────────── */
     .canvas-wrap {
       position: relative;
+      width: 100%;
+      max-width: 360px;
     }
 
-    canvas {
+    canvas#gameCanvas {
       background: #1a1b28;
       border: 2px solid #2a2a4a;
       border-radius: 12px;
       display: block;
+      width: 100%;
+      height: auto;
+      touch-action: none;
     }
 
     .overlay {
@@ -83,27 +128,11 @@
       justify-content: center;
       border-radius: 10px;
       gap: 12px;
+      z-index: 10;
     }
-
-    .overlay h2 {
-      font-size: 28px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .overlay p {
-      font-size: 14px;
-      color: #9090b0;
-      text-align: center;
-      line-height: 1.6;
-    }
-
-    .chip-hint {
-      font-size: 0.8rem;
-      color: #a78bfa;
-      margin: 0;
-      opacity: 0.9;
-    }
+    .overlay h2 { font-size: 28px; font-weight: 700; color: #fff; }
+    .overlay p  { font-size: 14px; color: #9090b0; text-align: center; line-height: 1.6; }
+    .chip-hint  { font-size: 0.8rem; color: #a78bfa; margin: 0; opacity: 0.9; }
 
     .btn {
       background: #7c3aed;
@@ -116,100 +145,34 @@
       cursor: pointer;
       transition: background 0.2s;
     }
-
     .btn:hover { background: #6d28d9; }
 
-    /* Side panel */
-    .side-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      min-width: 110px;
-    }
-
-    .stat-box {
-      background: #1a1b28;
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
-      padding: 12px 16px;
-      text-align: center;
-    }
-
-    .stat-label {
-      font-size: 11px;
-      color: #9090b0;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom: 4px;
-    }
-
-    .stat-value {
-      font-size: 26px;
-      font-weight: 700;
-      color: #a78bfa;
-    }
-
-    .next-box {
-      background: #1a1b28;
-      border: 1px solid #2a2a4a;
-      border-radius: 10px;
-      padding: 12px;
-      text-align: center;
-    }
-
-    .next-box .stat-label {
-      margin-bottom: 8px;
-    }
-
-    #nextCanvas {
-      display: block;
-      margin: 0 auto;
-      border-radius: 6px;
-    }
-
-    /* Mobile controls */
+    /* ── Mobile controls ─────────────────────────────────── */
     .mobile-controls {
       display: none;
       flex-direction: column;
       align-items: center;
       gap: 6px;
-      margin-top: 16px;
+      margin-top: 12px;
     }
-
-    .ctrl-row {
-      display: flex;
-      gap: 6px;
-    }
-
+    .ctrl-row { display: flex; gap: 6px; }
     .ctrl-btn {
-      width: 60px;
-      height: 60px;
+      width: 62px; height: 62px;
       background: #1a1b28;
       border: 1px solid #2a2a4a;
       border-radius: 10px;
       color: #a78bfa;
       font-size: 22px;
       cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display: flex; align-items: center; justify-content: center;
       user-select: none;
       -webkit-tap-highlight-color: transparent;
     }
-
     .ctrl-btn:active { background: #2a2a4a; }
-
-    .ctrl-btn.wide {
-      width: 126px;
-      font-size: 13px;
-      color: #e0e0e0;
-    }
+    .ctrl-btn.wide { width: 130px; font-size: 13px; color: #e0e0e0; }
 
     @media (max-width: 600px) {
       .mobile-controls { display: flex; }
-      .game-wrap { gap: 12px; }
-      .side-panel { min-width: 90px; }
-      .stat-value { font-size: 20px; }
     }
   </style>
 </head>
@@ -221,47 +184,31 @@
     <div class="chip-display">🪙 <span id="chipCount">—</span></div>
   </div>
 
-  <div class="game-wrap">
-    <div class="canvas-wrap">
-      <canvas id="gameCanvas" width="300" height="600"></canvas>
-      <div class="overlay" id="overlay">
-        <h2 id="overlay-title">Tetris</h2>
-        <p id="overlay-msg">Use ← → to move · ↑ to rotate<br>↓ to soft drop · Space to hard drop</p>
-        <p class="chip-hint">💰 Earn +100 chips per 1,000 points</p>
-        <button class="btn" onclick="startGame()">Start Game</button>
-        <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
-      </div>
-    </div>
-
-    <div class="side-panel">
-      <div class="stat-box">
-        <div class="stat-label">Score</div>
-        <div class="stat-value" id="score">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Best</div>
-        <div class="stat-value" id="best">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Level</div>
-        <div class="stat-value" id="level">1</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Lines</div>
-        <div class="stat-value" id="lines">0</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Time</div>
-        <div class="stat-value" id="timer">0:00</div>
-      </div>
-      <div class="next-box">
-        <div class="stat-label">Next</div>
-        <canvas id="nextCanvas" width="80" height="80"></canvas>
-      </div>
+  <!-- Compact top stats bar (replaces side panel) -->
+  <div class="top-panel">
+    <div class="stat-item"><span class="sl">Score</span><span class="sv" id="score">0</span></div>
+    <div class="stat-item"><span class="sl">Best</span><span class="sv" id="best">0</span></div>
+    <div class="stat-item"><span class="sl">Level</span><span class="sv" id="level">1</span></div>
+    <div class="stat-item"><span class="sl">Lines</span><span class="sv" id="lines">0</span></div>
+    <div class="stat-item"><span class="sl">Time</span><span class="sv" id="timer">0:00</span></div>
+    <div class="stat-item next-wrap">
+      <span class="sl">Next</span>
+      <canvas id="nextCanvas" width="56" height="40"></canvas>
     </div>
   </div>
 
-  <!-- Mobile controls -->
+  <div class="canvas-wrap">
+    <!-- Canvas is wider now that the side panel is gone (360px CSS → 10×36 = 360 attribute) -->
+    <canvas id="gameCanvas" width="360" height="720"></canvas>
+    <div class="overlay" id="overlay">
+      <h2 id="overlay-title">🟦 Tetris</h2>
+      <p id="overlay-msg">← → move · ↑ rotate · ↓ soft drop<br>Space = hard drop</p>
+      <p class="chip-hint">💰 Earn +100 chips per 1,000 points</p>
+      <button class="btn" onclick="startGame()">Start Game</button>
+      <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
+    </div>
+  </div>
+
   <div class="mobile-controls">
     <div class="ctrl-row">
       <div class="ctrl-btn" onclick="rotatePiece()">↻</div>
@@ -277,19 +224,19 @@
   </div>
 
   <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    const canvas     = document.getElementById('gameCanvas');
+    const ctx        = canvas.getContext('2d');
     const nextCanvas = document.getElementById('nextCanvas');
-    const nctx = nextCanvas.getContext('2d');
-    const BLOCK = 30;
-    const COLS = 10;
-    const ROWS = 20;
+    const nctx       = nextCanvas.getContext('2d');
+
+    const BLOCK = 36;   // 10 × 36 = 360px wide, 20 × 36 = 720px tall
+    const COLS  = 10;
+    const ROWS  = 20;
 
     const COLORS = {
       I: '#22d3ee', O: '#facc15', T: '#a78bfa',
       S: '#4ade80', Z: '#f87171', J: '#60a5fa', L: '#fb923c'
     };
-
     const SHAPES = {
       I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
       O: [[1,1],[1,1]],
@@ -299,82 +246,103 @@
       J: [[1,0,0],[1,1,1],[0,0,0]],
       L: [[0,0,1],[1,1,1],[0,0,0]]
     };
-
     const PIECES = Object.keys(SHAPES);
     const SCORE_TABLE = [0, 100, 300, 500, 800];
 
     let board, current, next, score, best, level, lines, timerSecs;
-    let gameLoopId, timerLoopId, running, paused;
+    let gameLoopId, timerLoopId, rafId;
+    let running = false, paused = false;
+    let clearingRows = [];   // rows currently flashing
+    let flashEnd = 0;        // timestamp when flash ends
+    let lastTickTime = 0;
+    let interpT = 0;         // interpolation factor for piece drop
 
     best = parseInt(localStorage.getItem('tetrisBest') || '0');
     document.getElementById('best').textContent = best;
 
+    // ── Piece factory ─────────────────────────────────────────
     function newPiece(type) {
       type = type || PIECES[Math.floor(Math.random() * PIECES.length)];
       const shape = SHAPES[type].map(r => [...r]);
-      return {
-        type,
-        shape,
-        color: COLORS[type],
-        x: Math.floor((COLS - shape[0].length) / 2),
-        y: 0
-      };
+      return { type, shape, color: COLORS[type],
+               x: Math.floor((COLS - shape[0].length) / 2), y: 0, prevY: 0 };
     }
 
+    // ── Game start ────────────────────────────────────────────
     function startGame() {
       document.getElementById('overlay').style.display = 'none';
       board = Array.from({length: ROWS}, () => Array(COLS).fill(null));
       score = 0; level = 1; lines = 0; timerSecs = 0;
+      clearingRows = [];
       current = newPiece();
-      next = newPiece();
+      next    = newPiece();
       running = true; paused = false;
       updateStats();
       clearInterval(gameLoopId);
       clearInterval(timerLoopId);
-      gameLoopId = setInterval(tick, getSpeed());
+      if (rafId) cancelAnimationFrame(rafId);
+      lastTickTime = performance.now();
+      gameLoopId  = setInterval(tick, getSpeed());
       timerLoopId = setInterval(() => { timerSecs++; updateTimer(); }, 1000);
-      draw();
+      drawNext();
+      rafId = requestAnimationFrame(renderLoop);
     }
 
-    function getSpeed() { return Math.max(100, 700 - (level - 1) * 60); }
+    function getSpeed() { return Math.max(80, 700 - (level - 1) * 60); }
 
+    // ── Render loop (requestAnimationFrame) ───────────────────
+    function renderLoop(now) {
+      if (!running) { rafId = null; return; }
+      rafId = requestAnimationFrame(renderLoop);
+      const elapsed = now - lastTickTime;
+      interpT = Math.min(elapsed / getSpeed(), 1);
+      draw(interpT);
+    }
+
+    // ── Logic tick (setInterval) ──────────────────────────────
     function tick() {
       if (!running || paused) return;
-      if (!movePiece(0, 1)) {
+      lastTickTime = performance.now();
+      current.prevY = current.y;
+      if (!gravityDrop()) {
         placePiece();
-        clearLines();
-        current = next;
-        next = newPiece();
-        drawNext();
-        if (collision(current, 0, 0)) { endGame(); return; }
+        handleLineClear();   // may pause briefly for flash
       }
-      draw();
     }
 
+    function gravityDrop() {
+      if (!collision(current, 0, 1)) {
+        current.y++;
+        return true;
+      }
+      return false;
+    }
+
+    // ── Controls ──────────────────────────────────────────────
     function movePiece(dx, dy) {
       if (!collision(current, dx, dy)) {
-        current.x += dx;
-        current.y += dy;
-        draw();
+        current.x += dx; current.y += dy;
         return true;
       }
       return false;
     }
 
     function moveLeft()  { if (running && !paused) movePiece(-1, 0); }
-    function moveRight() { if (running && !paused) movePiece(1, 0); }
-    function softDrop()  { if (running && !paused) movePiece(0, 1); }
+    function moveRight() { if (running && !paused) movePiece( 1, 0); }
+    function softDrop()  {
+      if (!running || paused) return;
+      current.prevY = current.y;
+      movePiece(0, 1);
+      lastTickTime = performance.now(); // reset gravity timer
+    }
 
     function hardDrop() {
       if (!running || paused) return;
+      current.prevY = current.y;
       while (!collision(current, 0, 1)) current.y++;
+      lastTickTime = performance.now();
       placePiece();
-      clearLines();
-      current = next;
-      next = newPiece();
-      drawNext();
-      if (collision(current, 0, 0)) { endGame(); return; }
-      draw();
+      handleLineClear();
     }
 
     function rotatePiece() {
@@ -385,9 +353,9 @@
       const prev = current.shape;
       current.shape = rotated;
       if (collision(current, 0, 0)) current.shape = prev;
-      draw();
     }
 
+    // ── Collision ─────────────────────────────────────────────
     function collision(piece, dx, dy) {
       return piece.shape.some((row, r) =>
         row.some((val, c) => {
@@ -399,6 +367,7 @@
       );
     }
 
+    // ── Place & clear ─────────────────────────────────────────
     function placePiece() {
       current.shape.forEach((row, r) =>
         row.forEach((val, c) => {
@@ -408,20 +377,33 @@
       );
     }
 
-    function clearLines() {
-      let cleared = 0;
+    function handleLineClear() {
+      const toRemove = [];
       for (let r = ROWS - 1; r >= 0; r--) {
-        if (board[r].every(c => c)) {
-          board.splice(r, 1);
-          board.unshift(Array(COLS).fill(null));
-          cleared++;
-          r++;
-        }
+        if (board[r].every(c => c !== null)) toRemove.push(r);
       }
-      if (cleared) {
-        lines += cleared;
-        score += SCORE_TABLE[cleared] * level;
-        level = Math.floor(lines / 10) + 1;
+
+      if (toRemove.length === 0) {
+        spawnNext();
+        return;
+      }
+
+      // Flash the completed rows before removing them
+      clearingRows = toRemove;
+      flashEnd = Date.now() + 200;
+      paused = true;
+
+      setTimeout(() => {
+        // Remove from bottom up
+        for (let i = toRemove.length - 1; i >= 0; i--) {
+          board.splice(toRemove[i], 1);
+          board.unshift(Array(COLS).fill(null));
+        }
+        clearingRows = [];
+        const cleared = toRemove.length;
+        lines  += cleared;
+        score  += SCORE_TABLE[cleared] * level;
+        level   = Math.floor(lines / 10) + 1;
         if (score > best) {
           best = score;
           localStorage.setItem('tetrisBest', best);
@@ -429,12 +411,23 @@
         clearInterval(gameLoopId);
         gameLoopId = setInterval(tick, getSpeed());
         updateStats();
-      }
+        paused = false;
+        spawnNext();
+      }, 220);
     }
 
+    function spawnNext() {
+      current = next;
+      current.prevY = current.y;
+      next = newPiece();
+      drawNext();
+      if (collision(current, 0, 0)) { endGame(); }
+    }
+
+    // ── Stats ─────────────────────────────────────────────────
     function updateStats() {
-      document.getElementById('score').textContent = score;
-      document.getElementById('best').textContent = best;
+      document.getElementById('score').textContent = score.toLocaleString();
+      document.getElementById('best').textContent  = best.toLocaleString();
       document.getElementById('level').textContent = level;
       document.getElementById('lines').textContent = lines;
     }
@@ -445,48 +438,72 @@
       document.getElementById('timer').textContent = `${m}:${s}`;
     }
 
+    // ── End game ──────────────────────────────────────────────
     function endGame() {
       clearInterval(gameLoopId);
       clearInterval(timerLoopId);
       running = false;
-      const overlay = document.getElementById('overlay');
-      document.getElementById('overlay-title').textContent = 'Game Over';
-      // Chips earned: 100 per 1000 points
       const chipsEarned = Math.floor(score / 1000) * 100;
       const chipMsg = chipsEarned > 0 ? ` · 🪙 +${chipsEarned} chips` : '';
+      document.getElementById('overlay-title').textContent = 'Game Over';
       document.getElementById('overlay-msg').textContent =
         `Score: ${score} · Level: ${level} · Lines: ${lines}${chipMsg}`;
       document.querySelector('#overlay .btn').textContent = 'Play Again';
-      overlay.style.display = 'flex';
-      // Save to Firestore if user is logged in
+      document.getElementById('overlay').style.display = 'flex';
       if (window.firestoreSaveScore) window.firestoreSaveScore('tetris', score);
       if (chipsEarned > 0 && window.firestoreEarnChips) window.firestoreEarnChips(chipsEarned);
     }
 
-    function draw() {
+    // ── Draw ──────────────────────────────────────────────────
+    function drawBlockAt(context, px, py, color) {
+      context.fillStyle = color;
+      context.beginPath();
+      context.roundRect(px + 1, py + 1, BLOCK - 2, BLOCK - 2, 4);
+      context.fill();
+      // Highlight sheen
+      context.fillStyle = 'rgba(255,255,255,0.16)';
+      context.beginPath();
+      context.roundRect(px + 2, py + 2, BLOCK - 4, 7, 2);
+      context.fill();
+    }
+
+    function drawBlock(context, gx, gy, color) {
+      drawBlockAt(context, gx * BLOCK, gy * BLOCK, color);
+    }
+
+    function draw(t) {
       ctx.fillStyle = '#1a1b28';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       // Grid lines
-      ctx.strokeStyle = '#ffffff06';
+      ctx.strokeStyle = '#ffffff05';
       ctx.lineWidth = 0.5;
       for (let c = 0; c <= COLS; c++) {
-        ctx.beginPath();
-        ctx.moveTo(c * BLOCK, 0);
-        ctx.lineTo(c * BLOCK, canvas.height);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(c * BLOCK, 0); ctx.lineTo(c * BLOCK, canvas.height); ctx.stroke();
       }
       for (let r = 0; r <= ROWS; r++) {
-        ctx.beginPath();
-        ctx.moveTo(0, r * BLOCK);
-        ctx.lineTo(canvas.width, r * BLOCK);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, r * BLOCK); ctx.lineTo(canvas.width, r * BLOCK); ctx.stroke();
       }
 
       // Board
       board.forEach((row, r) =>
         row.forEach((color, c) => {
-          if (color) drawBlock(ctx, c, r, color);
+          if (!color) return;
+          if (clearingRows.includes(r)) {
+            // Flash: blend toward white based on remaining flash time
+            const flashRatio = Math.max(0, (flashEnd - Date.now()) / 220);
+            const alpha = 0.5 + 0.5 * flashRatio;
+            ctx.save();
+            ctx.globalAlpha = 1;
+            drawBlock(ctx, c, r, color);
+            ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+            ctx.beginPath();
+            ctx.roundRect(c * BLOCK + 1, r * BLOCK + 1, BLOCK - 2, BLOCK - 2, 4);
+            ctx.fill();
+            ctx.restore();
+          } else {
+            drawBlock(ctx, c, r, color);
+          }
         })
       );
 
@@ -496,54 +513,44 @@
       current.shape.forEach((row, r) =>
         row.forEach((val, c) => {
           if (val && ghostY + r >= 0) {
-            ctx.fillStyle = current.color + '30';
-            ctx.fillRect(
-              (current.x + c) * BLOCK + 1,
-              (ghostY + r) * BLOCK + 1,
-              BLOCK - 2, BLOCK - 2
-            );
+            ctx.fillStyle = current.color + '28';
+            ctx.beginPath();
+            ctx.roundRect((current.x + c) * BLOCK + 1, (ghostY + r) * BLOCK + 1,
+                          BLOCK - 2, BLOCK - 2, 4);
+            ctx.fill();
           }
         })
       );
 
-      // Current piece
+      // Current piece — Y axis interpolated for smooth gravity drop
+      const renderY = current.prevY + (current.y - current.prevY) * t;
       current.shape.forEach((row, r) =>
         row.forEach((val, c) => {
           if (val && current.y + r >= 0)
-            drawBlock(ctx, current.x + c, current.y + r, current.color);
+            drawBlockAt(ctx, (current.x + c) * BLOCK, (renderY + r) * BLOCK, current.color);
         })
       );
-    }
-
-    function drawBlock(context, x, y, color) {
-      context.fillStyle = color;
-      context.beginPath();
-      context.roundRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, BLOCK - 2, 3);
-      context.fill();
-      context.fillStyle = 'rgba(255,255,255,0.15)';
-      context.beginPath();
-      context.roundRect(x * BLOCK + 2, y * BLOCK + 2, BLOCK - 4, 6, 2);
-      context.fill();
     }
 
     function drawNext() {
       nctx.fillStyle = '#1a1b28';
       nctx.fillRect(0, 0, nextCanvas.width, nextCanvas.height);
-      const nb = 18;
-      const offsetX = Math.floor((nextCanvas.width - next.shape[0].length * nb) / 2);
-      const offsetY = Math.floor((nextCanvas.height - next.shape.length * nb) / 2);
+      const nb = 12;
+      const ox = Math.floor((nextCanvas.width  - next.shape[0].length * nb) / 2);
+      const oy = Math.floor((nextCanvas.height - next.shape.length    * nb) / 2);
       next.shape.forEach((row, r) =>
         row.forEach((val, c) => {
           if (val) {
             nctx.fillStyle = next.color;
             nctx.beginPath();
-            nctx.roundRect(offsetX + c * nb + 1, offsetY + r * nb + 1, nb - 2, nb - 2, 2);
+            nctx.roundRect(ox + c * nb + 1, oy + r * nb + 1, nb - 2, nb - 2, 2);
             nctx.fill();
           }
         })
       );
     }
 
+    // ── Keyboard ──────────────────────────────────────────────
     document.addEventListener('keydown', e => {
       if (e.key === 'ArrowLeft')  { e.preventDefault(); moveLeft(); }
       if (e.key === 'ArrowRight') { e.preventDefault(); moveRight(); }
@@ -552,11 +559,11 @@
       if (e.key === ' ')          { e.preventDefault(); hardDrop(); }
     });
 
-    draw();
+    draw(0);
     drawNext();
   </script>
 
-  <!-- Firebase: save score to Firestore when logged in -->
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
@@ -595,27 +602,17 @@
         const snap = await getDoc(ref);
         const prev = snap.exists() ? (snap.data().score || 0) : 0;
         if (score > prev) {
-          await setDoc(ref, {
-            userId:    currentUser.uid,
-            username:  currentUser.displayName || currentUser.email.split('@')[0],
-            score,
-            updatedAt: serverTimestamp()
-          });
+          await setDoc(ref, { userId: currentUser.uid,
+            username: currentUser.displayName || currentUser.email.split('@')[0],
+            score, updatedAt: serverTimestamp() });
         }
-      } catch (err) {
-        console.warn('Could not save score to Firestore:', err);
-      }
+      } catch(e) {}
     };
 
     window.firestoreEarnChips = async function(amount) {
       if (!currentUser || amount <= 0) return;
-      try {
-        await updateDoc(doc(db, 'users', currentUser.uid), {
-          chips: increment(amount)
-        });
-      } catch (err) {
-        console.warn('Could not save chips to Firestore:', err);
-      }
+      try { await updateDoc(doc(db, 'users', currentUser.uid), { chips: increment(amount) }); }
+      catch(e) {}
     };
   </script>
 

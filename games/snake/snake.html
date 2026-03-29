@@ -31,7 +31,6 @@
       gap: 12px;
       margin-bottom: 20px;
     }
-
     .back-btn {
       background: none;
       border: 1px solid #2a2a4a;
@@ -43,7 +42,6 @@
     }
     .back-btn:hover { background: #2a2a4a; }
     .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; }
-
     .chip-display {
       background: #0c0d14;
       border: 1px solid #2a2a4a;
@@ -78,7 +76,6 @@
       width: 100%;
       max-width: 480px;
     }
-
     canvas {
       background: #1a1b28;
       border: 2px solid #2a2a4a;
@@ -89,21 +86,21 @@
       touch-action: none;
     }
 
-    /* Food emojis rendered as HTML on top of canvas for crisp display */
+    /* Food elements: HTML positioned for crisp emoji on all devices */
     .food-emoji {
       position: absolute;
       font-size: 22px;
       line-height: 1;
       pointer-events: none;
       transform: translate(-50%, -50%);
+      transform-origin: center;
       filter: drop-shadow(0 0 5px rgba(255, 210, 60, 0.85));
       z-index: 2;
       display: none;
+      transition: none;
     }
 
-    .controls {
-      margin-top: 12px;
-    }
+    .controls { margin-top: 12px; }
     .btn {
       background: #7c3aed;
       color: #fff;
@@ -116,7 +113,6 @@
       transition: background 0.2s;
     }
     .btn:hover { background: #6d28d9; }
-
     .status {
       font-size: 13px;
       color: #9090b0;
@@ -150,23 +146,13 @@
   </div>
 
   <div class="stats">
-    <div class="stat">
-      <div class="stat-label">Score</div>
-      <div class="stat-value" id="score">0</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Best</div>
-      <div class="stat-value" id="best">0</div>
-    </div>
-    <div class="stat">
-      <div class="stat-label">Time</div>
-      <div class="stat-value" id="timer">0:00</div>
-    </div>
+    <div class="stat"><div class="stat-label">Score</div><div class="stat-value" id="score">0</div></div>
+    <div class="stat"><div class="stat-label">Best</div><div class="stat-value" id="best">0</div></div>
+    <div class="stat"><div class="stat-label">Time</div><div class="stat-value" id="timer">0:00</div></div>
   </div>
 
   <div class="canvas-wrap">
     <canvas id="gameCanvas" width="480" height="640"></canvas>
-    <!-- Two food emoji elements rendered in HTML for crisp display on all devices -->
     <span class="food-emoji" id="food0"></span>
     <span class="food-emoji" id="food1"></span>
     <div class="overlay" id="overlay">
@@ -188,72 +174,33 @@
     const GRID   = 20;
     const COLS   = canvas.width  / GRID;  // 24
     const ROWS   = canvas.height / GRID;  // 32
+    const TICK_MS = 130;    // ms per step
+    const FOOD_LIFE = 5000; // ms before food expires
+    const FOOD_WARN = 2500; // ms remaining when warning starts
 
-    let snake, dir, nextDir, foods, score, best, timerSecs, gameLoop, timerLoop, running;
-    let countdownHandle = null;
-
-    // ── Color phases — cycle infinitely every 50 pts ──────────
+    // ── Color phases (cycle infinitely every 50pts) ───────────
     const PHASES = [
-      { head: '#a78bfa', body: '#7c3aed', glow: 'rgba(167,139,250,0.45)' }, // purple
-      { head: '#22d3ee', body: '#0891b2', glow: 'rgba(34,211,238,0.45)'  }, // cyan
-      { head: '#4ade80', body: '#16a34a', glow: 'rgba(74,222,128,0.45)'  }, // green
-      { head: '#fb923c', body: '#ea580c', glow: 'rgba(251,146,60,0.45)'  }, // orange
-      { head: '#f87171', body: '#dc2626', glow: 'rgba(248,113,113,0.45)' }, // red
+      { head: '#a78bfa', body: '#7c3aed', glow: 'rgba(167,139,250,0.5)' },
+      { head: '#22d3ee', body: '#0891b2', glow: 'rgba(34,211,238,0.5)'  },
+      { head: '#4ade80', body: '#16a34a', glow: 'rgba(74,222,128,0.5)'  },
+      { head: '#fb923c', body: '#ea580c', glow: 'rgba(251,146,60,0.5)'  },
+      { head: '#f87171', body: '#dc2626', glow: 'rgba(248,113,113,0.5)' },
     ];
-
     const FRUITS = ['🍎','🍐','🍓','🍇','🍊','🫐','🍉','🍋','🍑','🍒'];
-    let currentPhase = 0;
 
-    function getPhase(s) {
-      return Math.floor(s / 50) % PHASES.length;
-    }
+    let snake, dir, nextDir, foods;
+    let score, best, timerSecs, timerLoop;
+    let running = false, inCountdown = false;
+    let currentPhase = 0;
+    let prevHeadX = 0, prevHeadY = 0;  // for head interpolation
+    let lastTickTime = 0, rafId = null;
+    let countdownHandle = null;
+    let particles = [];
 
     best = parseInt(localStorage.getItem('snakeBest') || '0');
     document.getElementById('best').textContent = best;
 
-    // ── Food: 2 fruits, HTML-positioned for crisp emoji rendering ─
-    function randomFruit() {
-      return FRUITS[Math.floor(Math.random() * FRUITS.length)];
-    }
-
-    function newFoodPos() {
-      let pos;
-      do {
-        pos = {
-          x: Math.floor(Math.random() * COLS),
-          y: Math.floor(Math.random() * ROWS)
-        };
-      } while (
-        snake.some(s => s.x === pos.x && s.y === pos.y) ||
-        (foods && foods.some(f => f && f.x === pos.x && f.y === pos.y))
-      );
-      return { ...pos, fruit: randomFruit() };
-    }
-
-    function initFoods() {
-      foods = [];
-      foods.push(newFoodPos());
-      foods.push(newFoodPos());
-      positionFoodDOM();
-    }
-
-    // Convert grid coords to CSS pixel position on the (possibly scaled) canvas
-    function positionFoodDOM() {
-      if (!foods) return;
-      const scaleX = canvas.clientWidth  / canvas.width;
-      const scaleY = canvas.clientHeight / canvas.height;
-      foods.forEach((f, i) => {
-        const el = document.getElementById(`food${i}`);
-        if (!el || !f) return;
-        el.textContent    = f.fruit;
-        el.style.left     = (f.x * GRID + GRID / 2) * scaleX + 'px';
-        el.style.top      = (f.y * GRID + GRID / 2) * scaleY + 'px';
-        el.style.display  = 'block';
-      });
-    }
-
-    // Keep food positions correct if window is resized
-    window.addEventListener('resize', positionFoodDOM);
+    function getPhase(s) { return Math.floor(s / 50) % PHASES.length; }
 
     // ── Web Audio ─────────────────────────────────────────────
     let audioCtx = null;
@@ -263,28 +210,22 @@
       return audioCtx;
     }
 
-    function playTone(freq, duration, type = 'sine', vol = 0.22) {
+    function playTone(freq, dur, type = 'sine', vol = 0.2, startDelay = 0) {
       try {
         const a = getAudio();
         const osc = a.createOscillator(), g = a.createGain();
         osc.connect(g); g.connect(a.destination);
-        osc.type = type;
-        osc.frequency.value = freq;
-        g.gain.setValueAtTime(vol, a.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + duration);
-        osc.start(a.currentTime); osc.stop(a.currentTime + duration);
+        osc.type = type; osc.frequency.value = freq;
+        const t = a.currentTime + startDelay;
+        g.gain.setValueAtTime(vol, t);
+        g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+        osc.start(t); osc.stop(t + dur);
       } catch(e) {}
     }
 
     function playCountdownBeep(isGo) {
-      if (isGo) {
-        // "GO!" — bright ascending two-note
-        playTone(660, 0.12, 'sine', 0.25);
-        setTimeout(() => playTone(880, 0.25, 'sine', 0.3), 100);
-      } else {
-        // Tick — short low blip
-        playTone(330, 0.12, 'sine', 0.18);
-      }
+      if (isGo) { playTone(660, 0.1, 'sine', 0.25); playTone(880, 0.25, 'sine', 0.3, 0.1); }
+      else        { playTone(330, 0.1, 'sine', 0.18); }
     }
 
     function playEatSound() {
@@ -301,22 +242,15 @@
       } catch(e) {}
     }
 
-    function playPhaseSound(phaseIdx) {
+    function playPhaseSound(idx) {
       try {
         const a = getAudio();
-        const arpeggios = [
-          [523, 659, 784, 1047],
-          [554, 698, 831, 1109],
-          [587, 740, 880, 1175],
-          [622, 784, 932, 1245],
-          [659, 831, 988, 1319],
-        ];
-        const freqs = arpeggios[phaseIdx] || arpeggios[0];
-        freqs.forEach((freq, i) => {
+        [[523,659,784,1047],[554,698,831,1109],[587,740,880,1175],
+         [622,784,932,1245],[659,831,988,1319]][idx]
+        .forEach((f,i) => {
           const osc = a.createOscillator(), g = a.createGain();
           osc.connect(g); g.connect(a.destination);
-          osc.type = 'sine';
-          osc.frequency.value = freq;
+          osc.type = 'sine'; osc.frequency.value = f;
           const t = a.currentTime + i * 0.07;
           g.gain.setValueAtTime(0, t);
           g.gain.linearRampToValueAtTime(0.2, t + 0.02);
@@ -326,84 +260,135 @@
       } catch(e) {}
     }
 
-    function playDeathSound() {
+    function playExplosionSound() {
       try {
         const a = getAudio();
-        const osc = a.createOscillator(), g = a.createGain();
-        osc.connect(g); g.connect(a.destination);
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(220, a.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(55, a.currentTime + 0.5);
-        g.gain.setValueAtTime(0.28, a.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.5);
-        osc.start(a.currentTime); osc.stop(a.currentTime + 0.5);
+        // Sawtooth crack
+        const o1 = a.createOscillator(), g1 = a.createGain();
+        o1.connect(g1); g1.connect(a.destination);
+        o1.type = 'sawtooth';
+        o1.frequency.setValueAtTime(180, a.currentTime);
+        o1.frequency.exponentialRampToValueAtTime(40, a.currentTime + 0.35);
+        g1.gain.setValueAtTime(0.5, a.currentTime);
+        g1.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.35);
+        o1.start(a.currentTime); o1.stop(a.currentTime + 0.35);
+        // Sub boom
+        const o2 = a.createOscillator(), g2 = a.createGain();
+        o2.connect(g2); g2.connect(a.destination);
+        o2.type = 'sine';
+        o2.frequency.setValueAtTime(90, a.currentTime);
+        o2.frequency.exponentialRampToValueAtTime(22, a.currentTime + 0.55);
+        g2.gain.setValueAtTime(0.4, a.currentTime);
+        g2.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.55);
+        o2.start(a.currentTime); o2.stop(a.currentTime + 0.55);
       } catch(e) {}
     }
 
-    // ── Game init / countdown ─────────────────────────────────
-    function startGame() {
-      try { getAudio(); } catch(e) {}
-      document.getElementById('overlay').style.display = 'none';
-
-      snake   = [{x: 12, y: 16}, {x: 11, y: 16}, {x: 10, y: 16}];
-      dir     = {x: 1, y: 0};
-      nextDir = {x: 1, y: 0};
-      score   = 0;
-      currentPhase = 0;
-      timerSecs    = 0;
-      running      = false;
-
-      const scoreEl = document.getElementById('score');
-      scoreEl.style.color = '';
-      scoreEl.style.transform = '';
-      document.getElementById('score').textContent = '0';
-      document.getElementById('timer').textContent = '0:00';
-      clearInterval(gameLoop);
-      clearInterval(timerLoop);
-      if (countdownHandle) clearTimeout(countdownHandle);
-
-      initFoods();
-      runCountdown(3);
-    }
-
-    function runCountdown(n) {
-      playCountdownBeep(n === 0);
-      draw();
-      // Dim overlay on canvas
-      ctx.fillStyle = 'rgba(12,13,20,0.62)';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-      ctx.save();
-      ctx.textAlign    = 'center';
-      ctx.textBaseline = 'middle';
-      if (n > 0) {
-        ctx.font        = 'bold 110px Segoe UI, sans-serif';
-        ctx.fillStyle   = PHASES[0].head;
-        ctx.shadowColor = PHASES[0].glow;
-        ctx.shadowBlur  = 40;
-        ctx.fillText(n, canvas.width / 2, canvas.height / 2);
-      } else {
-        ctx.font        = 'bold 72px Segoe UI, sans-serif';
-        ctx.fillStyle   = '#4ade80';
-        ctx.shadowColor = 'rgba(74,222,128,0.7)';
-        ctx.shadowBlur  = 40;
-        ctx.fillText('GO!', canvas.width / 2, canvas.height / 2);
-      }
-      ctx.restore();
-
-      if (n > 0) {
-        countdownHandle = setTimeout(() => runCountdown(n - 1), 1000);
-      } else {
-        countdownHandle = setTimeout(beginGame, 500);
+    // ── Particles (explosion) ─────────────────────────────────
+    function spawnExplosion(gx, gy, color) {
+      const cx = gx * GRID + GRID / 2;
+      const cy = gy * GRID + GRID / 2;
+      for (let i = 0; i < 28; i++) {
+        const angle = (Math.PI * 2 * i / 28) + Math.random() * 0.4;
+        const speed = 1.5 + Math.random() * 4;
+        particles.push({
+          x: cx, y: cy,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1,
+          life: 1.0,
+          decay: 0.03 + Math.random() * 0.025,
+          r: 2 + Math.random() * 4,
+          color
+        });
       }
     }
 
-    function beginGame() {
-      running = true;
-      document.getElementById('status').textContent = 'Arrow keys or swipe to steer';
-      gameLoop  = setInterval(tick, 120);
-      timerLoop = setInterval(() => { timerSecs++; updateTimer(); }, 1000);
+    function updateParticles() {
+      particles.forEach(p => {
+        p.x += p.vx * 2;
+        p.y += p.vy * 2;
+        p.vy += 0.15; // gravity
+        p.life -= p.decay;
+      });
+      particles = particles.filter(p => p.life > 0);
     }
+
+    function drawParticles() {
+      particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    // ── Food ──────────────────────────────────────────────────
+    function newFoodPos() {
+      let pos;
+      do {
+        pos = { x: Math.floor(Math.random() * COLS), y: Math.floor(Math.random() * ROWS) };
+      } while (
+        snake.some(s => s.x === pos.x && s.y === pos.y) ||
+        (foods && foods.some(f => f && f.x === pos.x && f.y === pos.y))
+      );
+      return { ...pos, fruit: FRUITS[Math.floor(Math.random() * FRUITS.length)], placedAt: Date.now() };
+    }
+
+    function initFoods() {
+      foods = [];
+      foods.push(newFoodPos());
+      foods.push(newFoodPos());
+    }
+
+    function checkFoodExpiry() {
+      const now = Date.now();
+      let changed = false;
+      foods.forEach((f, i) => {
+        if (now - f.placedAt >= FOOD_LIFE) { foods[i] = newFoodPos(); changed = true; }
+      });
+      return changed;
+    }
+
+    // Update HTML food elements (called every frame for expiry animation)
+    function updateFoodDOM() {
+      if (!foods) return;
+      const now = Date.now();
+      const scaleX = canvas.clientWidth  / canvas.width;
+      const scaleY = canvas.clientHeight / canvas.height;
+      foods.forEach((f, i) => {
+        const el = document.getElementById(`food${i}`);
+        if (!el || !f) return;
+        el.textContent   = f.fruit;
+        el.style.left    = (f.x * GRID + GRID / 2) * scaleX + 'px';
+        el.style.top     = (f.y * GRID + GRID / 2) * scaleY + 'px';
+        el.style.display = 'block';
+
+        const remaining = FOOD_LIFE - (now - f.placedAt);
+        if (remaining < FOOD_WARN) {
+          const ratio = remaining / FOOD_WARN;                // 1→0
+          const pulse = 1 + 0.18 * Math.sin(now / (80 * ratio + 30)); // faster pulse as it expires
+          const scale = (0.5 + 0.5 * ratio) * pulse;
+          el.style.opacity   = 0.3 + 0.7 * ratio;
+          el.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        } else {
+          el.style.opacity   = '1';
+          el.style.transform = 'translate(-50%, -50%) scale(1)';
+        }
+      });
+    }
+
+    function hideFoodDOM() {
+      ['food0','food1'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+    }
+
+    window.addEventListener('resize', updateFoodDOM);
 
     // ── Direction ─────────────────────────────────────────────
     function setDir(x, y) {
@@ -415,20 +400,18 @@
     }
 
     document.addEventListener('keydown', e => {
-      if (e.key === 'ArrowUp')    setDir(0, -1);
-      if (e.key === 'ArrowDown')  setDir(0,  1);
-      if (e.key === 'ArrowLeft')  setDir(-1, 0);
-      if (e.key === 'ArrowRight') setDir(1,  0);
+      if (e.key === 'ArrowUp')    { e.preventDefault(); setDir(0, -1); }
+      if (e.key === 'ArrowDown')  { e.preventDefault(); setDir(0,  1); }
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); setDir(-1, 0); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); setDir(1,  0); }
     });
 
-    // Touch swipe
     let touchStartX = 0, touchStartY = 0;
     canvas.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
       touchStartY = e.touches[0].clientY;
       e.preventDefault();
     }, { passive: false });
-
     canvas.addEventListener('touchend', e => {
       if (!running) return;
       const dx = e.changedTouches[0].clientX - touchStartX;
@@ -439,32 +422,115 @@
       e.preventDefault();
     }, { passive: false });
 
-    // ── Main tick ─────────────────────────────────────────────
+    // ── Game init ─────────────────────────────────────────────
+    function startGame() {
+      try { getAudio(); } catch(e) {}
+      document.getElementById('overlay').style.display = 'none';
+
+      snake   = [{x:12, y:16, px:12, py:16}, {x:11, y:16, px:11, py:16}, {x:10, y:16, px:10, py:16}];
+      dir     = {x:1, y:0};
+      nextDir = {x:1, y:0};
+      prevHeadX = 12; prevHeadY = 16;
+      score = 0; currentPhase = 0; timerSecs = 0;
+      particles = [];
+      running = false; inCountdown = true;
+
+      const scoreEl = document.getElementById('score');
+      scoreEl.style.color = ''; scoreEl.style.transform = '';
+      document.getElementById('score').textContent = '0';
+      document.getElementById('timer').textContent = '0:00';
+      clearInterval(timerLoop);
+      if (countdownHandle) clearTimeout(countdownHandle);
+      if (rafId) cancelAnimationFrame(rafId);
+
+      initFoods();
+      runCountdown(3);
+    }
+
+    function runCountdown(n) {
+      playCountdownBeep(n === 0);
+      draw(1);
+      ctx.fillStyle = 'rgba(12,13,20,0.62)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (n > 0) {
+        ctx.font = 'bold 110px Segoe UI, sans-serif';
+        ctx.fillStyle = PHASES[0].head;
+        ctx.shadowColor = PHASES[0].glow; ctx.shadowBlur = 40;
+        ctx.fillText(n, canvas.width / 2, canvas.height / 2);
+      } else {
+        ctx.font = 'bold 72px Segoe UI, sans-serif';
+        ctx.fillStyle = '#4ade80';
+        ctx.shadowColor = 'rgba(74,222,128,0.7)'; ctx.shadowBlur = 40;
+        ctx.fillText('GO!', canvas.width / 2, canvas.height / 2);
+      }
+      ctx.restore();
+
+      if (n > 0) countdownHandle = setTimeout(() => runCountdown(n - 1), 1000);
+      else        countdownHandle = setTimeout(beginGame, 500);
+    }
+
+    function beginGame() {
+      inCountdown = false;
+      running = true;
+      lastTickTime = performance.now();
+      document.getElementById('status').textContent = 'Arrow keys or swipe to steer';
+      timerLoop = setInterval(() => { timerSecs++; updateTimer(); }, 1000);
+      rafId = requestAnimationFrame(gameFrame);
+    }
+
+    // ── Main game loop (requestAnimationFrame) ────────────────
+    function gameFrame(now) {
+      if (!running) { rafId = null; return; }
+      rafId = requestAnimationFrame(gameFrame);
+
+      const elapsed = now - lastTickTime;
+      const t = Math.min(elapsed / TICK_MS, 1); // interpolation factor 0→1
+
+      if (elapsed >= TICK_MS) {
+        lastTickTime = now;
+        tick();
+        if (!running) return; // tick may have called endGame
+      }
+
+      checkFoodExpiry();
+      updateFoodDOM();
+      draw(t);
+    }
+
+    // ── Logic tick ────────────────────────────────────────────
     function tick() {
       dir = nextDir;
-      const head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+
+      // Save previous head for interpolation
+      prevHeadX = snake[0].x;
+      prevHeadY = snake[0].y;
+
+      const head = {
+        x: snake[0].x + dir.x,
+        y: snake[0].y + dir.y,
+        px: snake[0].x, py: snake[0].y
+      };
 
       if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) { endGame(); return; }
       if (snake.some(s => s.x === head.x && s.y === head.y))             { endGame(); return; }
 
       snake.unshift(head);
 
-      const eatenIdx = foods.findIndex(f => f.x === head.x && f.y === head.y);
+      const eatenIdx = foods.findIndex(f => head.x === f.x && head.y === f.y);
       if (eatenIdx >= 0) {
         updateScore(score + 10);
         playEatSound();
         foods[eatenIdx] = newFoodPos();
-        positionFoodDOM();
       } else {
         snake.pop();
       }
-
-      draw();
     }
 
-    // ── Score & phase ─────────────────────────────────────────
+    // ── Score ─────────────────────────────────────────────────
     function updateScore(val) {
-      const prevPhase = currentPhase;
+      const prev = currentPhase;
       score = val;
       currentPhase = getPhase(score);
       document.getElementById('score').textContent = score;
@@ -473,9 +539,9 @@
         localStorage.setItem('snakeBest', best);
         document.getElementById('best').textContent = best;
       }
-      if (currentPhase !== prevPhase) {
+      if (currentPhase !== prev) {
         const el = document.getElementById('score');
-        el.style.color     = PHASES[currentPhase].head;
+        el.style.color = PHASES[currentPhase].head;
         el.style.transform = 'scale(1.4)';
         setTimeout(() => { el.style.transform = ''; }, 250);
         playPhaseSound(currentPhase);
@@ -490,32 +556,41 @@
 
     // ── End game ──────────────────────────────────────────────
     function endGame() {
-      clearInterval(gameLoop);
-      clearInterval(timerLoop);
       running = false;
-      playDeathSound();
+      clearInterval(timerLoop);
+      hideFoodDOM();
+      playExplosionSound();
+      spawnExplosion(snake[0].x, snake[0].y, PHASES[currentPhase].head);
 
-      // Hide food emojis
-      ['food0','food1'].forEach(id => {
-        document.getElementById(id).style.display = 'none';
-      });
+      // Continue animating the explosion, then show overlay
+      function explosionFrame() {
+        updateParticles();
+        draw(1); // draw at final position
+        if (particles.length > 0) {
+          requestAnimationFrame(explosionFrame);
+        } else {
+          showGameOver();
+        }
+      }
+      requestAnimationFrame(explosionFrame);
+    }
 
+    function showGameOver() {
       const minutesPlayed = Math.floor(timerSecs / 60);
       const chipsEarned   = minutesPlayed * 100;
       const chipMsg = chipsEarned > 0 ? ` · 🪙 +${chipsEarned} chips` : '';
-
       document.getElementById('overlay-title').textContent = 'Game Over';
       document.getElementById('overlay-msg').textContent =
         `Score: ${score} · Time: ${document.getElementById('timer').textContent}${chipMsg}`;
       document.querySelector('#overlay .btn').textContent = 'Play Again';
       document.getElementById('overlay').style.display = 'flex';
-
       if (window.firestoreSaveScore) window.firestoreSaveScore('snake', score);
-      if (chipsEarned > 0 && window.firestoreEarnChips) window.firestoreEarnChips(chipsEarned);
+      const chipsEarned2 = Math.floor(timerSecs / 60) * 100;
+      if (chipsEarned2 > 0 && window.firestoreEarnChips) window.firestoreEarnChips(chipsEarned2);
     }
 
-    // ── Draw (canvas only — food drawn via HTML elements) ─────
-    function draw() {
+    // ── Draw (t = interpolation factor 0→1 between ticks) ────
+    function draw(t) {
       const phase = PHASES[currentPhase];
 
       ctx.fillStyle = '#1a1b28';
@@ -531,7 +606,7 @@
         }
       }
 
-      // Snake body (tail → neck)
+      // Snake body (body segments at grid positions — tail→neck)
       for (let i = snake.length - 1; i >= 1; i--) {
         const seg    = snake[i];
         const ratio  = 0.35 + 0.65 * (1 - i / snake.length);
@@ -540,18 +615,16 @@
         ctx.globalAlpha = ratio * shade;
         ctx.fillStyle   = phase.body;
         ctx.beginPath();
-        ctx.roundRect(
-          seg.x * GRID + shrink, seg.y * GRID + shrink,
-          GRID - shrink * 2,     GRID - shrink * 2, 3
-        );
+        ctx.roundRect(seg.x * GRID + shrink, seg.y * GRID + shrink,
+                      GRID - shrink * 2, GRID - shrink * 2, 3);
         ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      // Snake head
+      // Snake head — smooth interpolation between prevHead and current head
       if (snake.length > 0) {
-        const head = snake[0];
-        const hx = head.x * GRID, hy = head.y * GRID;
+        const hx = (prevHeadX + (snake[0].x - prevHeadX) * t) * GRID;
+        const hy = (prevHeadY + (snake[0].y - prevHeadY) * t) * GRID;
 
         ctx.save();
         ctx.shadowColor = phase.glow;
@@ -575,9 +648,12 @@
         ctx.fillStyle = '#0c0d14';
         [e1,e2].forEach(e => { ctx.beginPath(); ctx.arc(e.x,e.y,1.1,0,Math.PI*2); ctx.fill(); });
       }
+
+      // Explosion particles
+      drawParticles();
     }
 
-    draw();
+    draw(1);
   </script>
 
   <!-- Firebase -->
@@ -619,21 +695,17 @@
         const snap = await getDoc(ref);
         const prev = snap.exists() ? (snap.data().score || 0) : 0;
         if (score > prev) {
-          await setDoc(ref, {
-            userId:    currentUser.uid,
-            username:  currentUser.displayName || currentUser.email.split('@')[0],
-            score,
-            updatedAt: serverTimestamp()
-          });
+          await setDoc(ref, { userId: currentUser.uid,
+            username: currentUser.displayName || currentUser.email.split('@')[0],
+            score, updatedAt: serverTimestamp() });
         }
-      } catch(err) { console.warn('Could not save score:', err); }
+      } catch(e) {}
     };
 
     window.firestoreEarnChips = async function(amount) {
       if (!currentUser || amount <= 0) return;
-      try {
-        await updateDoc(doc(db, 'users', currentUser.uid), { chips: increment(amount) });
-      } catch(err) { console.warn('Could not save chips:', err); }
+      try { await updateDoc(doc(db, 'users', currentUser.uid), { chips: increment(amount) }); }
+      catch(e) {}
     };
   </script>
 
