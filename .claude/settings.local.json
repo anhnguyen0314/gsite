@@ -21,7 +21,11 @@
       "Bash(powershell.exe -Command \"Get-Command powershell | Select-Object -ExpandProperty Source\")",
       "mcp__Claude_Preview__preview_start",
       "Bash(powershell.exe -Command \"Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_OwningProcess -Force -ErrorAction SilentlyContinue }\")",
-      "Bash(powershell.exe -Command \"Get-Process -Name powershell | Where-Object { $_.MainWindowTitle -eq '''' } | Stop-Process -Force\")"
+      "Bash(powershell.exe -Command \"Get-Process -Name powershell | Where-Object { $_.MainWindowTitle -eq '''' } | Stop-Process -Force\")",
+      "Bash(while read:*)",
+      "Bash(do sed:*)",
+      "Bash(echo \"Updated: $f\")",
+      "Bash(done)"
     ]
   }
 }
