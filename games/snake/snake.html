@@ -42,7 +42,6 @@
       text-decoration: none;
     }
     .back-btn:hover { background: #2a2a4a; }
-
     .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; }
 
     .chip-display {
@@ -60,16 +59,13 @@
       gap: 24px;
       margin-bottom: 16px;
     }
-
     .stat { text-align: center; }
-
     .stat-label {
       font-size: 11px;
       color: #9090b0;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
-
     .stat-value {
       font-size: 28px;
       font-weight: 700;
@@ -77,7 +73,6 @@
       transition: transform 0.25s, color 0.25s;
     }
 
-    /* Canvas scales responsively — aspect ratio maintained by width/height attributes */
     .canvas-wrap {
       position: relative;
       width: 100%;
@@ -91,13 +86,24 @@
       display: block;
       width: 100%;
       height: auto;
-      touch-action: none; /* prevent default scroll/zoom on canvas swipes */
+      touch-action: none;
+    }
+
+    /* Food emojis rendered as HTML on top of canvas for crisp display */
+    .food-emoji {
+      position: absolute;
+      font-size: 22px;
+      line-height: 1;
+      pointer-events: none;
+      transform: translate(-50%, -50%);
+      filter: drop-shadow(0 0 5px rgba(255, 210, 60, 0.85));
+      z-index: 2;
+      display: none;
     }
 
     .controls {
       margin-top: 12px;
     }
-
     .btn {
       background: #7c3aed;
       color: #fff;
@@ -128,25 +134,11 @@
       justify-content: center;
       border-radius: 10px;
       gap: 10px;
+      z-index: 10;
     }
-
-    .overlay h2 {
-      font-size: 28px;
-      font-weight: 700;
-      color: #fff;
-    }
-
-    .overlay p {
-      font-size: 15px;
-      color: #9090b0;
-    }
-
-    .chip-hint {
-      font-size: 0.8rem;
-      color: #a78bfa;
-      margin: 0;
-      opacity: 0.9;
-    }
+    .overlay h2 { font-size: 28px; font-weight: 700; color: #fff; }
+    .overlay p  { font-size: 15px; color: #9090b0; }
+    .chip-hint  { font-size: 0.8rem; color: #a78bfa; margin: 0; opacity: 0.9; }
   </style>
 </head>
 <body>
@@ -174,6 +166,9 @@
 
   <div class="canvas-wrap">
     <canvas id="gameCanvas" width="480" height="640"></canvas>
+    <!-- Two food emoji elements rendered in HTML for crisp display on all devices -->
+    <span class="food-emoji" id="food0"></span>
+    <span class="food-emoji" id="food1"></span>
     <div class="overlay" id="overlay">
       <h2 id="overlay-title">🐍 Snake</h2>
       <p id="overlay-msg">Arrow keys or swipe to move</p>
@@ -194,7 +189,7 @@
     const COLS   = canvas.width  / GRID;  // 24
     const ROWS   = canvas.height / GRID;  // 32
 
-    let snake, dir, nextDir, food, score, best, timerSecs, gameLoop, timerLoop, running;
+    let snake, dir, nextDir, foods, score, best, timerSecs, gameLoop, timerLoop, running;
     let countdownHandle = null;
 
     // ── Color phases — cycle infinitely every 50 pts ──────────
@@ -207,24 +202,89 @@
     ];
 
     const FRUITS = ['🍎','🍐','🍓','🍇','🍊','🫐','🍉','🍋','🍑','🍒'];
-    let currentFruit = '🍎';
     let currentPhase = 0;
 
     function getPhase(s) {
-      // Cycle through phases every 50 pts — never stops
       return Math.floor(s / 50) % PHASES.length;
     }
 
     best = parseInt(localStorage.getItem('snakeBest') || '0');
     document.getElementById('best').textContent = best;
 
+    // ── Food: 2 fruits, HTML-positioned for crisp emoji rendering ─
+    function randomFruit() {
+      return FRUITS[Math.floor(Math.random() * FRUITS.length)];
+    }
+
+    function newFoodPos() {
+      let pos;
+      do {
+        pos = {
+          x: Math.floor(Math.random() * COLS),
+          y: Math.floor(Math.random() * ROWS)
+        };
+      } while (
+        snake.some(s => s.x === pos.x && s.y === pos.y) ||
+        (foods && foods.some(f => f && f.x === pos.x && f.y === pos.y))
+      );
+      return { ...pos, fruit: randomFruit() };
+    }
+
+    function initFoods() {
+      foods = [];
+      foods.push(newFoodPos());
+      foods.push(newFoodPos());
+      positionFoodDOM();
+    }
+
+    // Convert grid coords to CSS pixel position on the (possibly scaled) canvas
+    function positionFoodDOM() {
+      if (!foods) return;
+      const scaleX = canvas.clientWidth  / canvas.width;
+      const scaleY = canvas.clientHeight / canvas.height;
+      foods.forEach((f, i) => {
+        const el = document.getElementById(`food${i}`);
+        if (!el || !f) return;
+        el.textContent    = f.fruit;
+        el.style.left     = (f.x * GRID + GRID / 2) * scaleX + 'px';
+        el.style.top      = (f.y * GRID + GRID / 2) * scaleY + 'px';
+        el.style.display  = 'block';
+      });
+    }
+
+    // Keep food positions correct if window is resized
+    window.addEventListener('resize', positionFoodDOM);
+
     // ── Web Audio ─────────────────────────────────────────────
     let audioCtx = null;
-
     function getAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === 'suspended') audioCtx.resume();
       return audioCtx;
+    }
+
+    function playTone(freq, duration, type = 'sine', vol = 0.22) {
+      try {
+        const a = getAudio();
+        const osc = a.createOscillator(), g = a.createGain();
+        osc.connect(g); g.connect(a.destination);
+        osc.type = type;
+        osc.frequency.value = freq;
+        g.gain.setValueAtTime(vol, a.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + duration);
+        osc.start(a.currentTime); osc.stop(a.currentTime + duration);
+      } catch(e) {}
+    }
+
+    function playCountdownBeep(isGo) {
+      if (isGo) {
+        // "GO!" — bright ascending two-note
+        playTone(660, 0.12, 'sine', 0.25);
+        setTimeout(() => playTone(880, 0.25, 'sine', 0.3), 100);
+      } else {
+        // Tick — short low blip
+        playTone(330, 0.12, 'sine', 0.18);
+      }
     }
 
     function playEatSound() {
@@ -244,13 +304,12 @@
     function playPhaseSound(phaseIdx) {
       try {
         const a = getAudio();
-        // Ascending arpeggio in the phase's colour "feel"
         const arpeggios = [
-          [523, 659, 784, 1047], // purple — C major
-          [554, 698, 831, 1109], // cyan   — C# major
-          [587, 740, 880, 1175], // green  — D major
-          [622, 784, 932, 1245], // orange — D# major
-          [659, 831, 988, 1319], // red    — E major
+          [523, 659, 784, 1047],
+          [554, 698, 831, 1109],
+          [587, 740, 880, 1175],
+          [622, 784, 932, 1245],
+          [659, 831, 988, 1319],
         ];
         const freqs = arpeggios[phaseIdx] || arpeggios[0];
         freqs.forEach((freq, i) => {
@@ -281,11 +340,9 @@
       } catch(e) {}
     }
 
-    // ── Game init / countdown ──────────────────────────────────
+    // ── Game init / countdown ─────────────────────────────────
     function startGame() {
-      // Initialise AudioContext on first user gesture
       try { getAudio(); } catch(e) {}
-
       document.getElementById('overlay').style.display = 'none';
 
       snake   = [{x: 12, y: 16}, {x: 11, y: 16}, {x: 10, y: 16}];
@@ -293,8 +350,8 @@
       nextDir = {x: 1, y: 0};
       score   = 0;
       currentPhase = 0;
-      timerSecs = 0;
-      running = false;
+      timerSecs    = 0;
+      running      = false;
 
       const scoreEl = document.getElementById('score');
       scoreEl.style.color = '';
@@ -305,20 +362,20 @@
       clearInterval(timerLoop);
       if (countdownHandle) clearTimeout(countdownHandle);
 
-      placeFood();
+      initFoods();
       runCountdown(3);
     }
 
     function runCountdown(n) {
+      playCountdownBeep(n === 0);
       draw();
-      // Dark tint overlay on canvas
-      ctx.fillStyle = 'rgba(12,13,20,0.65)';
+      // Dim overlay on canvas
+      ctx.fillStyle = 'rgba(12,13,20,0.62)';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       ctx.save();
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
-
       if (n > 0) {
         ctx.font        = 'bold 110px Segoe UI, sans-serif';
         ctx.fillStyle   = PHASES[0].head;
@@ -348,19 +405,6 @@
       timerLoop = setInterval(() => { timerSecs++; updateTimer(); }, 1000);
     }
 
-    // ── Food ──────────────────────────────────────────────────
-    function placeFood() {
-      let pos;
-      do {
-        pos = {
-          x: Math.floor(Math.random() * COLS),
-          y: Math.floor(Math.random() * ROWS)
-        };
-      } while (snake.some(s => s.x === pos.x && s.y === pos.y));
-      food = pos;
-      currentFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
-    }
-
     // ── Direction ─────────────────────────────────────────────
     function setDir(x, y) {
       if (x ===  1 && dir.x === -1) return;
@@ -370,7 +414,6 @@
       nextDir = {x, y};
     }
 
-    // Keyboard
     document.addEventListener('keydown', e => {
       if (e.key === 'ArrowUp')    setDir(0, -1);
       if (e.key === 'ArrowDown')  setDir(0,  1);
@@ -378,7 +421,7 @@
       if (e.key === 'ArrowRight') setDir(1,  0);
     });
 
-    // Touch swipe on canvas
+    // Touch swipe
     let touchStartX = 0, touchStartY = 0;
     canvas.addEventListener('touchstart', e => {
       touchStartX = e.touches[0].clientX;
@@ -390,12 +433,9 @@
       if (!running) return;
       const dx = e.changedTouches[0].clientX - touchStartX;
       const dy = e.changedTouches[0].clientY - touchStartY;
-      if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return; // too small
-      if (Math.abs(dx) > Math.abs(dy)) {
-        setDir(dx > 0 ? 1 : -1, 0);
-      } else {
-        setDir(0, dy > 0 ? 1 : -1);
-      }
+      if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
+      if (Math.abs(dx) > Math.abs(dy)) setDir(dx > 0 ? 1 : -1, 0);
+      else                             setDir(0, dy > 0 ? 1 : -1);
       e.preventDefault();
     }, { passive: false });
 
@@ -409,10 +449,12 @@
 
       snake.unshift(head);
 
-      if (head.x === food.x && head.y === food.y) {
+      const eatenIdx = foods.findIndex(f => f.x === head.x && f.y === head.y);
+      if (eatenIdx >= 0) {
         updateScore(score + 10);
         playEatSound();
-        placeFood();
+        foods[eatenIdx] = newFoodPos();
+        positionFoodDOM();
       } else {
         snake.pop();
       }
@@ -453,6 +495,11 @@
       running = false;
       playDeathSound();
 
+      // Hide food emojis
+      ['food0','food1'].forEach(id => {
+        document.getElementById(id).style.display = 'none';
+      });
+
       const minutesPlayed = Math.floor(timerSecs / 60);
       const chipsEarned   = minutesPlayed * 100;
       const chipMsg = chipsEarned > 0 ? ` · 🪙 +${chipsEarned} chips` : '';
@@ -467,11 +514,10 @@
       if (chipsEarned > 0 && window.firestoreEarnChips) window.firestoreEarnChips(chipsEarned);
     }
 
-    // ── Draw ──────────────────────────────────────────────────
+    // ── Draw (canvas only — food drawn via HTML elements) ─────
     function draw() {
       const phase = PHASES[currentPhase];
 
-      // Background
       ctx.fillStyle = '#1a1b28';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -485,53 +531,27 @@
         }
       }
 
-      // Food — bright glow circle + large emoji on top
-      const fx = food.x * GRID + GRID / 2;
-      const fy = food.y * GRID + GRID / 2;
-
-      // Backing glow disc for contrast
-      ctx.save();
-      ctx.shadowColor = 'rgba(255,220,80,0.9)';
-      ctx.shadowBlur  = 16;
-      ctx.fillStyle   = 'rgba(255,230,80,0.18)';
-      ctx.beginPath();
-      ctx.arc(fx, fy, GRID / 2 + 1, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-
-      // Emoji — sized bigger than cell so it's clearly visible
-      ctx.save();
-      ctx.shadowColor   = 'rgba(255,220,80,0.7)';
-      ctx.shadowBlur    = 10;
-      ctx.font          = `${GRID + 8}px serif`;
-      ctx.textAlign     = 'center';
-      ctx.textBaseline  = 'middle';
-      ctx.fillText(currentFruit, fx, fy + 1);
-      ctx.restore();
-
-      // Snake body (drawn tail→neck so head renders on top)
+      // Snake body (tail → neck)
       for (let i = snake.length - 1; i >= 1; i--) {
         const seg    = snake[i];
         const ratio  = 0.35 + 0.65 * (1 - i / snake.length);
-        const shade  = i % 2 === 0 ? 1 : 0.78; // alternating scale texture
+        const shade  = i % 2 === 0 ? 1 : 0.78;
         const shrink = 1 + (i / snake.length) * 2;
         ctx.globalAlpha = ratio * shade;
         ctx.fillStyle   = phase.body;
         ctx.beginPath();
         ctx.roundRect(
           seg.x * GRID + shrink, seg.y * GRID + shrink,
-          GRID - shrink * 2,     GRID - shrink * 2,
-          3
+          GRID - shrink * 2,     GRID - shrink * 2, 3
         );
         ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      // Snake head — glowing rounded square
+      // Snake head
       if (snake.length > 0) {
         const head = snake[0];
-        const hx = head.x * GRID;
-        const hy = head.y * GRID;
+        const hx = head.x * GRID, hy = head.y * GRID;
 
         ctx.save();
         ctx.shadowColor = phase.glow;
@@ -545,22 +565,22 @@
         // Direction-aware eyes
         const cx = hx + GRID / 2, cy = hy + GRID / 2;
         let e1, e2;
-        if      (dir.x ===  1) { e1 = {x: cx+3, y: cy-3}; e2 = {x: cx+3, y: cy+3}; }
-        else if (dir.x === -1) { e1 = {x: cx-3, y: cy-3}; e2 = {x: cx-3, y: cy+3}; }
-        else if (dir.y === -1) { e1 = {x: cx-3, y: cy-3}; e2 = {x: cx+3, y: cy-3}; }
-        else                   { e1 = {x: cx-3, y: cy+3}; e2 = {x: cx+3, y: cy+3}; }
+        if      (dir.x ===  1) { e1={x:cx+3,y:cy-3}; e2={x:cx+3,y:cy+3}; }
+        else if (dir.x === -1) { e1={x:cx-3,y:cy-3}; e2={x:cx-3,y:cy+3}; }
+        else if (dir.y === -1) { e1={x:cx-3,y:cy-3}; e2={x:cx+3,y:cy-3}; }
+        else                   { e1={x:cx-3,y:cy+3}; e2={x:cx+3,y:cy+3}; }
 
         ctx.fillStyle = '#fff';
-        [e1, e2].forEach(e => { ctx.beginPath(); ctx.arc(e.x, e.y, 2.2, 0, Math.PI * 2); ctx.fill(); });
+        [e1,e2].forEach(e => { ctx.beginPath(); ctx.arc(e.x,e.y,2.2,0,Math.PI*2); ctx.fill(); });
         ctx.fillStyle = '#0c0d14';
-        [e1, e2].forEach(e => { ctx.beginPath(); ctx.arc(e.x, e.y, 1.1, 0, Math.PI * 2); ctx.fill(); });
+        [e1,e2].forEach(e => { ctx.beginPath(); ctx.arc(e.x,e.y,1.1,0,Math.PI*2); ctx.fill(); });
       }
     }
 
     draw();
   </script>
 
-  <!-- Firebase: save score + earn chips -->
+  <!-- Firebase -->
   <script type="module">
     import { initializeApp }   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
     import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
