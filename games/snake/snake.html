@@ -156,7 +156,8 @@
     <span class="food-emoji" id="food0"></span>
     <span class="food-emoji" id="food1"></span>
     <div class="overlay" id="overlay">
-      <h2 id="overlay-title">🐍 Snake</h2>
+      <img src="snake.png" alt="Snake" style="width:140px;height:79px;object-fit:cover;border-radius:10px;margin-bottom:2px;">
+      <h2 id="overlay-title">Snake</h2>
       <p id="overlay-msg">Arrow keys or swipe to move</p>
       <p class="chip-hint">💰 Earn +100 chips per minute played</p>
       <button class="btn" onclick="startGame()">Start Game</button>
@@ -475,6 +476,9 @@
       inCountdown = false;
       running = true;
       lastTickTime = performance.now();
+      // Reset food timers NOW (after countdown) so the 5s starts from when gameplay begins
+      const now = Date.now();
+      if (foods) foods.forEach(f => { f.placedAt = now; });
       document.getElementById('status').textContent = 'Arrow keys or swipe to steer';
       timerLoop = setInterval(() => { timerSecs++; updateTimer(); }, 1000);
       rafId = requestAnimationFrame(gameFrame);
@@ -486,12 +490,18 @@
       rafId = requestAnimationFrame(gameFrame);
 
       const elapsed = now - lastTickTime;
-      const t = Math.min(elapsed / TICK_MS, 1); // interpolation factor 0→1
+      let t;
 
       if (elapsed >= TICK_MS) {
+        // A logic tick fires this frame — reset timer and advance state
         lastTickTime = now;
         tick();
         if (!running) return; // tick may have called endGame
+        // Draw at t=0 right after tick so next frames interpolate forward cleanly
+        // This prevents the head from jumping back after reaching t=1
+        t = 0;
+      } else {
+        t = elapsed / TICK_MS;
       }
 
       checkFoodExpiry();
