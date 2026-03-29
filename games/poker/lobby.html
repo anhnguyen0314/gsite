@@ -6,6 +6,38 @@
   <title>Poker Lobby — PlayDen</title>
   <link rel="stylesheet" href="../../style.css"/>
   <style>
+    /* Standard game header */
+    .header {
+      width: 100%;
+      background: #1a1a2e;
+      border-bottom: 1px solid #2a2a4a;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .back-btn {
+      background: none;
+      border: 1px solid #2a2a4a;
+      color: #a78bfa;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      text-decoration: none;
+    }
+    .back-btn:hover { background: #2a2a4a; }
+    .header-title { font-size: 18px; font-weight: 700; color: #a78bfa; }
+    .chip-display {
+      background: #0f0f1a;
+      border: 1px solid #2a2a4a;
+      border-radius: 20px;
+      padding: 5px 14px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    .chip-display span { font-weight: 700; color: #a78bfa; }
+
     .lobby-wrap {
       max-width: 780px;
       margin: 0 auto;
@@ -292,19 +324,11 @@
 </head>
 <body>
 
-  <!-- Navigation -->
-  <nav>
-    <a href="../../index.html" class="nav-logo" style="text-decoration:none;">🎮 PlayDen</a>
-    <ul class="nav-links">
-      <li><a href="../../index.html#arcade">Arcade</a></li>
-      <li><a href="../../index.html#puzzle">Puzzle</a></li>
-      <li><a href="../../index.html#card">Card</a></li>
-    </ul>
-    <div class="nav-auth" id="navAuth">
-      <a href="../../login.html" class="btn-secondary">Log in</a>
-      <a href="../../signup.html" class="btn-primary">Sign up</a>
-    </div>
-  </nav>
+  <div class="header">
+    <a href="../../index.html" class="back-btn">← Back</a>
+    <div class="header-title">♠️ Texas Hold'em</div>
+    <div class="chip-display">🪙 <span id="chipCount">—</span></div>
+  </div>
 
   <div class="lobby-wrap">
     <div class="page-header">
@@ -421,29 +445,20 @@
         }
 
         myChips = chips;
-        // Update chip display if the lobby is already rendered
+        // Update chip displays
         const el = document.getElementById('chipDisplay');
         if (el) el.textContent = chips.toLocaleString();
+        const hdr = document.getElementById('chipCount');
+        if (hdr) hdr.textContent = chips.toLocaleString();
       } catch (err) {
         console.warn('Lobby: could not sync chips from Firestore:', err);
       }
     }
 
-    // Nav
-    const navAuth = document.getElementById('navAuth');
     onAuthStateChanged(auth, async (user) => {
       currentUser = user;
       if (user) {
         const name = user.displayName || user.email.split('@')[0];
-        navAuth.innerHTML = `
-          <a href="../../account.html" class="nav-username" style="text-decoration:none;">👾 ${name}</a>
-          <button class="btn-secondary" id="logoutBtn">Log out</button>
-        `;
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-          if (socket) socket.disconnect();
-          await signOut(auth);
-          window.location.reload();
-        });
         // Connect socket AND sync chips from Firestore in parallel
         connectSocket(user);
         syncChipsFromFirestore(user.uid, name);

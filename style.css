@@ -792,6 +792,17 @@ footer a:hover { color: #a78bfa; }
 /* ─── Utility ─── */
 .mobile-only { display: none; }
 
+/* Mobile top-bar logo */
+.top-bar-logo {
+  display: none;
+  font-size: 16px;
+  font-weight: 700;
+  color: #a78bfa;
+  text-decoration: none;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ─── Responsive: narrow sidebar at 900px ─── */
 @media (max-width: 900px) {
   #sidebar {
@@ -868,6 +879,9 @@ footer a:hover { color: #a78bfa; }
   }
   .mobile-only {
     display: inline-block;
+  }
+  .top-bar-logo {
+    display: block;
   }
 }
 

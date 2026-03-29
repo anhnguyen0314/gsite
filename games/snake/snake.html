@@ -248,6 +248,27 @@
 
     let snake, dir, nextDir, food, score, best, timerSecs, gameLoop, timerLoop, running;
 
+    // Color phases: [headColor, bodyColor, glowColor] triggered at score thresholds
+    const PHASES = [
+      { score: 0,   head: '#a78bfa', body: '#7c3aed', glow: 'rgba(167,139,250,0.4)'  }, // purple
+      { score: 50,  head: '#22d3ee', body: '#0891b2', glow: 'rgba(34,211,238,0.4)'   }, // cyan
+      { score: 100, head: '#4ade80', body: '#16a34a', glow: 'rgba(74,222,128,0.4)'   }, // green
+      { score: 150, head: '#fb923c', body: '#ea580c', glow: 'rgba(251,146,60,0.4)'   }, // orange
+      { score: 200, head: '#f87171', body: '#dc2626', glow: 'rgba(248,113,113,0.4)'  }, // red
+    ];
+
+    const FRUITS = ['🍎','🍐','🍓','🍇','🍊','🫐','🍉','🍋','🍑','🍒'];
+    let currentFruit = '🍎';
+    let currentPhase = 0;
+
+    function getPhase(s) {
+      let p = 0;
+      for (let i = 0; i < PHASES.length; i++) {
+        if (s >= PHASES[i].score) p = i;
+      }
+      return p;
+    }
+
     best = parseInt(localStorage.getItem('snakeBest') || '0');
     document.getElementById('best').textContent = best;
 
@@ -257,8 +278,12 @@
       dir = {x: 1, y: 0};
       nextDir = {x: 1, y: 0};
       score = 0;
+      currentPhase = 0;
       timerSecs = 0;
       running = true;
+      const scoreEl = document.getElementById('score');
+      scoreEl.style.color = '';
+      scoreEl.style.transform = '';
       updateScore(0);
       updateTimer();
       placeFood();
@@ -281,6 +306,7 @@
         };
       } while (snake.some(s => s.x === pos.x && s.y === pos.y));
       food = pos;
+      currentFruit = FRUITS[Math.floor(Math.random() * FRUITS.length)];
     }
 
     function setDir(x, y) {
@@ -325,12 +351,24 @@
     }
 
     function updateScore(val) {
+      const prevPhase = currentPhase;
       score = val;
+      currentPhase = getPhase(score);
       document.getElementById('score').textContent = score;
       if (score > best) {
         best = score;
         localStorage.setItem('snakeBest', best);
         document.getElementById('best').textContent = best;
+      }
+      // Flash score element on phase change
+      if (currentPhase !== prevPhase) {
+        const el = document.getElementById('score');
+        el.style.color = PHASES[currentPhase].head;
+        el.style.transform = 'scale(1.4)';
+        el.style.transition = 'transform 0.25s, color 0.25s';
+        setTimeout(() => {
+          el.style.transform = '';
+        }, 250);
       }
     }
 
@@ -360,6 +398,8 @@
     }
 
     function draw() {
+      const phase = PHASES[currentPhase];
+
       ctx.fillStyle = '#1a1b28';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -373,20 +413,82 @@
         }
       }
 
-      // Food
-      ctx.fillStyle = '#f43f5e';
-      ctx.beginPath();
-      ctx.roundRect(food.x * GRID + 2, food.y * GRID + 2, GRID - 4, GRID - 4, 4);
-      ctx.fill();
+      // Food — fruit emoji with subtle glow
+      const fx = food.x * GRID + GRID / 2;
+      const fy = food.y * GRID + GRID / 2;
+      ctx.save();
+      ctx.shadowColor = 'rgba(255,200,0,0.5)';
+      ctx.shadowBlur = 8;
+      ctx.font = `${GRID - 2}px serif`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(currentFruit, fx, fy + 1);
+      ctx.restore();
 
-      // Snake
-      snake.forEach((seg, i) => {
-        const ratio = 1 - (i / snake.length) * 0.5;
-        ctx.fillStyle = i === 0 ? '#a78bfa' : `rgba(124, 58, 237, ${ratio})`;
+      // Snake body (tail → neck, fade opacity)
+      for (let i = snake.length - 1; i >= 1; i--) {
+        const seg = snake[i];
+        const ratio = 0.35 + 0.65 * (1 - i / snake.length);
+        // Alternate shade for scale effect
+        const shade = i % 2 === 0 ? 1 : 0.78;
+        ctx.fillStyle = phase.body;
+        ctx.globalAlpha = ratio * shade;
         ctx.beginPath();
-        ctx.roundRect(seg.x * GRID + 1, seg.y * GRID + 1, GRID - 2, GRID - 2, i === 0 ? 6 : 3);
+        const shrink = 1 + (i / snake.length) * 2; // tail gets slightly smaller
+        ctx.roundRect(
+          seg.x * GRID + shrink,
+          seg.y * GRID + shrink,
+          GRID - shrink * 2,
+          GRID - shrink * 2,
+          3
+        );
         ctx.fill();
-      });
+      }
+      ctx.globalAlpha = 1;
+
+      // Snake head with glow + eyes
+      if (snake.length > 0) {
+        const head = snake[0];
+        const hx = head.x * GRID;
+        const hy = head.y * GRID;
+
+        // Glow
+        ctx.save();
+        ctx.shadowColor = phase.glow;
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = phase.head;
+        ctx.beginPath();
+        ctx.roundRect(hx + 1, hy + 1, GRID - 2, GRID - 2, 6);
+        ctx.fill();
+        ctx.restore();
+
+        // Eyes — direction-aware placement
+        const cx = hx + GRID / 2;
+        const cy = hy + GRID / 2;
+        const eyeR = 2.2;
+        const pupilR = 1.1;
+        // Offsets relative to head center based on direction
+        let e1, e2;
+        if (dir.x === 1)       { e1 = {x: cx+3, y: cy-3}; e2 = {x: cx+3, y: cy+3}; }
+        else if (dir.x === -1) { e1 = {x: cx-3, y: cy-3}; e2 = {x: cx-3, y: cy+3}; }
+        else if (dir.y === -1) { e1 = {x: cx-3, y: cy-3}; e2 = {x: cx+3, y: cy-3}; }
+        else                   { e1 = {x: cx-3, y: cy+3}; e2 = {x: cx+3, y: cy+3}; }
+
+        // White of eye
+        ctx.fillStyle = '#fff';
+        [e1, e2].forEach(e => {
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, eyeR, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        // Pupil
+        ctx.fillStyle = '#0c0d14';
+        [e1, e2].forEach(e => {
+          ctx.beginPath();
+          ctx.arc(e.x, e.y, pupilR, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
     }
 
     draw();
