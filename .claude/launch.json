@@ -18,5 +18,6 @@
       "runtimeArgs": ["poker-server/server.js"],
       "port": 3000
     }
-  ]
+  ],
+  "autoVerify": false
 }
