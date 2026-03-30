@@ -1,5 +1,6 @@
 // ============================================================
 //  PlayDen Poker Server — Socket.io + Express
+//  Service account loaded from SERVICE_ACCOUNT_JSON env var
 // ============================================================
 const express    = require('express');
 const http       = require('http');
@@ -961,25 +962,4 @@ snk.on('connection', socket => {
       const snap = await ref.get();
       const prev = snap.exists ? (snap.data().score || 0) : 0;
       if (score > prev) {
-        await ref.set({ userId: uid, username: socket.data.username, score, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-      }
-      const chips = kills * 50 + Math.floor(score / 5);
-      if (chips > 0) {
-        await db.collection('users').doc(uid).update({ chips: admin.firestore.FieldValue.increment(chips) });
-      }
-      socket.emit('scoreSaved', { chips });
-    } catch (e) { console.error('Snake save score error:', e.message); }
-  });
-
-  socket.on('disconnect', () => {
-    const s = snkPlayers.get(socket.id);
-    if (s) { if (s.alive) snkKill(s, null); snkPlayers.delete(socket.id); }
-    console.log(`Snake socket disconnected: ${socket.id}`);
-  });
-});
-
-// ── Start server ─────────────────────────────────────────────
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Poker server listening on port ${PORT}`);
-});
+        awa
