@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="../../style.css"/>
   <style>
     * { box-sizing: border-box; }
-    body { background: #0a0a14; overflow-x: hidden; }
+    body { background: #0a0a14; overflow-x: hidden; touch-action: manipulation; }
 
     /* Standard game header */
     .header {
@@ -490,6 +490,36 @@
     }
     .card .suit-icon { line-height: 1; }
 
+    /* ── Community card flip animation ── */
+    @keyframes cardFlip {
+      0%   { transform: rotateY(90deg) scale(0.85); opacity: 0; }
+      55%  { transform: rotateY(-6deg) scale(1.04); opacity: 1; }
+      100% { transform: rotateY(0deg)  scale(1);    opacity: 1; }
+    }
+    .card-flip-in {
+      animation: cardFlip 0.38s ease-out forwards;
+      transform-origin: center;
+    }
+
+    /* ── Player action bubble ── */
+    @keyframes bubbleUp {
+      0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+      65%  { opacity: 1; }
+      100% { opacity: 0; transform: translateX(-50%) translateY(-28px); }
+    }
+    .action-bubble {
+      position: absolute; top: -10px; left: 50%;
+      transform: translateX(-50%);
+      background: rgba(10,10,20,0.92);
+      border: 1px solid currentColor;
+      border-radius: 20px;
+      padding: 3px 11px;
+      font-size: 11px; font-weight: 700;
+      pointer-events: none; z-index: 30;
+      white-space: nowrap;
+      animation: bubbleUp 1.6s ease forwards;
+    }
+
     /* ── Hand history ── */
     .history-section {
       margin-top: 20px;
@@ -663,8 +693,21 @@
     let myUserId      = null;
     let timerInterval = null;
     let timerSecs     = 30;
-    let lastHandNumber = 0;
-    const handHistory  = [];   // stores last 10 hand results
+    let lastHandNumber     = 0;
+    let prevCommunityCount = 0;
+    let prevPlayerStates   = {};   // userId → { folded, bet, allIn }
+    let prevActionIdx      = -1;
+    const handHistory      = [];   // stores last 10 hand results
+
+    function showActionBubble(podEl, action) {
+      const colors = { FOLD:'#f87171', CHECK:'#60a5fa', CALL:'#4ade80', RAISE:'#c4b5fd', 'ALL-IN':'#fbbf24' };
+      const div = document.createElement('div');
+      div.className = 'action-bubble';
+      div.textContent = action;
+      div.style.color = colors[action] || '#e0e0e0';
+      podEl.appendChild(div);
+      setTimeout(() => div.remove(), 1700);
+    }
 
     const navAuth = document.getElementById('navAuth');
 
@@ -790,15 +833,82 @@
       const stakeLabels = { low: '25/50', mid: '100/200', high: '500/1000' };
       document.getElementById('tableTitle').textContent =
         `♠️ Poker  ·  ${stakeLabels[state.stakeLevel] || ''}  ·  Hand #${state.handNumber}`;
+
+      // Reset tracking on new hand
+      if (state.handNumber !== lastHandNumber) {
+        prevCommunityCount = 0;
+        prevPlayerStates   = {};
+        prevActionIdx      = -1;
+      }
       lastHandNumber = state.handNumber;
+
+      // Snapshot player states before re-render
+      const snapBefore = {};
+      for (const [uid, ps] of Object.entries(prevPlayerStates)) snapBefore[uid] = { ...ps };
 
       const sb = document.getElementById('statusBox');
       if (state.state === 'waiting') {
         sb.innerHTML = buildWaiting(state);
+        prevCommunityCount = 0; prevPlayerStates = {}; prevActionIdx = -1;
         return;
       }
       sb.innerHTML = buildGameUI(state, me);
       setupActions(state, me);
+
+      // ── Community card flip animation ───────────────────────
+      const newCount = state.community ? state.community.length : 0;
+      if (newCount > prevCommunityCount) {
+        const cards = document.querySelectorAll('.community-cards .card:not(.placeholder)');
+        cards.forEach((el, i) => {
+          if (i >= prevCommunityCount) {
+            const delay = (i - prevCommunityCount) * 140;
+            setTimeout(() => el.classList.add('card-flip-in'), delay);
+          }
+        });
+      }
+      prevCommunityCount = newCount;
+
+      // ── Player action bubbles ───────────────────────────────
+      state.players.forEach(p => {
+        const prev = snapBefore[p.userId];
+        const cur  = { folded: p.folded, bet: p.bet, allIn: p.allIn };
+
+        if (!prev) { prevPlayerStates[p.userId] = cur; return; }
+
+        let action = null;
+        if (p.folded && !prev.folded) {
+          action = 'FOLD';
+        } else if (p.allIn && !prev.allIn) {
+          action = 'ALL-IN';
+        } else if (p.bet > prev.bet) {
+          action = p.bet <= (state.currentBet ?? p.bet) ? 'CALL' : 'RAISE';
+        }
+        prevPlayerStates[p.userId] = cur;
+
+        if (action) {
+          document.querySelectorAll('.opp-pod').forEach(pod => {
+            if (pod.querySelector('.opp-name')?.textContent.trim() === p.username) {
+              showActionBubble(pod, action);
+            }
+          });
+        }
+      });
+
+      // Detect CHECK: action index moved on, but the previous actor didn't fold or raise
+      if (prevActionIdx >= 0 && state.actionIdx !== prevActionIdx) {
+        const prevActor = state.players[prevActionIdx];
+        if (prevActor && prevActor.userId !== myUserId) {
+          const prev = snapBefore[prevActor.userId];
+          if (prev && !prevActor.folded && !prevActor.allIn && prevActor.bet === prev.bet) {
+            document.querySelectorAll('.opp-pod').forEach(pod => {
+              if (pod.querySelector('.opp-name')?.textContent.trim() === prevActor.username) {
+                showActionBubble(pod, 'CHECK');
+              }
+            });
+          }
+        }
+      }
+      prevActionIdx = state.actionIdx;
     }
 
     // ── Waiting screen ──────────────────────────────────────────

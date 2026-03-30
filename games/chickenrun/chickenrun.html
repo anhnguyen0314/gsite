@@ -67,22 +67,6 @@
     .back-a{color:#5050a0;font-size:13px;text-decoration:none;}
     .back-a:hover{color:#a78bfa;}
 
-    /* ── Mobile D-pad ── */
-    #dpad{
-      position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
-      width:160px;height:160px;display:none;z-index:20;
-    }
-    .db{
-      position:absolute;width:50px;height:50px;
-      background:rgba(124,58,237,.45);border:2px solid rgba(167,139,250,.4);
-      border-radius:10px;display:flex;align-items:center;justify-content:center;
-      font-size:22px;cursor:pointer;user-select:none;-webkit-user-select:none;
-    }
-    #dU{top:0;left:50%;transform:translateX(-50%);}
-    #dD{bottom:0;left:50%;transform:translateX(-50%);}
-    #dL{left:0;top:50%;transform:translateY(-50%);}
-    #dR{right:0;top:50%;transform:translateY(-50%);}
-    @media(pointer:coarse){#dpad{display:block;}}
   </style>
 </head>
 <body>
@@ -98,14 +82,6 @@
 </div>
 <div id="livesEl">🐔🐔🐔</div>
 <a id="backBtn" href="../../index.html">← Back</a>
-
-<!-- Mobile D-pad -->
-<div id="dpad">
-  <div class="db" id="dU">↑</div>
-  <div class="db" id="dL">←</div>
-  <div class="db" id="dR">→</div>
-  <div class="db" id="dD">↓</div>
-</div>
 
 <!-- Start overlay -->
 <div class="ov" id="ovStart">
@@ -250,6 +226,7 @@ function diff(row) {
   if (row >= 90)  return 1.5;
   if (row >= 60)  return 1.0;
   if (row >= 30)  return 0.5;
+  if (row >= 5)   return 0.2;
   return 0;
 }
 
@@ -277,7 +254,7 @@ function makeDecor(sparse) {
 
 function makeBushes(r, excludeCols = []) {
   const d = diff(r);
-  if (d === 0 || r < 5) return [];
+  if (d === 0) return [];
   // Available columns (not already occupied by a tree)
   const avail = [];
   for (let c = 0; c < COLS; c++)
@@ -561,8 +538,8 @@ function tryMove(dr, dc) {
 
   player.hopping = true;
   player.hopT    = 0;
-  // Only reset idle timer when moving to a new row (not lateral moves)
-  if (dr !== 0) player.idleTimer = IDLE_MAX;
+  // Only reset idle timer when moving forward (not backward or lateral)
+  if (dr > 0) player.idleTimer = IDLE_MAX;
 }
 
 window.addEventListener('keydown', e => {
@@ -575,14 +552,6 @@ window.addEventListener('keydown', e => {
     case 'ArrowRight': case 'KeyD': e.preventDefault(); tryMove(0,1);  break;
   }
 });
-
-// D-pad
-const DMAP = { dU:[1,0], dD:[-1,0], dL:[0,-1], dR:[0,1] };
-for (const [id, args] of Object.entries(DMAP)) {
-  const el = document.getElementById(id);
-  el.addEventListener('touchstart', e => { e.preventDefault(); tryMove(...args); }, {passive:false});
-  el.addEventListener('mousedown',  () => tryMove(...args));
-}
 
 // Swipe
 let swipeStart = null;

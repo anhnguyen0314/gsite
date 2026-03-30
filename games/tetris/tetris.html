@@ -16,7 +16,10 @@
       align-items: center;
       min-height: 100vh;
       padding: 0 20px 20px;
+      touch-action: manipulation;
+      overflow-x: hidden;
     }
+    @media (max-width: 380px) { body { padding: 0 8px 20px; } }
 
     .header {
       width: calc(100% + 40px);
@@ -124,7 +127,7 @@
     <div class="overlay" id="overlay">
       <img src="tetris.png" alt="Tetris" style="width:140px;height:79px;object-fit:cover;border-radius:10px;margin-bottom:2px;">
       <h2 id="overlay-title">Tetris</h2>
-      <p id="overlay-msg">← → move · ↑ rotate · ↓ soft drop<br>Space = hard drop</p>
+      <p id="overlay-msg">← → move · ↑ rotate · ↓ soft drop · Space = hard drop<br>Mobile: tap = rotate · swipe left/right = move · swipe down = drop</p>
       <p class="chip-hint">💰 Earn +100 chips per 1,000 points</p>
       <button class="btn" onclick="startGame()">Start Game</button>
       <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
@@ -549,6 +552,55 @@
       if (e.key === 'ArrowUp')    { e.preventDefault(); rotatePiece(); }
       if (e.key === ' ')          { e.preventDefault(); hardDrop(); }
     });
+
+    // ── Touch / swipe controls on canvas ──────────────────────
+    let tcStartX = 0, tcStartY = 0, tcStartTime = 0;
+    let tcSoftDropping = false;
+
+    canvas.addEventListener('touchstart', e => {
+      tcStartX    = e.touches[0].clientX;
+      tcStartY    = e.touches[0].clientY;
+      tcStartTime = Date.now();
+      tcSoftDropping = false;
+      e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', e => {
+      if (!running) return;
+      const dy = e.touches[0].clientY - tcStartY;
+      // Soft drop while dragging down > 20px
+      if (dy > 20 && !tcSoftDropping) {
+        tcSoftDropping = true;
+        softDrop();
+      } else if (dy > 20 && tcSoftDropping) {
+        softDrop();
+      }
+      e.preventDefault();
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', e => {
+      if (!running) return;
+      const dx   = e.changedTouches[0].clientX - tcStartX;
+      const dy   = e.changedTouches[0].clientY - tcStartY;
+      const dist = Math.max(Math.abs(dx), Math.abs(dy));
+      const dt   = Date.now() - tcStartTime;
+
+      if (dist < 18) {
+        // Tap → rotate
+        rotatePiece();
+      } else if (Math.abs(dx) > Math.abs(dy)) {
+        // Horizontal swipe
+        if (dx < 0) moveLeft(); else moveRight();
+      } else if (dy < -18) {
+        // Swipe up → hard drop
+        hardDrop();
+      } else if (dy > 18 && dt < 250) {
+        // Fast swipe down → hard drop
+        hardDrop();
+      }
+      tcSoftDropping = false;
+      e.preventDefault();
+    }, { passive: false });
 
     draw(0); drawNext();
   </script>

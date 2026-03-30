@@ -16,6 +16,7 @@
       align-items: center;
       min-height: 100vh;
       padding: 0 20px 20px;
+      touch-action: manipulation;
     }
 
     .header {
@@ -100,6 +101,32 @@
       transition: none;
     }
 
+    /* Mobile D-pad */
+    #snake-dpad {
+      position: relative;
+      width: 150px; height: 150px;
+      margin: 16px auto 0;
+      display: none;
+    }
+    .sdb {
+      position: absolute;
+      width: 48px; height: 48px;
+      background: rgba(124,58,237,0.35);
+      border: 2px solid rgba(167,139,250,0.4);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; color: #a78bfa;
+      cursor: pointer;
+      user-select: none; -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .sdb:active { background: rgba(124,58,237,0.65); }
+    #sdU { top: 0; left: 50%; transform: translateX(-50%); }
+    #sdD { bottom: 0; left: 50%; transform: translateX(-50%); }
+    #sdL { left: 0; top: 50%; transform: translateY(-50%); }
+    #sdR { right: 0; top: 50%; transform: translateY(-50%); }
+    @media (pointer: coarse) { #snake-dpad { display: block; } }
+
     .controls { margin-top: 12px; }
     .btn {
       background: #7c3aed;
@@ -163,6 +190,13 @@
       <button class="btn" onclick="startGame()">Start Game</button>
       <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
     </div>
+  </div>
+
+  <div id="snake-dpad">
+    <div class="sdb" id="sdU">▲</div>
+    <div class="sdb" id="sdL">◀</div>
+    <div class="sdb" id="sdD">▼</div>
+    <div class="sdb" id="sdR">▶</div>
   </div>
 
   <div class="controls">
@@ -423,6 +457,16 @@
       e.preventDefault();
     }, { passive: false });
 
+    // D-pad controls
+    const SDMAP = { sdU:[0,-1], sdD:[0,1], sdL:[-1,0], sdR:[1,0] };
+    for (const [id, [x, y]] of Object.entries(SDMAP)) {
+      const el = document.getElementById(id);
+      if (el) {
+        el.addEventListener('touchstart', e => { e.preventDefault(); if (running) setDir(x, y); }, {passive:false});
+        el.addEventListener('mousedown',  () => { if (running) setDir(x, y); });
+      }
+    }
+
     // ── Game init ─────────────────────────────────────────────
     function startGame() {
       try { getAudio(); } catch(e) {}
@@ -616,35 +660,36 @@
         }
       }
 
-      // Snake body — circle segments + rectangular connectors for smooth rounded turns
-      for (let i = snake.length - 1; i >= 1; i--) {
-        const seg  = snake[i];
-        const next = snake[i - 1];
-        const ratio  = 0.35 + 0.65 * (1 - i / snake.length);
-        const shade  = i % 2 === 0 ? 1 : 0.88;
-        const shrink = 1 + (i / snake.length) * 1.5;
-        const r  = GRID / 2 - shrink;
-        const cx = seg.x * GRID + GRID / 2;
-        const cy = seg.y * GRID + GRID / 2;
-        const ncx = next.x * GRID + GRID / 2;
-        const ncy = next.y * GRID + GRID / 2;
+      // Snake body — single continuous stroke path for smooth rounded corners, no flicker
+      if (snake.length >= 2) {
+        const len = snake.length;
+        ctx.save();
+        ctx.lineCap  = 'round';
+        ctx.lineJoin = 'round';
 
-        ctx.globalAlpha = ratio * shade;
-        ctx.fillStyle   = phase.body;
-
-        // Connector rectangle to next segment (fills the gap at turns)
+        // Outer body
+        ctx.strokeStyle = phase.body;
+        ctx.lineWidth   = GRID - 2;
+        ctx.globalAlpha = 0.92;
         ctx.beginPath();
-        if (seg.x === next.x) {
-          ctx.rect(cx - r, Math.min(cy, ncy), r * 2, Math.abs(cy - ncy));
-        } else {
-          ctx.rect(Math.min(cx, ncx), cy - r, Math.abs(cx - ncx), r * 2);
+        ctx.moveTo(snake[len-1].x * GRID + GRID/2, snake[len-1].y * GRID + GRID/2);
+        for (let i = len - 2; i >= 1; i--) {
+          ctx.lineTo(snake[i].x * GRID + GRID/2, snake[i].y * GRID + GRID/2);
         }
-        ctx.fill();
+        ctx.stroke();
 
-        // Circle at segment position
+        // Inner highlight for depth
+        ctx.strokeStyle = phase.head;
+        ctx.lineWidth   = GRID - 9;
+        ctx.globalAlpha = 0.18;
         ctx.beginPath();
-        ctx.arc(cx, cy, r, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.moveTo(snake[len-1].x * GRID + GRID/2, snake[len-1].y * GRID + GRID/2);
+        for (let i = len - 2; i >= 1; i--) {
+          ctx.lineTo(snake[i].x * GRID + GRID/2, snake[i].y * GRID + GRID/2);
+        }
+        ctx.stroke();
+
+        ctx.restore();
       }
       ctx.globalAlpha = 1;
 
