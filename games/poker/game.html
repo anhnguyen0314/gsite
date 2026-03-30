@@ -497,7 +497,7 @@
       100% { transform: rotateY(0deg)  scale(1);    opacity: 1; }
     }
     .card-flip-in {
-      animation: cardFlip 0.38s ease-out forwards;
+      animation: cardFlip 1.0s ease-out forwards;
       transform-origin: center;
     }
 
@@ -517,7 +517,7 @@
       font-size: 11px; font-weight: 700;
       pointer-events: none; z-index: 30;
       white-space: nowrap;
-      animation: bubbleUp 1.6s ease forwards;
+      animation: bubbleUp 3.0s ease forwards;
     }
 
     /* ── Hand history ── */
@@ -607,6 +607,44 @@
       .my-hole-cards .card .suit-icon { font-size: 24px; }
       .opp-pod { min-width: 80px; padding: 8px; }
     }
+
+    /* ── Starting countdown overlay ── */
+    .starting-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.82);
+      align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+    }
+    .starting-overlay.show { display: flex; }
+    .starting-overlay .start-title { font-size: 28px; font-weight: 700; color: #a78bfa; letter-spacing: 0.04em; }
+    .starting-overlay .start-count {
+      font-size: 96px; font-weight: 900; color: #facc15; line-height: 1;
+      animation: countPop 0.35s ease-out forwards;
+    }
+    @keyframes countPop {
+      0%   { transform: scale(1.6); opacity: 0.4; }
+      100% { transform: scale(1);   opacity: 1;   }
+    }
+
+    /* ── Hand name + equity pill ── */
+    .hand-pill {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      border-radius: 8px; padding: 2px 9px; margin-top: 5px; letter-spacing: 0.02em;
+    }
+    .hand-pill.gray   { background: rgba(150,150,170,0.18); color: #a0a0b8; }
+    .hand-pill.blue   { background: rgba(96,165,250,0.18);  color: #60a5fa; }
+    .hand-pill.purple { background: rgba(167,139,250,0.2);  color: #a78bfa; }
+    .hand-pill.gold   { background: rgba(250,204,21,0.18);  color: #facc15; }
+
+    /* ── Opponent timer bar ── */
+    .opp-timer-wrap {
+      width: 100%; height: 3px; background: #2a2a4a;
+      border-radius: 2px; margin-top: 4px; overflow: hidden;
+    }
+    .opp-timer-bar {
+      height: 100%; width: 100%; background: #7c3aed;
+      transition: width 0.5s linear, background 0.3s; border-radius: 2px;
+    }
+    .opp-timer-bar.urgent { background: #ef4444; }
   </style>
 </head>
 <body>
@@ -642,6 +680,12 @@
 
   <!-- Hand result overlay (outside game-wrap so it covers full screen) -->
   <div class="result-overlay" id="resultOverlay"></div>
+
+  <!-- Game-starting countdown overlay -->
+  <div class="starting-overlay" id="startingOverlay">
+    <div class="start-title">Get ready!</div>
+    <div class="start-count" id="startingCount">3</div>
+  </div>
 
   <!-- Out of chips / rebuy modal -->
   <div class="broke-modal" id="brokeModal">
@@ -697,6 +741,10 @@
     let prevCommunityCount = 0;
     let prevPlayerStates   = {};   // userId → { folded, bet, allIn }
     let prevActionIdx      = -1;
+    let startingCountdownInterval = null;
+    let opponentTimerInterval = null;
+    let opponentTimerStart    = null;
+    let activeOpponentIdx     = -1;
     const handHistory      = [];   // stores last 10 hand results
 
     function showActionBubble(podEl, action) {
@@ -706,7 +754,7 @@
       div.textContent = action;
       div.style.color = colors[action] || '#e0e0e0';
       podEl.appendChild(div);
-      setTimeout(() => div.remove(), 1700);
+      setTimeout(() => div.remove(), 3100);
     }
 
     const navAuth = document.getElementById('navAuth');
@@ -819,6 +867,95 @@
       });
     }
 
+    // ── Hand Evaluator (client-side copy from engine.js) ────────
+    const RANKS_EV = ['2','3','4','5','6','7','8','9','T','J','Q','K','A'];
+    const HAND_NAMES_EV = [
+      'High Card', 'One Pair', 'Two Pair', 'Three of a Kind',
+      'Straight', 'Flush', 'Full House', 'Four of a Kind', 'Straight Flush'
+    ];
+    function rankIdx(r) { return RANKS_EV.indexOf(r); }
+    function choose5(arr, k) {
+      if (k === 0) return [[]];
+      if (arr.length === k) return [arr.slice()];
+      const [first, ...rest] = arr;
+      return [...choose5(rest, k - 1).map(c => [first, ...c]), ...choose5(rest, k)];
+    }
+    function eval5(cards) {
+      const ranks = cards.map(c => rankIdx(c.rank)).sort((a, b) => b - a);
+      const suits = cards.map(c => c.suit);
+      const isFlush = suits.every(s => s === suits[0]);
+      let isStraight = false, straightHigh = ranks[0];
+      if (ranks[0] - ranks[4] === 4 && new Set(ranks).size === 5) {
+        isStraight = true;
+      } else if (JSON.stringify(ranks) === JSON.stringify([12,3,2,1,0])) {
+        isStraight = true; straightHigh = 3;
+      }
+      const cnt = {};
+      for (const r of ranks) cnt[r] = (cnt[r] || 0) + 1;
+      const groups = Object.entries(cnt)
+        .map(([r, c]) => ({ r: Number(r), c }))
+        .sort((a, b) => b.c - a.c || b.r - a.r);
+      if (isFlush && isStraight) return { rank: 8, name: 'Straight Flush' };
+      if (groups[0].c === 4)     return { rank: 7, name: 'Four of a Kind' };
+      if (groups[0].c === 3 && groups[1]?.c === 2) return { rank: 6, name: 'Full House' };
+      if (isFlush)               return { rank: 5, name: 'Flush' };
+      if (isStraight)            return { rank: 4, name: 'Straight' };
+      if (groups[0].c === 3)     return { rank: 3, name: 'Three of a Kind' };
+      if (groups[0].c === 2 && groups[1]?.c === 2) return { rank: 2, name: 'Two Pair' };
+      if (groups[0].c === 2)     return { rank: 1, name: 'One Pair' };
+      return { rank: 0, name: 'High Card' };
+    }
+    function evalHand(cards) {
+      if (cards.length < 5) return null;
+      if (cards.length === 5) return eval5(cards);
+      const combos = choose5(cards, 5);
+      let best = null;
+      for (const combo of combos) {
+        const ev = eval5(combo);
+        if (!best || ev.rank > best.rank) best = ev;
+      }
+      return best;
+    }
+
+    // ── Monte Carlo equity estimator ─────────────────────────────
+    function estimateEquity(myCards, community, numOpponents, iterations = 400) {
+      const SUITS_MC = ['c','d','h','s'];
+      const fullDeck = [];
+      for (const s of SUITS_MC) for (const r of RANKS_EV) fullDeck.push({ rank: r, suit: s });
+      const knownKeys = new Set([
+        ...myCards.map(c => c.rank + c.suit),
+        ...community.map(c => c.rank + c.suit)
+      ]);
+      const remaining = fullDeck.filter(c => !knownKeys.has(c.rank + c.suit));
+      const communityNeeded = 5 - community.length;
+      let wins = 0, ties = 0;
+      for (let i = 0; i < iterations; i++) {
+        // Fisher-Yates shuffle
+        for (let j = remaining.length - 1; j > 0; j--) {
+          const k = Math.floor(Math.random() * (j + 1));
+          [remaining[j], remaining[k]] = [remaining[k], remaining[j]];
+        }
+        let cursor = 0;
+        const simComm = [...community, ...remaining.slice(cursor, cursor + communityNeeded)];
+        cursor += communityNeeded;
+        const myEv = evalHand([...myCards, ...simComm]);
+        if (!myEv) continue;
+        let iWin = true, iLose = false;
+        for (let opp = 0; opp < numOpponents; opp++) {
+          const oppCards = remaining.slice(cursor, cursor + 2);
+          cursor += 2;
+          if (oppCards.length < 2) continue;
+          const oppEv = evalHand([...oppCards, ...simComm]);
+          if (!oppEv) continue;
+          if (oppEv.rank > myEv.rank) { iWin = false; iLose = true; break; }
+          if (oppEv.rank === myEv.rank) iWin = false;
+        }
+        if (iWin) wins++;
+        else if (!iLose) ties++;
+      }
+      return Math.round(((wins + 0.5 * ties) / iterations) * 100);
+    }
+
     // ── Render table state ──────────────────────────────────────
     function renderTable(state) {
       const me = state.players.find(p => p.userId === myUserId);
@@ -847,6 +984,45 @@
       for (const [uid, ps] of Object.entries(prevPlayerStates)) snapBefore[uid] = { ...ps };
 
       const sb = document.getElementById('statusBox');
+
+      // ── Starting countdown overlay ──────────────────────────
+      if (state.state === 'starting') {
+        sb.innerHTML = buildGameUI(state, me);
+        const overlay = document.getElementById('startingOverlay');
+        if (overlay && !overlay.classList.contains('show')) {
+          overlay.classList.add('show');
+          let count = 3;
+          const countEl = document.getElementById('startingCount');
+          if (countEl) countEl.textContent = count;
+          clearInterval(startingCountdownInterval);
+          startingCountdownInterval = setInterval(() => {
+            count--;
+            if (count > 0) {
+              if (countEl) {
+                countEl.style.animation = 'none';
+                countEl.textContent = count;
+                void countEl.offsetWidth; // force reflow to restart animation
+                countEl.style.animation = '';
+              }
+            } else {
+              clearInterval(startingCountdownInterval);
+              startingCountdownInterval = null;
+              overlay.classList.remove('show');
+            }
+          }, 1000);
+        }
+        setupActions(state, me);
+        return;
+      }
+
+      // ── Clear starting overlay if still showing ─────────────
+      const _startOverlay = document.getElementById('startingOverlay');
+      if (_startOverlay && _startOverlay.classList.contains('show')) {
+        clearInterval(startingCountdownInterval);
+        startingCountdownInterval = null;
+        _startOverlay.classList.remove('show');
+      }
+
       if (state.state === 'waiting') {
         sb.innerHTML = buildWaiting(state);
         prevCommunityCount = 0; prevPlayerStates = {}; prevActionIdx = -1;
@@ -861,7 +1037,7 @@
         const cards = document.querySelectorAll('.community-cards .card:not(.placeholder)');
         cards.forEach((el, i) => {
           if (i >= prevCommunityCount) {
-            const delay = (i - prevCommunityCount) * 140;
+            const delay = (i - prevCommunityCount) * 220;
             setTimeout(() => el.classList.add('card-flip-in'), delay);
           }
         });
@@ -909,6 +1085,36 @@
         }
       }
       prevActionIdx = state.actionIdx;
+
+      // ── Opponent timer ──────────────────────────────────────
+      const curActor = state.players[state.actionIdx];
+      const curIsOpponent = curActor && curActor.userId !== myUserId;
+
+      if (curIsOpponent && state.actionIdx !== activeOpponentIdx) {
+        // New opponent's turn — start/reset timer
+        clearInterval(opponentTimerInterval);
+        opponentTimerStart = Date.now();
+        activeOpponentIdx  = state.actionIdx;
+        const barId = 'oppTimerBar_' + curActor.userId.replace(/[^a-z0-9_]/gi, '_');
+
+        opponentTimerInterval = setInterval(() => {
+          const elapsed   = (Date.now() - opponentTimerStart) / 1000;
+          const remaining = Math.max(0, 30 - elapsed);
+          const bar = document.getElementById(barId);
+          if (bar) {
+            bar.style.width = (remaining / 30 * 100) + '%';
+            if (remaining <= 8) bar.classList.add('urgent');
+            else bar.classList.remove('urgent');
+          }
+          if (remaining <= 0) { clearInterval(opponentTimerInterval); opponentTimerInterval = null; }
+        }, 500);
+
+      } else if (!curIsOpponent) {
+        clearInterval(opponentTimerInterval);
+        opponentTimerInterval = null;
+        activeOpponentIdx     = -1;
+        opponentTimerStart    = null;
+      }
     }
 
     // ── Waiting screen ──────────────────────────────────────────
@@ -986,6 +1192,10 @@
       if (p.allIn)  badge = `<div class="badge allin">ALL-IN</div>`;
       if (p.folded) badge = `<div class="badge folded-badge">FOLD</div>`;
 
+      const timerHtml = isActive
+        ? `<div class="opp-timer-wrap"><div class="opp-timer-bar" id="oppTimerBar_${p.userId.replace(/[^a-z0-9_]/gi, '_')}"></div></div>`
+        : '';
+
       return `
         <div class="${classes}">
           ${badge}
@@ -994,6 +1204,7 @@
           <div class="opp-chips">🪙 ${p.chips.toLocaleString()}</div>
           ${p.bet > 0 ? `<div class="opp-bet">Bet: ${p.bet.toLocaleString()}</div>` : ''}
           <div class="opp-cards">${p.cards.map(c => buildCard(c, 'opp')).join('')}</div>
+          ${timerHtml}
         </div>`;
     }
 
@@ -1003,6 +1214,41 @@
       if (isDealer) badges += `<span class="my-badge dealer-tag">Dealer</span>`;
       if (me.allIn)  badges += `<span class="my-badge allin-tag">ALL-IN</span>`;
       if (me.folded) badges += `<span class="my-badge folded-tag">Folded</span>`;
+
+      // ── Hand name + equity pill ──────────────────────────────
+      let handPillHtml = '';
+      const activeStates = ['preflop', 'flop', 'turn', 'river'];
+      const visibleCards = (me.cards || []).filter(c => c && c.rank !== '?');
+      if (activeStates.includes(state.state) && visibleCards.length === 2 && !me.folded) {
+        const comm = state.community || [];
+        const allCards = [...visibleCards, ...comm];
+
+        let ev;
+        if (allCards.length >= 5) {
+          ev = evalHand(allCards);
+        } else {
+          // Pre-flop: simplified — pocket pair or high card
+          ev = (rankIdx(visibleCards[0].rank) === rankIdx(visibleCards[1].rank))
+            ? { rank: 1, name: 'One Pair' }
+            : { rank: 0, name: 'High Card' };
+        }
+
+        if (ev) {
+          let pillClass = 'gray';
+          if (ev.rank <= 1)       pillClass = 'gray';
+          else if (ev.rank === 2) pillClass = 'blue';
+          else if (ev.rank <= 5)  pillClass = 'purple';
+          else                    pillClass = 'gold';
+
+          const numOpponents = state.players.filter(p => p.userId !== myUserId && !p.folded).length;
+          let equityStr = '';
+          if (numOpponents > 0) {
+            const pct = estimateEquity(visibleCards, comm, numOpponents, 400);
+            equityStr = ` <span style="color:#7070a0;font-weight:400;">·</span> ~${pct}% equity`;
+          }
+          handPillHtml = `<div class="hand-pill ${pillClass}">${escHtml(ev.name)}${equityStr}</div>`;
+        }
+      }
 
       return `
         <div class="my-area">
@@ -1014,6 +1260,7 @@
             <div class="my-chips-line">🪙 ${me.chips.toLocaleString()}</div>
             ${me.bet > 0 ? `<div class="my-bet-line">Bet: ${me.bet.toLocaleString()}</div>` : ''}
             ${badges ? `<div class="my-badges">${badges}</div>` : ''}
+            ${handPillHtml}
           </div>
         </div>`;
     }
