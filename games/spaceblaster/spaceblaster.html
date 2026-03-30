@@ -10,10 +10,11 @@
       font-family: 'Segoe UI', sans-serif;
       background: #0c0d14;
       color: #e2e8f0;
-      min-height: 100vh;
+      height: 100dvh;
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      touch-action: manipulation;
     }
 
     /* ── Header ── */
@@ -140,27 +141,32 @@
       display: inline-block;
     }
 
-    /* ── D-Pad for mobile ── */
-    .dpad {
+    /* ── One-hand ctrl cluster (mobile, bottom-right) ── */
+    .ctrl-cluster {
       position: absolute;
       bottom: 16px;
-      left: 16px;
+      right: 16px;
       display: none;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
+      flex-direction: row;
+      align-items: flex-end;
+      gap: 10px;
       z-index: 10;
       user-select: none;
     }
-    .dpad-row { display: flex; gap: 4px; }
+    .dpad-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 48px);
+      grid-template-rows: repeat(2, 48px);
+      gap: 4px;
+    }
     .dpad-btn {
-      width: 52px;
-      height: 52px;
+      width: 48px;
+      height: 48px;
       background: rgba(124,58,237,0.3);
       border: 2px solid rgba(124,58,237,0.5);
       border-radius: 10px;
       color: #a78bfa;
-      font-size: 22px;
+      font-size: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -168,30 +174,29 @@
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
     }
+    .dpad-btn.spacer { visibility: hidden; pointer-events: none; }
     .dpad-btn:active { background: rgba(124,58,237,0.6); }
     .fire-btn {
-      position: absolute;
-      bottom: 16px;
-      right: 16px;
-      width: 70px;
-      height: 70px;
-      background: rgba(124,58,237,0.4);
-      border: 2px solid #7c3aed;
+      width: 72px;
+      height: 72px;
+      background: rgba(239,68,68,0.45);
+      border: 2px solid #ef4444;
       border-radius: 50%;
       color: #fff;
-      font-size: 28px;
-      display: none;
+      font-size: 30px;
+      display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
-      z-index: 10;
       touch-action: none;
       -webkit-tap-highlight-color: transparent;
+      align-self: flex-end;
+      box-shadow: 0 0 12px rgba(239,68,68,0.4);
     }
-    .fire-btn:active { background: rgba(124,58,237,0.8); }
+    .fire-btn:active { background: rgba(239,68,68,0.85); }
 
     @media (max-width: 600px) {
-      .dpad, .fire-btn { display: flex; }
+      .ctrl-cluster { display: flex; }
     }
 
     /* ── Auth gate ── */
@@ -273,16 +278,18 @@
     <a href="../../index.html" class="btn-secondary">Back to Hub</a>
   </div>
 
-  <!-- Mobile controls -->
-  <div class="dpad" id="dpad">
-    <div class="dpad-row"><button class="dpad-btn" id="dUp">▲</button></div>
-    <div class="dpad-row">
+  <!-- Mobile one-hand control cluster (bottom-right) -->
+  <div class="ctrl-cluster" id="ctrlCluster">
+    <div class="dpad-grid">
+      <div class="dpad-btn spacer"></div>
+      <button class="dpad-btn" id="dUp">▲</button>
+      <div class="dpad-btn spacer"></div>
       <button class="dpad-btn" id="dLeft">◀</button>
       <button class="dpad-btn" id="dDown">▼</button>
       <button class="dpad-btn" id="dRight">▶</button>
     </div>
+    <button class="fire-btn" id="fireBtn">🔥</button>
   </div>
-  <div class="fire-btn" id="fireBtn">🔥</div>
 </div>
 
 <script type="module">
@@ -382,6 +389,56 @@ const keys = {};
 const mobileKeys = { up: false, down: false, left: false, right: false, fire: false };
 let fireCooldown = 0;
 
+// Effects
+let shakeFrames = 0;
+let muzzleFlash = 0;
+let waveFlash   = 0;
+
+// ── Web Audio ─────────────────────────────────────────────────────────
+let audioCtx = null;
+function getAC() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playSound(type) {
+  try {
+    const ac  = getAC();
+    const osc = ac.createOscillator();
+    const g   = ac.createGain();
+    osc.connect(g); g.connect(ac.destination);
+    const t = ac.currentTime;
+    if (type === 'laser') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(900, t);
+      osc.frequency.exponentialRampToValueAtTime(400, t + 0.07);
+      g.gain.setValueAtTime(0.12, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.07);
+      osc.start(t); osc.stop(t + 0.07);
+    } else if (type === 'explode') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(220, t);
+      osc.frequency.exponentialRampToValueAtTime(30, t + 0.28);
+      g.gain.setValueAtTime(0.28, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+      osc.start(t); osc.stop(t + 0.28);
+    } else if (type === 'hit') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(160, t);
+      osc.frequency.exponentialRampToValueAtTime(40, t + 0.45);
+      g.gain.setValueAtTime(0.38, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+      osc.start(t); osc.stop(t + 0.45);
+    } else if (type === 'wave') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(440, t);
+      osc.frequency.exponentialRampToValueAtTime(880, t + 0.3);
+      g.gain.setValueAtTime(0.18, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+      osc.start(t); osc.stop(t + 0.5);
+    }
+  } catch(e) { /* ignore audio errors */ }
+}
+
 function initStars() {
   stars = [];
   for (let i = 0; i < 80; i++) {
@@ -438,6 +495,9 @@ function initGame() {
   particles    = [];
   fireCooldown = 0;
   sessionChips = 0;
+  shakeFrames  = 0;
+  muzzleFlash  = 0;
+  waveFlash    = 0;
   initStars();
   initShip();
   spawnWave(wave);
@@ -472,18 +532,21 @@ bindMobileBtn('dRight', 'right');
 bindMobileBtn('fireBtn','fire');
 
 // ── Particle effects ──────────────────────────────────────────────────
-function explode(x, y, color = '#a78bfa') {
-  for (let i = 0; i < 10; i++) {
+function explode(x, y, isEnemy = false, count = 22) {
+  const palette = isEnemy
+    ? ['#f97316','#fb923c','#fbbf24','#fde68a','#ffffff']
+    : ['#7c3aed','#a78bfa','#c4b5fd','#e9d5ff','#ffffff'];
+  for (let i = 0; i < count; i++) {
     const angle = Math.random() * Math.PI * 2;
-    const speed = Math.random() * 3 + 1;
+    const speed = Math.random() * 5.5 + 0.8;
     particles.push({
       x, y,
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
-      r: Math.random() * 3 + 1,
-      life: 30 + Math.random() * 20,
-      maxLife: 50,
-      color
+      r: Math.random() * 4 + 1,
+      life: 40 + Math.random() * 35,
+      maxLife: 75,
+      color: palette[Math.floor(Math.random() * palette.length)]
     });
   }
 }
@@ -568,8 +631,24 @@ function loop() {
   if (!running) return;
   animId = requestAnimationFrame(loop);
 
+  ctx.save();
+
+  // Screen shake
+  if (shakeFrames > 0) {
+    const mag = shakeFrames > 12 ? 7 : shakeFrames > 6 ? 4 : 2;
+    ctx.translate((Math.random() - 0.5) * mag * 2, (Math.random() - 0.5) * mag * 2);
+    shakeFrames--;
+  }
+
   ctx.fillStyle = '#0c0d14';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Wave clear flash overlay
+  if (waveFlash > 0) {
+    ctx.fillStyle = `rgba(167,139,250,${(waveFlash / 18) * 0.25})`;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    waveFlash--;
+  }
 
   drawStars();
   drawParticles();
@@ -591,6 +670,8 @@ function loop() {
   if (firing && fireCooldown <= 0) {
     bullets.push({ x: ship.x, y: ship.y - ship.h/2 });
     fireCooldown = 12;
+    muzzleFlash = 4;
+    playSound('laser');
   }
 
   // ── Player bullets ──
@@ -644,7 +725,8 @@ function loop() {
           e.hp--;
           if (e.hp <= 0) {
             e.alive = false;
-            explode(e.x, e.y, '#f97316');
+            explode(e.x, e.y, true);
+            playSound('explode');
             score += 10 * wave;
             updateHUD();
             earnChips(CHIP_PER_KILL);
@@ -673,6 +755,8 @@ function loop() {
     // ── Wave clear ──
     if (liveEnemies.length === 0 && !waveClearing) {
       waveClearing = true;
+      waveFlash = 18;
+      playSound('wave');
       earnChips(CHIP_PER_WAVE);
       score += 100 * wave;
       updateHUD();
@@ -689,12 +773,31 @@ function loop() {
   // ── Draw player bullets ──
   bullets.forEach(b => drawBullet(b, '#a78bfa'));
 
+  // ── Muzzle flash ──
+  if (muzzleFlash > 0) {
+    const alpha = muzzleFlash / 4;
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = '#fde68a';
+    ctx.shadowBlur = 18;
+    ctx.shadowColor = '#fbbf24';
+    ctx.beginPath();
+    ctx.arc(ship.x, ship.y - ship.h / 2 - 4, 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    muzzleFlash--;
+  }
+
   // ── Draw ship ──
   drawShip(ship.x, ship.y, ship.w, ship.h);
+
+  ctx.restore(); // end screen shake transform
 }
 
 function loseLife() {
-  explode(ship.x, ship.y, '#7c3aed');
+  explode(ship.x, ship.y, false, 30);
+  shakeFrames = 18;
+  playSound('hit');
   lives--;
   updateHUD();
   if (lives <= 0) {
