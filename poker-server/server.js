@@ -11,7 +11,9 @@ const { Table, STATE, STAKE_CONFIG, MAX_PLAYERS, STARTING_CHIPS, evaluateHand } 
 // ── Firebase Admin init ──────────────────────────────────────
 // You'll paste your service account JSON here (from Firebase console)
 // Download it from: Firebase Console → Project Settings → Service accounts → Generate new private key
-const serviceAccount = require('./serviceAccount.json');
+const serviceAccount = process.env.SERVICE_ACCOUNT_JSON
+  ? JSON.parse(process.env.SERVICE_ACCOUNT_JSON)
+  : require('./serviceAccount.json');
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
