@@ -14,21 +14,21 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      min-height: 100vh;
-      padding: 0 20px 20px;
+      height: 100dvh;
+      overflow: hidden;
+      padding: 0 12px;
       touch-action: manipulation;
-      overflow-x: hidden;
     }
-    @media (max-width: 380px) { body { padding: 0 8px 20px; } }
 
     .header {
-      width: calc(100% + 40px);
-      margin-left: -20px; margin-right: -20px;
+      width: calc(100% + 24px);
+      margin-left: -12px; margin-right: -12px;
       background: #1a1b28;
       border-bottom: 1px solid #2a2a4a;
-      padding: 12px 20px;
+      padding: 8px 16px;
       display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 8px;
+      flex-shrink: 0;
     }
     .back-btn {
       background: none; border: 1px solid #2a2a4a; color: #a78bfa;
@@ -47,8 +47,8 @@
       display: flex; align-items: center; gap: 8px;
       width: 100%; max-width: 420px;
       background: #1a1b28; border: 1px solid #2a2a4a;
-      border-radius: 12px; padding: 10px 14px; margin-bottom: 12px;
-      flex-wrap: wrap;
+      border-radius: 10px; padding: 6px 12px; margin-bottom: 6px;
+      flex-wrap: wrap; flex-shrink: 0;
     }
     .stat-item {
       display: flex; flex-direction: column; align-items: center;
@@ -61,11 +61,15 @@
 
     /* ── Canvas ─────────────────────────────────────────────── */
     .canvas-wrap {
-      position: relative; width: 100%; max-width: 420px;
+      position: relative;
+      flex: 1; min-height: 0;
+      display: flex; align-items: flex-start; justify-content: center;
+      width: 100%;
     }
     canvas#gameCanvas {
       background: #1a1b28; border: 2px solid #2a2a4a;
-      border-radius: 12px; display: block; width: 100%; height: auto;
+      border-radius: 12px; display: block;
+      width: auto; height: 100%; max-width: 100%;
       touch-action: none;
     }
 
@@ -85,20 +89,6 @@
     }
     .btn:hover { background: #6d28d9; }
 
-    /* ── Mobile controls ─────────────────────────────────────── */
-    .mobile-controls {
-      display: none; flex-direction: column; align-items: center; gap: 6px; margin-top: 12px;
-    }
-    .ctrl-row { display: flex; gap: 6px; }
-    .ctrl-btn {
-      width: 62px; height: 62px; background: #1a1b28; border: 1px solid #2a2a4a;
-      border-radius: 10px; color: #a78bfa; font-size: 22px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      user-select: none; -webkit-tap-highlight-color: transparent;
-    }
-    .ctrl-btn:active { background: #2a2a4a; }
-    .ctrl-btn.wide { width: 130px; font-size: 13px; color: #e0e0e0; }
-    @media (max-width: 600px) { .mobile-controls { display: flex; } }
   </style>
 </head>
 <body>
@@ -127,22 +117,13 @@
     <div class="overlay" id="overlay">
       <img src="tetris.png" alt="Tetris" style="width:140px;height:79px;object-fit:cover;border-radius:10px;margin-bottom:2px;">
       <h2 id="overlay-title">Tetris</h2>
-      <p id="overlay-msg">← → move · ↑ rotate · ↓ soft drop · Space = hard drop<br>Mobile: tap = rotate · swipe left/right = move · swipe down = drop</p>
+      <p id="overlay-msg">← → move · ↑ rotate · ↓ drop · Space = hard drop<br>📱 Tap = rotate · Swipe left/right = move · Swipe down = drop</p>
       <p class="chip-hint">💰 Earn +100 chips per 1,000 points</p>
       <button class="btn" onclick="startGame()">Start Game</button>
       <a href="../../index.html" style="color:#a78bfa;font-size:13px;text-decoration:none;margin-top:4px;opacity:0.85">← Back to Arcade</a>
     </div>
   </div>
 
-  <div class="mobile-controls">
-    <div class="ctrl-row"><div class="ctrl-btn" onclick="rotatePiece()">↻</div></div>
-    <div class="ctrl-row">
-      <div class="ctrl-btn" onclick="moveLeft()">◀</div>
-      <div class="ctrl-btn" onclick="softDrop()">▼</div>
-      <div class="ctrl-btn" onclick="moveRight()">▶</div>
-    </div>
-    <div class="ctrl-row"><div class="ctrl-btn wide" onclick="hardDrop()">Hard Drop</div></div>
-  </div>
 
   <script>
     const canvas     = document.getElementById('gameCanvas');

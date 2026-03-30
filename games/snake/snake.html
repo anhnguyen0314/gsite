@@ -660,14 +660,20 @@
         }
       }
 
-      // Snake body — single continuous stroke path for smooth rounded corners, no flicker
+      // Pre-compute interpolated head position so body can extend to it seamlessly
+      const hx = snake.length > 0 ? (prevHeadX + (snake[0].x - prevHeadX) * t) * GRID : 0;
+      const hy = snake.length > 0 ? (prevHeadY + (snake[0].y - prevHeadY) * t) * GRID : 0;
+
+      // Snake body — single continuous stroke extending all the way to the head position
       if (snake.length >= 2) {
         const len = snake.length;
+        const neckX = hx + GRID / 2;
+        const neckY = hy + GRID / 2;
         ctx.save();
         ctx.lineCap  = 'round';
         ctx.lineJoin = 'round';
 
-        // Outer body
+        // Outer body (reaches head center for a gapless join)
         ctx.strokeStyle = phase.body;
         ctx.lineWidth   = GRID - 2;
         ctx.globalAlpha = 0.92;
@@ -676,6 +682,7 @@
         for (let i = len - 2; i >= 1; i--) {
           ctx.lineTo(snake[i].x * GRID + GRID/2, snake[i].y * GRID + GRID/2);
         }
+        ctx.lineTo(neckX, neckY);
         ctx.stroke();
 
         // Inner highlight for depth
@@ -687,17 +694,15 @@
         for (let i = len - 2; i >= 1; i--) {
           ctx.lineTo(snake[i].x * GRID + GRID/2, snake[i].y * GRID + GRID/2);
         }
+        ctx.lineTo(neckX, neckY);
         ctx.stroke();
 
         ctx.restore();
       }
       ctx.globalAlpha = 1;
 
-      // Snake head — smooth interpolation between prevHead and current head
+      // Snake head — drawn over the body endpoint for a seamless look
       if (snake.length > 0) {
-        const hx = (prevHeadX + (snake[0].x - prevHeadX) * t) * GRID;
-        const hy = (prevHeadY + (snake[0].y - prevHeadY) * t) * GRID;
-
         ctx.save();
         ctx.shadowColor = phase.glow;
         ctx.shadowBlur  = 14;
