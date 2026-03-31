@@ -487,30 +487,30 @@ class Table {
     if (typeof this._onStreetChange === 'function') this._onStreetChange();
 
     // Set action to first ACTIVE (non-folded, non-all-in) player left of dealer.
-    // _nextSittingAfter only skips folded players, so we need our own loop here
-    // to avoid pointing actionIdx at an all-in player and hanging the game.
-    let canAct = false;
-    for (let i = 1; i <= this.players.length; i++) {
-      const next = (this.dealerIdx + i) % this.players.length;
-      const p = this.players[next];
-      if (p.sitting && !p.folded && !p.allIn) {
-        this.actionIdx = next;
-        canAct = true;
-        break;
-      }
-    }
-    if (!canAct) this.actionIdx = this._nextSittingAfter(this.dealerIdx); // all-in runout fallback
+    // If fewer than 2 players can act (everyone else is all-in), skip betting and
+    // run out the board automatically — there's nothing meaningful to bet into.
+    const activePlayers = this.players.filter(p => p.sitting && !p.folded && !p.allIn);
+    const canAct = activePlayers.length >= 2;
 
     if (canAct) {
+      for (let i = 1; i <= this.players.length; i++) {
+        const next = (this.dealerIdx + i) % this.players.length;
+        const p = this.players[next];
+        if (p.sitting && !p.folded && !p.allIn) {
+          this.actionIdx = next;
+          break;
+        }
+      }
       this._startActionTimer();
     } else {
+      this.actionIdx = this._nextSittingAfter(this.dealerIdx); // all-in runout fallback
       this.actionTimer = setTimeout(() => {
         this._nextAction();
         // If the runout completed and reached showdown, notify the server
         if (this.state === STATE.SHOWDOWN && typeof this._onShowdown === 'function') {
           this._onShowdown();
         }
-      }, 1500);
+      }, 2500); // 2.5s — enough for the 2-second card flip animation to finish
     }
   }
 
@@ -563,9 +563,16 @@ class Table {
   _startActionTimer() {
     clearTimeout(this.actionTimer);
     this.actionTimer = setTimeout(() => {
-      // Auto-fold on timeout
       const p = this.players[this.actionIdx];
-      if (p) p.folded = true;
+      if (p) {
+        if (p.bet >= this.currentBet) {
+          // Player can check — auto-check instead of fold
+          p.acted = true;
+        } else {
+          // Must call or fold — auto-fold
+          p.folded = true;
+        }
+      }
       this._nextAction();
       // Notify server so it can broadcast and handle showdown
       if (typeof this._onAutoAction === 'function') this._onAutoAction();

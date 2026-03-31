@@ -497,9 +497,33 @@
       100% { transform: rotateY(0deg)  scale(1);    opacity: 1; }
     }
     .card-flip-in {
-      animation: cardFlip 1.0s ease-out forwards;
+      animation: cardFlip 2.0s ease-out forwards;
       transform-origin: center;
     }
+
+    /* ── Quick-bet buttons ── */
+    .quick-bet-row {
+      display: flex; gap: 6px; margin-bottom: 6px;
+    }
+    .quick-bet-btn {
+      flex: 1; padding: 5px 0; background: #1a1b28;
+      border: 1px solid #2a2a4a; border-radius: 8px;
+      color: #a78bfa; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .quick-bet-btn:hover { background: #252540; }
+
+    /* ── Sticky action label ── */
+    .sticky-action {
+      font-size: 10px; font-weight: 700; padding: 2px 8px;
+      border-radius: 10px; display: inline-block; margin-top: 3px;
+      background: rgba(10,10,20,0.85); border: 1px solid currentColor;
+    }
+    .sticky-action.fold   { color: #f87171; }
+    .sticky-action.check  { color: #60a5fa; }
+    .sticky-action.call   { color: #4ade80; }
+    .sticky-action.raise  { color: #c4b5fd; }
+    .sticky-action.all-in { color: #fbbf24; }
 
     /* ── Player action bubble ── */
     @keyframes bubbleUp {
@@ -741,6 +765,7 @@
     let prevCommunityCount = 0;
     let prevPlayerStates   = {};   // userId → { folded, bet, allIn }
     let prevActionIdx      = -1;
+    let lastActionLabels   = {};   // userId → last action string (persists until new hand)
     let startingCountdownInterval = null;
     let opponentTimerInterval = null;
     let opponentTimerStart    = null;
@@ -976,6 +1001,7 @@
         prevCommunityCount = 0;
         prevPlayerStates   = {};
         prevActionIdx      = -1;
+        lastActionLabels   = {};
       }
       lastHandNumber = state.handNumber;
 
@@ -1037,14 +1063,14 @@
         const cards = document.querySelectorAll('.community-cards .card:not(.placeholder)');
         cards.forEach((el, i) => {
           if (i >= prevCommunityCount) {
-            const delay = (i - prevCommunityCount) * 220;
+            const delay = (i - prevCommunityCount) * 400;
             setTimeout(() => el.classList.add('card-flip-in'), delay);
           }
         });
       }
       prevCommunityCount = newCount;
 
-      // ── Player action bubbles ───────────────────────────────
+      // ── Player action bubbles + sticky labels ──────────────
       state.players.forEach(p => {
         const prev = snapBefore[p.userId];
         const cur  = { folded: p.folded, bet: p.bet, allIn: p.allIn };
@@ -1062,25 +1088,31 @@
         prevPlayerStates[p.userId] = cur;
 
         if (action) {
-          document.querySelectorAll('.opp-pod').forEach(pod => {
-            if (pod.querySelector('.opp-name')?.textContent.trim() === p.username) {
-              showActionBubble(pod, action);
-            }
-          });
+          lastActionLabels[p.userId] = action;
+          if (p.userId !== myUserId) {
+            document.querySelectorAll('.opp-pod').forEach(pod => {
+              if (pod.querySelector('.opp-name')?.textContent.trim() === p.username) {
+                showActionBubble(pod, action);
+              }
+            });
+          }
         }
       });
 
       // Detect CHECK: action index moved on, but the previous actor didn't fold or raise
       if (prevActionIdx >= 0 && state.actionIdx !== prevActionIdx) {
         const prevActor = state.players[prevActionIdx];
-        if (prevActor && prevActor.userId !== myUserId) {
+        if (prevActor) {
           const prev = snapBefore[prevActor.userId];
           if (prev && !prevActor.folded && !prevActor.allIn && prevActor.bet === prev.bet) {
-            document.querySelectorAll('.opp-pod').forEach(pod => {
-              if (pod.querySelector('.opp-name')?.textContent.trim() === prevActor.username) {
-                showActionBubble(pod, 'CHECK');
-              }
-            });
+            lastActionLabels[prevActor.userId] = 'CHECK';
+            if (prevActor.userId !== myUserId) {
+              document.querySelectorAll('.opp-pod').forEach(pod => {
+                if (pod.querySelector('.opp-name')?.textContent.trim() === prevActor.username) {
+                  showActionBubble(pod, 'CHECK');
+                }
+              });
+            }
           }
         }
       }
@@ -1204,6 +1236,7 @@
           <div class="opp-chips">🪙 ${p.chips.toLocaleString()}</div>
           ${p.bet > 0 ? `<div class="opp-bet">Bet: ${p.bet.toLocaleString()}</div>` : ''}
           <div class="opp-cards">${p.cards.map(c => buildCard(c, 'opp')).join('')}</div>
+          ${lastActionLabels[p.userId] ? `<div class="sticky-action ${lastActionLabels[p.userId].toLowerCase().replace(' ', '-')}">${lastActionLabels[p.userId]}</div>` : ''}
           ${timerHtml}
         </div>`;
     }
@@ -1260,6 +1293,7 @@
             <div class="my-chips-line">🪙 ${me.chips.toLocaleString()}</div>
             ${me.bet > 0 ? `<div class="my-bet-line">Bet: ${me.bet.toLocaleString()}</div>` : ''}
             ${badges ? `<div class="my-badges">${badges}</div>` : ''}
+            ${lastActionLabels[myUserId] ? `<div class="sticky-action ${lastActionLabels[myUserId].toLowerCase().replace(' ', '-')}">${lastActionLabels[myUserId]}</div>` : ''}
             ${handPillHtml}
           </div>
         </div>`;
@@ -1295,6 +1329,11 @@
             <input type="number" class="bet-input" id="betInput"
               min="${minRaise}" max="${maxBet}"
               value="${minRaise}" oninput="syncSlider(this.value)"/>
+          </div>
+          <div class="quick-bet-row">
+            <button class="quick-bet-btn" onclick="setQuickRaise(${Math.min(maxBet, Math.max(minRaise, Math.floor(state.pot * 0.5)))})">½ Pot</button>
+            <button class="quick-bet-btn" onclick="setQuickRaise(${Math.min(maxBet, Math.max(minRaise, Math.floor(state.pot * 0.75)))})">¾ Pot</button>
+            <button class="quick-bet-btn" onclick="setQuickRaise(${Math.min(maxBet, Math.max(minRaise, state.pot))})">Pot</button>
           </div>
           <div class="action-buttons">
             <button class="act-btn btn-fold"  onclick="sendAction('fold')">Fold</button>
@@ -1608,6 +1647,12 @@
     window.syncSlider = (val) => {
       const slider = document.getElementById('betSlider');
       if (slider) slider.value = val;
+    };
+    window.setQuickRaise = (val) => {
+      const slider = document.getElementById('betSlider');
+      const input  = document.getElementById('betInput');
+      if (slider) slider.value = val;
+      if (input)  input.value  = val;
     };
   </script>
 
